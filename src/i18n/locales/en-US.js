@@ -215,6 +215,7 @@ export default {
         deviceLimit: 'Online Devices',
         unlimited: 'Unlimited',
         nextResetTime: 'Next Reset Time',
+        autoRenewal: 'Auto Renewal',
 
         importTitle: 'Select Import Method',
         copySubscription: 'Copy Subscription Link',
@@ -377,7 +378,11 @@ export default {
         popup: {
             close_btn: 'Close',
             wait_close_btn: 'Close in {seconds}s'
-        }
+        },
+        
+        imageUpload: 'Image Upload',
+        imageUploadSuccess: 'Image uploaded successfully',
+        imageUploadError: 'Image upload failed'
     },
     profile: {
         title: 'User Center',
@@ -836,7 +841,8 @@ export default {
     wallet: {
         balance: {
             title: 'Account Balance',
-            description: 'Deposited balance can only be used for spending'
+            description: 'Deposited balance can only be used for spending',
+            autorenew: 'Auto Renewal'
         },
         deposit: {
             title: 'Deposit Balance',
@@ -855,6 +861,13 @@ export default {
         welcome: {
             title: 'Account Deposit',
             description: 'Here you can easily deposit funds into your account, choose preset amounts or enter a custom amount. Deposited balance will be credited instantly and can be used to purchase our services.'
+        },
+        autoRenewal: 'Auto Renewal',
+        autoRenewalStatus: {
+            title: 'Auto Renewal',
+            enabled: 'Auto renewal enabled',
+            disabled: 'Auto renewal disabled',
+            error: 'Failed to toggle auto renewal'
         }
     }
 };

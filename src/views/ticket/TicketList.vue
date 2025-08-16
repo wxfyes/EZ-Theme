@@ -348,49 +348,53 @@
 
             <div class="reply-container" v-if="selectedTicket.status === 0">
 
-              <textarea 
+              <div class="reply-input-section">
+                <div class="input-row">
+                  <textarea 
 
-                v-model="replyMessage" 
+                    v-model="replyMessage" 
 
-                :placeholder="$t('tickets.replyPlaceholder')"
+                    :placeholder="$t('tickets.replyPlaceholder')"
 
-                rows="3"
+                    rows="1"
 
-                @keydown.ctrl.enter="sendReply"
+                    @keydown.ctrl.enter="sendReply"
+                    @paste="handleTextareaPaste"
 
-              ></textarea>
-              
-              <!-- 图片上传组件 -->
-              <div class="image-upload-section">
-                <ImageUpload 
-                  v-model:images="replyImages"
-                  :disabled="sendingReply"
-                  :enable-markdown="true"
-                  :auto-insert-markdown="true"
-                  @upload-success="handleImageUploadSuccess"
-                  @upload-error="handleImageUploadError"
-                  @markdown-ready="handleMarkdownReady"
-                />
-              </div>
+                  ></textarea>
+                  
+                  <!-- 图片上传组件 -->
+                  <div class="image-upload-section">
+                    <ImageUpload 
+                      v-model:images="replyImages"
+                      :disabled="sendingReply"
+                      :enable-markdown="true"
+                      :auto-insert-markdown="true"
+                      @upload-success="handleImageUploadSuccess"
+                      @upload-error="handleImageUploadError"
+                      @markdown-ready="handleMarkdownReady"
+                    />
 
-              <div class="reply-actions">
-                <button 
+                  </div>
+                  
+                  <button 
 
-                  class="send-reply-btn" 
+                    class="send-reply-btn" 
 
-                  @click="sendReply"
+                    @click="sendReply"
 
-                  :disabled="!replyMessage.trim() || sendingReply"
+                    :disabled="!replyMessage.trim() || sendingReply"
 
-                >
+                  >
 
-                  <span v-if="sendingReply" class="loader"></span>
+                    <span v-if="sendingReply" class="loader"></span>
 
-                  <IconSend v-else :size="18" />
+                    <IconSend v-else :size="18" />
 
-                  {{ $t('tickets.send') }}
+                    {{ $t('tickets.send') }}
 
-                </button>
+                  </button>
+                </div>
               </div>
 
             </div>
@@ -536,6 +540,32 @@
                 rows="5"
 
               ></textarea>
+
+            </div>
+
+            <div class="form-group">
+
+              <label>{{ $t('tickets.imageUpload') }}</label>
+
+              <ImageUpload 
+
+                v-model:images="newTicketImages"
+
+                :max-files="5"
+
+                :max-size="5 * 1024 * 1024"
+
+                :enable-markdown="true"
+
+                :auto-insert-markdown="true"
+
+                @upload-success="handleImageUploadSuccess"
+
+                @upload-error="handleImageUploadError"
+
+                @markdown-ready="handleMarkdownReady"
+
+              />
 
             </div>
 
@@ -766,6 +796,8 @@ const newTicket = ref({
 
 });
 
+const newTicketImages = ref([]);
+
 
 
 const filteredTickets = computed(() => {
@@ -883,7 +915,19 @@ const submitTicket = async () => {
 
     
 
-    const messageWithUserInfo = `${newTicket.value.message}\n\n${userInfoText}`;
+    // 处理图片信息
+    let messageWithImages = newTicket.value.message;
+    if (newTicketImages.value.length > 0) {
+      const imageMarkdowns = newTicketImages.value
+        .filter(img => img.markdown)
+        .map(img => img.markdown)
+        .join('\n\n');
+      if (imageMarkdowns) {
+        messageWithImages += '\n\n' + imageMarkdowns;
+      }
+    }
+    
+    const messageWithUserInfo = `${messageWithImages}\n\n${userInfoText}`;
 
     
 
@@ -1064,9 +1108,22 @@ const sendReply = async () => {
 
   try {
 
-    // 使用 WebDAV 上传时，图片已经转换为 Markdown 并插入到消息中
-    // 不再需要单独发送图片URL数组
-    const data = await replyTicket(selectedTicket.value.id, replyMessage.value);
+    // 处理图片上传
+    let finalMessage = replyMessage.value;
+    
+    // 如果有图片，将图片URL添加到消息中
+    if (replyImages.value.length > 0) {
+      const imageUrls = replyImages.value
+        .filter(img => img.uploadedUrl)
+        .map(img => img.markdown || `![图片](${img.uploadedUrl})`)
+        .join('\n\n');
+      
+      if (imageUrls) {
+        finalMessage += '\n\n' + imageUrls;
+      }
+    }
+    
+    const data = await replyTicket(selectedTicket.value.id, finalMessage);
 
     
 
@@ -1238,11 +1295,12 @@ const handleSearch = () => {
 // 图片上传处理函数
 const handleImageUploadSuccess = (result) => {
   console.log('Image upload success:', result);
+  showToast(t('tickets.imageUploadSuccess'), 'success');
 };
 
 const handleImageUploadError = (error) => {
   console.error('Image upload error:', error);
-  showToast(error.message || t('imageUpload.uploadFailed'), 'error');
+  showToast(t('tickets.imageUploadError'), 'error');
 };
 
 const handleMarkdownReady = (markdown) => {
@@ -1251,6 +1309,80 @@ const handleMarkdownReady = (markdown) => {
     replyMessage.value += '\n\n' + markdown;
   } else {
     replyMessage.value = markdown;
+  }
+};
+
+// 处理文本框粘贴图片
+const handleTextareaPaste = async (event) => {
+  const items = event.clipboardData?.items;
+  if (!items) return;
+  
+  const imageFiles = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) {
+        imageFiles.push(file);
+      }
+    }
+  }
+  
+  if (imageFiles.length > 0) {
+    event.preventDefault();
+    
+    // 将粘贴的图片添加到replyImages数组，让ImageUpload组件处理
+    for (const file of imageFiles) {
+      // 创建图片数据对象
+      const imageData = {
+        file,
+        url: URL.createObjectURL(file),
+        uploading: true,
+        progress: 0,
+        id: Date.now() + Math.random(),
+        markdown: null
+      };
+      
+      // 添加到replyImages数组
+      replyImages.value.push(imageData);
+      
+      // 模拟ImageUpload组件的上传过程
+      try {
+        const webdavUploadService = await import('@/utils/webdavUpload.js');
+        const uploadService = webdavUploadService.default;
+        
+        // 创建进度回调函数
+        const onProgress = (progress) => {
+          imageData.progress = progress;
+          // 强制更新视图
+          replyImages.value = [...replyImages.value];
+          console.log('Paste upload progress:', progress + '%');
+        };
+        
+        const result = await uploadService.uploadImage(file, onProgress);
+        
+        // 更新图片数据
+        imageData.progress = 100;
+        imageData.uploadedUrl = result.url;
+        imageData.uploading = false;
+        imageData.markdown = result.markdown;
+        
+        // 触发markdown-ready事件
+        if (result.markdown) {
+          handleMarkdownReady(result.markdown);
+        }
+        
+        showToast(t('tickets.imageUploadSuccess'), 'success');
+      } catch (error) {
+        console.error('Paste image upload failed:', error);
+        showToast(error.message || t('imageUpload.uploadFailed'), 'error');
+        // 移除失败的图片
+        const index = replyImages.value.indexOf(imageData);
+        if (index > -1) {
+          replyImages.value.splice(index, 1);
+        }
+      }
+    }
   }
 };
 
@@ -1306,6 +1438,8 @@ const closeModal = () => {
       level: '0'
 
     };
+
+    newTicketImages.value = [];
 
   }, 250); 
 };
@@ -2465,6 +2599,8 @@ onUnmounted(() => {
 
   background-color: var(--card-bg);
 
+  margin-top: 2rem;
+
   
 
   @media (prefers-color-scheme: dark) {
@@ -2499,7 +2635,9 @@ onUnmounted(() => {
 
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
 
-    min-height: 90px;
+    min-height: 40px;
+
+    max-height: 60px;
 
     
 
@@ -2535,12 +2673,239 @@ onUnmounted(() => {
 
     }
 
+    // 平板设备适配
+    @media (max-width: 1024px) {
+      min-height: 40px;
+      max-height: 55px;
+      padding: 0.6rem 1rem;
+      font-size: 0.95rem;
+    }
+
+    // 手机设备适配
+    @media (max-width: 768px) {
+      min-height: 35px;
+      max-height: 50px;
+      padding: 0.5rem 0.8rem;
+      font-size: 0.9rem;
+      border-radius: 12px;
+    }
+
+    // 小屏手机适配
+    @media (max-width: 480px) {
+      min-height: 32px;
+      max-height: 45px;
+      padding: 0.4rem 0.7rem;
+      font-size: 0.85rem;
+      border-radius: 10px;
+    }
+
   }
 
   
 
+  .reply-input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 220px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    margin-right: 1rem;
+    
+    textarea {
+      flex: 1;
+      max-width: 1200px;
+      min-height: 120px;
+      max-height: 220px;
+    }
+  }
+
+  .reply-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+
+  // 平板设备适配
+  @media (max-width: 1024px) {
+    .reply-input-section {
+      gap: 0.75rem;
+      min-height: 180px;
+    }
+    
+    .reply-controls {
+      gap: 0.4rem;
+    }
+    
+    .image-upload-section {
+      width: 180px;
+    }
+  }
+
+  // 手机设备适配
+  @media (max-width: 768px) {
+    .reply-input-section {
+      flex-direction: column;
+      gap: 0.75rem;
+      min-height: 160px;
+    }
+    
+    .reply-controls {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+    
+    .image-upload-section {
+      width: 100%;
+      flex: 1;
+      
+      :deep(.upload-area) {
+        min-height: 70px;
+        padding: 14px;
+        border: 2px dashed #d1d5db;
+        border-radius: 10px;
+        background: #ffffff;
+      }
+      
+      :deep(.upload-content) {
+        gap: 8px;
+      }
+      
+      :deep(.upload-icon) {
+        width: 24px;
+        height: 24px;
+        color: #6b7280;
+        opacity: 0.8;
+      }
+      
+      :deep(.upload-text) {
+        font-size: 13px;
+        color: #374151;
+        font-weight: 500;
+        line-height: 1.3;
+      }
+      
+      :deep(.upload-hint) {
+        font-size: 11px;
+        color: #6b7280;
+        opacity: 0.8;
+        line-height: 1.2;
+        text-align: center;
+      }
+    }
+    
+    .send-reply-btn {
+      height: 50px;
+      padding: 0 1.25rem;
+      flex-shrink: 0;
+    }
+  }
+
+  // 小屏手机适配
+  @media (max-width: 480px) {
+    .reply-container {
+      padding: 1rem;
+      margin-top: 1.5rem;
+    }
+    
+    .reply-input-section {
+      gap: 0.5rem;
+      min-height: 140px;
+    }
+    
+    .reply-controls {
+      gap: 0.3rem;
+    }
+    
+    .image-upload-section {
+      :deep(.upload-area) {
+        min-height: 60px;
+        padding: 10px;
+        border: 2px dashed #d1d5db;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+      
+      :deep(.upload-content) {
+        gap: 6px;
+      }
+      
+      :deep(.upload-icon) {
+        width: 20px;
+        height: 20px;
+        color: #6b7280;
+        opacity: 0.8;
+      }
+      
+      :deep(.upload-text) {
+        font-size: 12px;
+        color: #374151;
+        font-weight: 500;
+        line-height: 1.2;
+      }
+      
+      :deep(.upload-hint) {
+        font-size: 10px;
+        color: #6b7280;
+        opacity: 0.8;
+        line-height: 1.1;
+        text-align: center;
+      }
+    }
+    
+    .send-reply-btn {
+      height: 45px;
+      padding: 0 1rem;
+      font-size: 0.9rem;
+    }
+  }
+
   .image-upload-section {
-    margin-top: 0.5rem;
+    width: 160px;
+    flex-shrink: 0;
+    
+    :deep(.upload-area) {
+      min-height: 60px;
+      padding: 8px;
+      border: 2px dashed #d1d5db;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+    
+    :deep(.upload-content) {
+      gap: 6px;
+    }
+    
+    :deep(.upload-icon) {
+      width: 20px;
+      height: 20px;
+      color: #6b7280;
+      opacity: 0.8;
+    }
+    
+    :deep(.upload-text) {
+      font-size: 12px;
+      color: #374151;
+      font-weight: 500;
+      line-height: 1.2;
+      margin: 0;
+    }
+    
+    :deep(.upload-hint) {
+      font-size: 10px;
+      color: #6b7280;
+      opacity: 0.8;
+      line-height: 1.1;
+      text-align: center;
+      margin: 0;
+    }
   }
 
   .reply-actions {
@@ -2564,6 +2929,8 @@ onUnmounted(() => {
 
     border-radius: 8px;
 
+    flex-shrink: 0;
+
     background-color: rgba(var(--theme-color-rgb), 0.85);
 
     color: white;
@@ -2585,6 +2952,8 @@ onUnmounted(() => {
     -webkit-backdrop-filter: blur(8px);
 
     border: 1px solid rgba(var(--theme-color-rgb), 0.3);
+
+    align-self: flex-start;
 
     
 

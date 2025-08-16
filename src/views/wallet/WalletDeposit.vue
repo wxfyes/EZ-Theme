@@ -15,6 +15,23 @@
       <div class="dashboard-card balance-card">
         <div class="card-header">
           <h2 class="card-title">{{ $t('wallet.balance.title') }}</h2>
+          <div class="header-renewal-control">
+            <label class="switch" :class="{ disabled: isUpdatingAutoRenewal }">
+              <input
+                type="checkbox"
+                v-model="autoRenewal"
+                @change="handleRenewalChange"
+                :disabled="isUpdatingAutoRenewal"
+              />
+              <span
+                class="slider round"
+                :class="{ loading: isUpdatingAutoRenewal }"
+              ></span>
+            </label>
+            <span class="renewal-title" :class="{ 'is-active': autoRenewal }">
+              {{ $t('wallet.balance.autorenew') }}
+            </span>
+          </div>
         </div>
         <div class="card-body">
           <!-- 余额信息 - 已加载 -->
@@ -123,7 +140,7 @@ import { ref, computed, onMounted, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToast } from '@/composables/useToast';
 import { IconAlertCircle, IconShoppingCart } from '@tabler/icons-vue';
-import { getUserInfo } from '@/api/user';
+import { getUserInfo, updateRemindSettings } from '@/api/user';
 import { createOrderDeposit, getUserConfig } from '@/api/wallet';
 import { isXiaoV2board } from '@/utils/baseConfig';
 import { useRouter } from 'vue-router';
@@ -137,16 +154,18 @@ if (!isXiaoPanel) {
 }
 const userBalance = ref(0);
 const currencySymbol = ref('$');
-const presetAmounts = ref(WALLET_CONFIG.presetAmounts || [6, 30, 68, 128, 256, 328, 648, 1280]);
-const selectedAmount = ref(WALLET_CONFIG.defaultSelectedAmount || null);
-const customAmount = ref('');
-const amountError = ref('');
-const minimumDepositAmount = WALLET_CONFIG.minimumDepositAmount || 1;
+const autoRenewal = ref(false);
+const isUpdatingAutoRenewal = ref(false);
 const loading = reactive({
   balance: true,
   submitting: false,
   config: true
 });
+const presetAmounts = ref(WALLET_CONFIG.presetAmounts || [6, 30, 68, 128, 256, 328, 648, 1280]);
+const selectedAmount = ref(WALLET_CONFIG.defaultSelectedAmount || null);
+const customAmount = ref('');
+const amountError = ref('');
+const minimumDepositAmount = WALLET_CONFIG.minimumDepositAmount || 1;
 const fetchUserConfig = async () => {
   try {
     const response = await getUserConfig();
@@ -161,6 +180,23 @@ const fetchUserConfig = async () => {
 };
 const formatAmount = (amount) => {
   return (parseFloat(amount) / 100).toFixed(2);
+};
+
+const handleRenewalChange = async () => {
+  // 1. 开始更新，设置加载状态为 true，禁用开关
+  isUpdatingAutoRenewal.value = true;
+  try {
+    // 2. 调用API，将布尔值转换为 1 或 0
+    await updateRemindSettings({ auto_renewal: autoRenewal.value ? 1 : 0 });
+    showToast(t('profile.updateSuccess'), 'success');
+  } catch (error) {
+    // 3. 如果API调用失败，将开关恢复到操作之前的状态
+    autoRenewal.value = !autoRenewal.value;
+    showToast(error.response?.message || 'error');
+  } finally {
+    // 4. 无论成功或失败，最后都结束加载状态
+    isUpdatingAutoRenewal.value = false;
+  }
 };
 const selectAmount = (amount) => {
   selectedAmount.value = amount;
@@ -204,6 +240,7 @@ const fetchUserBalance = async () => {
     const response = await getUserInfo();
     if (response && response.data) {
       userBalance.value = response.data.balance || 0;
+      autoRenewal.value = response.data.auto_renewal === 1;
     }
   } catch (error) {
     console.error('获取用户余额失败:', error);
@@ -733,6 +770,158 @@ onMounted(() => {
     transform: translateX(-100%);
     animation: shimmer 2s infinite;
     will-change: transform;
-  }
+     }
+ }
+ 
+       /* 放在头部的自动续费控件容器 */
+    .header-renewal-control {
+      display: flex;
+      align-items: center;
+      gap: 5px; /* 开关和文字的间距 */
+    }
+
+    /* 续费文字标签的样式 */
+    .renewal-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--secondary-text-color);
+      transition: color 0.3s ease;
+      cursor: default;
+    }
+
+    /* 激活状态的文字颜色 */
+    .renewal-title.is-active {
+      color: var(--theme-color);
+    }
+
+    /* 开关主体样式 */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 24px;
+
+      &.disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+
+        &:checked + .slider {
+          background-color: var(--theme-color);
+        }
+
+        &:checked + .slider:before {
+          transform: translateX(22px);
+        }
+
+        &:disabled + .slider {
+          cursor: not-allowed;
+        }
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+
+        /* 加载中状态 */
+        &.loading {
+          overflow: hidden;
+
+          &:before {
+            animation: pulse 1.5s infinite;
+          }
+
+          &:after {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+              90deg,
+              transparent,
+              rgba(255, 255, 255, 0.4),
+              transparent
+            );
+            animation: sweep 1.5s infinite;
+          }
+        }
+
+        &:before {
+          position: absolute;
+          content: "";
+          height: 18px;
+          width: 18px;
+          left: 3px;
+          bottom: 3px;
+          background-color: white;
+          transition: 0.4s;
+          z-index: 1;
+        }
+
+        &.round {
+          border-radius: 34px;
+          &:before {
+            border-radius: 50%;
+          }
+        }
+      }
+    }
+
+    /* 开关加载动画 */
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 5px rgba(255, 255, 255, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+      }
+    }
+
+    @keyframes sweep {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(100%);
+      }
+    }
+ 
+ /* 加载动画 */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
-</style> 
+
+/* 暗色主题下的开关样式 */
+ .dark-theme {
+   .auto-renewal-toggle {
+     .toggle-label {
+       .toggle-slider {
+         background-color: #555;
+         
+         &::before {
+           background-color: #fff;
+         }
+       }
+       
+       .toggle-input:checked + .toggle-slider {
+         background-color: var(--theme-color);
+       }
+     }
+   }
+ }
+ </style> 

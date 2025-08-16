@@ -211,15 +211,30 @@
                 <IconMessage :size="16" class="btn-icon"/>
                 <span class="">{{ $t('dashboard.ticketSupport') }}</span>
               </button>
+              <!-- 自动续费开关 - 样式与按钮一致 -->
+              <div class="btn-outline auto-renewal-btn" :class="{ 'btn-active': autoRenewal }">
+                <label class="switch" :class="{ disabled: isUpdatingAutoRenewal }">
+                  <input
+                    type="checkbox"
+                    v-model="autoRenewal"
+                    @change="handleRenewalChange"
+                    :disabled="isUpdatingAutoRenewal"
+                  />
+                  <span
+                    class="slider round"
+                    :class="{ loading: isUpdatingAutoRenewal }"
+                  ></span>
+                </label>
+                <span class="renewal-title" :class="{ 'is-active': autoRenewal }">
+                  {{ $t('wallet.balance.autorenew') }}
+                </span>
+              </div>
             </div>
           </div>
         </template>
       </div>
 
-      <!-- 流量趋势图 -->
-      <div v-if="TRAFFICLOG_CONFIG.enableTrafficLog" class="dashboard-card">
-        <TrafficTrendChart :days-to-show="TRAFFICLOG_CONFIG.daysToShow" />
-      </div>
+
 
       <!-- 订阅导入卡片 -->
       <transition name="slide-fade">
@@ -627,6 +642,11 @@
           </div>
         </div>
       </div>
+
+      <!-- 流量趋势图 -->
+      <div v-if="TRAFFICLOG_CONFIG.enableTrafficLog" class="dashboard-card">
+        <TrafficTrendChart :days-to-show="TRAFFICLOG_CONFIG.daysToShow" />
+      </div>
     </div>
     <!-- 弹窗组件 -->
     <CommonDialog
@@ -704,7 +724,7 @@ import {
 } from 'vue';
 import {useRouter} from 'vue-router';
 import {useI18n} from 'vue-i18n';
-import {CLIENT_CONFIG, DASHBOARD_CONFIG, isXiaoV2board, SITE_CONFIG} from '@/utils/baseConfig';
+import {CLIENT_CONFIG, DASHBOARD_CONFIG, isXiaoV2board, SITE_CONFIG, TRAFFICLOG_CONFIG} from '@/utils/baseConfig';
 import {
   IconAlertTriangle,
   IconBox,
@@ -749,6 +769,7 @@ import {
 import CommonDialog from '@/components/popup/CommonDialog.vue';
 import TrafficTrendChart from '@/components/dashboard/TrafficTrendChart.vue';
 import {getNotices, getSubscribe, getUserConfig, getUserInfo, getUserStats, setNextPeriod} from '@/api/dashboard';
+import {updateRemindSettings} from '@/api/user';
 import {useToast} from '@/composables/useToast';
 import {submitOrder} from '@/api/shop';
 import MarkdownIt from 'markdown-it';
@@ -921,6 +942,8 @@ export default {
     const userBalance = ref('0.00');
     const currencySymbol = ref('$');
     const hasPlan = ref(true);
+    const autoRenewal = ref(false);
+    const isUpdatingAutoRenewal = ref(false);
     const currentNoticeIndex = ref(0);
     const showNoticeDetails = ref(false);
     const showImportCard = ref(false);
@@ -1124,6 +1147,9 @@ export default {
           if (info.balance !== undefined) {
             userBalance.value = info.balance;
             updateAccountBalanceDisplay();
+          }
+          if (info.auto_renewal !== undefined) {
+            autoRenewal.value = info.auto_renewal === 1;
           }
           if (info.expired_at) {
             userPlan.value.expireDate = formatDate(info.expired_at);
@@ -1472,6 +1498,23 @@ export default {
 
     const closeNoticeModal = () => {
       showNoticeDetails.value = false;
+    };
+
+    const handleRenewalChange = async () => {
+      // 1. 开始更新，设置加载状态为 true，禁用开关
+      isUpdatingAutoRenewal.value = true;
+      try {
+        // 2. 调用API，将布尔值转换为 1 或 0
+        await updateRemindSettings({ auto_renewal: autoRenewal.value ? 1 : 0 });
+        showToast(t('profile.updateSuccess'), 'success');
+      } catch (error) {
+        // 3. 如果API调用失败，将开关恢复到操作之前的状态
+        autoRenewal.value = !autoRenewal.value;
+        showToast(error.response?.message || 'error');
+      } finally {
+        // 4. 无论成功或失败，最后都结束加载状态
+        isUpdatingAutoRenewal.value = false;
+      }
     };
 
     const formatDate = (dateString) => {
@@ -1996,6 +2039,10 @@ export default {
       DASHBOARD_CONFIG,
       allowNewPeriod,
       showImportSubscription,
+      TRAFFICLOG_CONFIG,
+      autoRenewal,
+      isUpdatingAutoRenewal,
+      handleRenewalChange,
     };
   }
 };
@@ -2089,8 +2136,10 @@ export default {
 
     .subscription-actions {
       display: flex;
-      gap: 12px;
+      gap: 6px;
       margin-top: 15px;
+      align-items: center;
+      flex-wrap: wrap;
 
       @media (min-width: 769px) {
         flex-direction: row;
@@ -2106,9 +2155,15 @@ export default {
       @media (max-width: 768px) {
         flex-direction: column;
         gap: 10px;
+        align-items: stretch;
 
         button {
           width: 100%;
+        }
+
+        .auto-renewal-control {
+          margin-left: 0;
+          justify-content: center;
         }
       }
 
@@ -2569,7 +2624,7 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
@@ -2709,10 +2764,7 @@ export default {
     border-bottom: none;
   }
 
-  .subscription-actions {
-    flex-direction: column;
-    margin-top: 15px;
-  }
+
 
   .platform-selector {
     flex-wrap: wrap;
@@ -2781,13 +2833,7 @@ export default {
   }
 }
 
-@media (min-width: 769px) {
-  .subscription-actions {
-    display: flex;
-    flex-direction: row;
-    gap: 12px;
-  }
-}
+
 
 @media (min-width: 769px) and (max-width: 1199px) {
   .stats-grid {
@@ -4324,6 +4370,148 @@ a.eztheme-btn {
 
 .stats-card.balance-card .stats-value {
   color: var(--theme-color);
+}
+
+/* 自动续费开关按钮样式 */
+.auto-renewal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  min-width: 120px;
+
+  &:hover {
+    background-color: rgba(var(--theme-color-rgb), 0.05);
+    border-color: rgba(var(--theme-color-rgb), 0.3);
+  }
+
+  &.btn-active {
+    background-color: rgba(var(--theme-color-rgb), 0.1);
+    border-color: var(--theme-color);
+    color: var(--theme-color);
+  }
+}
+
+.renewal-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-color);
+  transition: color 0.3s ease;
+  cursor: default;
+}
+
+.renewal-title.is-active {
+  color: var(--theme-color);
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 18px;
+
+  &.disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+
+    &:checked + .slider {
+      background-color: var(--theme-color);
+    }
+
+    &:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    &:disabled + .slider {
+      cursor: not-allowed;
+    }
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+
+    &.loading {
+      overflow: hidden;
+
+      &:before {
+        animation: pulse 1.5s infinite;
+      }
+
+      &:after {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.4),
+          transparent
+        );
+        animation: sweep 1.5s infinite;
+      }
+    }
+
+    &:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: 0.4s;
+      z-index: 1;
+    }
+
+    &.round {
+      border-radius: 18px;
+      &:before {
+        border-radius: 50%;
+      }
+    }
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 5px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+@keyframes sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 </style>
 

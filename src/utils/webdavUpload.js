@@ -25,9 +25,10 @@ class WebDAVUploadService {
   /**
    * 上传图片到 WebDAV 服务器
    * @param {File} file - 要上传的文件
+   * @param {Function} onProgress - 进度回调函数
    * @returns {Promise<Object>} 上传结果
    */
-  async uploadToWebDAV(file) {
+  async uploadToWebDAV(file, onProgress) {
     const { webdav } = this.config;
     
     if (!webdav.serverUrl || !webdav.username || !webdav.password) {
@@ -41,58 +42,81 @@ class WebDAVUploadService {
     // 创建 Basic Auth 认证头
     const credentials = btoa(`${webdav.username}:${webdav.password}`);
     
-    try {
-      const response = await fetch(fullUrl, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Basic ${credentials}`,
-          'Content-Type': file.type,
-          'Content-Length': file.size.toString()
-        },
-        body: file
-      });
-
-      if (!response.ok) {
-        throw new Error(`WebDAV 上传失败: ${response.status} ${response.statusText}`);
-      }
-
-      // 生成公共访问URL
-      const publicUrl = `${webdav.publicUrl}/${fileName}`;
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
       
-      return {
-        success: true,
-        url: publicUrl,
-        fileName: fileName,
-        originalName: file.name,
-        size: file.size
-      };
-    } catch (error) {
-      console.error('WebDAV 上传错误:', error);
-      throw error;
-    }
+      // 监听上传进度
+      if (onProgress && xhr.upload) {
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            onProgress(progress);
+          }
+        });
+      }
+      
+      // 监听请求完成
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          // 生成公共访问URL
+          const publicUrl = `${webdav.publicUrl}/${fileName}`;
+          
+          resolve({
+            success: true,
+            url: publicUrl,
+            fileName: fileName,
+            originalName: file.name,
+            size: file.size
+          });
+        } else {
+          reject(new Error(`WebDAV 上传失败: ${xhr.status} ${xhr.statusText}`));
+        }
+      });
+      
+      // 监听错误
+      xhr.addEventListener('error', () => {
+        reject(new Error('WebDAV 上传网络错误'));
+      });
+      
+      // 监听超时
+      xhr.addEventListener('timeout', () => {
+        reject(new Error('WebDAV 上传超时'));
+      });
+      
+      // 打开连接
+      xhr.open('PUT', fullUrl);
+      xhr.setRequestHeader('Authorization', `Basic ${credentials}`);
+      xhr.setRequestHeader('Content-Type', file.type);
+      xhr.setRequestHeader('Content-Length', file.size.toString());
+      
+      // 发送文件
+      xhr.send(file);
+    });
   }
 
   /**
    * 上传图片到图床 API (支持多图床)
    * @param {File} file - 要上传的文件
+   * @param {Function} onProgress - 进度回调函数
    * @returns {Promise<Object>} 上传结果
    */
-  async uploadToImageBed(file) {
+  async uploadToImageBed(file, onProgress) {
     // 检查是否配置了多个图床
     if (this.config.imageBeds && this.config.imageBeds.length > 0) {
-      return await this.uploadToMultipleImageBeds(file);
+      return await this.uploadToMultipleImageBeds(file, onProgress);
     } else {
       // 兼容旧配置 (单个图床)
-      return await this.uploadToSingleImageBed(file);
+      return await this.uploadToSingleImageBed(file, onProgress);
     }
   }
 
   /**
    * 上传到多个图床 (支持故障转移)
    * @param {File} file - 要上传的文件
+   * @param {Function} onProgress - 进度回调函数
    * @returns {Promise<Object>} 上传结果
    */
-  async uploadToMultipleImageBeds(file) {
+  async uploadToMultipleImageBeds(file, onProgress) {
     const { imageBeds, imageBedStrategy } = this.config;
     
     if (!imageBeds || imageBeds.length === 0) {
@@ -117,7 +141,7 @@ class WebDAVUploadService {
       
       try {
         console.log(`尝试上传到图床: ${imageBed.name}`);
-        const result = await this.uploadToSpecificImageBed(file, imageBed);
+        const result = await this.uploadToSpecificImageBed(file, imageBed, onProgress);
         console.log(`成功上传到图床: ${imageBed.name}`);
         return result;
       } catch (error) {
@@ -164,9 +188,10 @@ class WebDAVUploadService {
   /**
    * 上传到单个图床 (兼容旧配置)
    * @param {File} file - 要上传的文件
+   * @param {Function} onProgress - 进度回调函数
    * @returns {Promise<Object>} 上传结果
    */
-  async uploadToSingleImageBed(file) {
+  async uploadToSingleImageBed(file, onProgress) {
     const { imageBed } = this.config;
     
     if (!imageBed.apiUrl || !imageBed.apiKey) {
@@ -179,20 +204,20 @@ class WebDAVUploadService {
       // 根据图床类型选择不同的上传方式
       switch (imageBed.type) {
         case 'imgbb':
-          result = await this.uploadToImgBB(file);
+          result = await this.uploadToImgBB(file, null, onProgress);
           break;
         case 'smms':
-          result = await this.uploadToSMMS(file);
+          result = await this.uploadToSMMS(file, null, onProgress);
           break;
         case 'chevereto':
-          result = await this.uploadToChevereto(file);
+          result = await this.uploadToChevereto(file, null, onProgress);
           break;
         case 'lsky':
-          result = await this.uploadToLsky(file);
+          result = await this.uploadToLsky(file, null, onProgress);
           break;
         case 'custom':
         default:
-          result = await this.uploadToCustom(file);
+          result = await this.uploadToCustom(file, null, onProgress);
           break;
       }
       
@@ -207,21 +232,22 @@ class WebDAVUploadService {
    * 上传到指定的图床
    * @param {File} file - 要上传的文件
    * @param {Object} imageBed - 图床配置
+   * @param {Function} onProgress - 进度回调函数
    * @returns {Promise<Object>} 上传结果
    */
-  async uploadToSpecificImageBed(file, imageBed) {
+  async uploadToSpecificImageBed(file, imageBed, onProgress) {
     switch (imageBed.type) {
       case 'imgbb':
-        return await this.uploadToImgBB(file, imageBed);
+        return await this.uploadToImgBB(file, imageBed, onProgress);
       case 'smms':
-        return await this.uploadToSMMS(file, imageBed);
+        return await this.uploadToSMMS(file, imageBed, onProgress);
       case 'chevereto':
-        return await this.uploadToChevereto(file, imageBed);
+        return await this.uploadToChevereto(file, imageBed, onProgress);
       case 'lsky':
-        return await this.uploadToLsky(file, imageBed);
+        return await this.uploadToLsky(file, imageBed, onProgress);
       case 'custom':
       default:
-        return await this.uploadToCustom(file, imageBed);
+        return await this.uploadToCustom(file, imageBed, onProgress);
     }
   }
 
@@ -237,143 +263,285 @@ class WebDAVUploadService {
   /**
    * 上传到 ImgBB
    */
-  async uploadToImgBB(file, imageBed = null) {
+  async uploadToImgBB(file, imageBed = null, onProgress) {
     const config = imageBed || this.config.imageBed;
     
     const formData = new FormData();
     formData.append('image', file);
     formData.append('key', config.apiKey);
 
-    const response = await fetch(config.apiUrl, {
-      method: 'POST',
-      body: formData
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      // 监听上传进度
+      if (onProgress && xhr.upload) {
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            onProgress(progress);
+          }
+        });
+      }
+      
+      // 监听请求完成
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            if (result.success) {
+              resolve({
+                success: true,
+                url: result.data.url,
+                fileName: file.name,
+                originalName: file.name,
+                size: file.size
+              });
+            } else {
+              reject(new Error(result.error?.message || 'ImgBB上传失败'));
+            }
+          } catch (error) {
+            reject(new Error('ImgBB响应解析失败'));
+          }
+        } else {
+          reject(new Error(`ImgBB上传失败: ${xhr.status} ${xhr.statusText}`));
+        }
+      });
+      
+      // 监听错误
+      xhr.addEventListener('error', () => {
+        reject(new Error('ImgBB上传网络错误'));
+      });
+      
+      // 监听超时
+      xhr.addEventListener('timeout', () => {
+        reject(new Error('ImgBB上传超时'));
+      });
+      
+      // 打开连接
+      xhr.open('POST', config.apiUrl);
+      
+      // 发送数据
+      xhr.send(formData);
     });
-
-    if (!response.ok) {
-      throw new Error(`ImgBB上传失败: ${response.status} ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    
-    if (result.success) {
-      return {
-        success: true,
-        url: result.data.url,
-        fileName: file.name,
-        originalName: file.name,
-        size: file.size
-      };
-    } else {
-      throw new Error(result.error?.message || 'ImgBB上传失败');
-    }
   }
 
   /**
    * 上传到 SM.MS
    */
-  async uploadToSMMS(file, imageBed = null) {
+  async uploadToSMMS(file, imageBed = null, onProgress) {
     const config = imageBed || this.config.imageBed;
     
     const formData = new FormData();
     formData.append('smfile', file);
 
-    const response = await fetch(config.apiUrl, {
-      method: 'POST',
-      headers: config.headers || {},
-      body: formData
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      // 监听上传进度
+      if (onProgress && xhr.upload) {
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            onProgress(progress);
+          }
+        });
+      }
+      
+      // 监听请求完成
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            if (result.success) {
+              resolve({
+                success: true,
+                url: result.data.url,
+                fileName: file.name,
+                originalName: file.name,
+                size: file.size
+              });
+            } else {
+              reject(new Error(result.message || 'SM.MS上传失败'));
+            }
+          } catch (error) {
+            reject(new Error('SM.MS响应解析失败'));
+          }
+        } else {
+          reject(new Error(`SM.MS上传失败: ${xhr.status} ${xhr.statusText}`));
+        }
+      });
+      
+      // 监听错误
+      xhr.addEventListener('error', () => {
+        reject(new Error('SM.MS上传网络错误'));
+      });
+      
+      // 监听超时
+      xhr.addEventListener('timeout', () => {
+        reject(new Error('SM.MS上传超时'));
+      });
+      
+      // 打开连接
+      xhr.open('POST', config.apiUrl);
+      
+      // 设置请求头
+      if (config.headers) {
+        Object.keys(config.headers).forEach(key => {
+          xhr.setRequestHeader(key, config.headers[key]);
+        });
+      }
+      
+      // 发送数据
+      xhr.send(formData);
     });
-
-    if (!response.ok) {
-      throw new Error(`SM.MS上传失败: ${response.status} ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    
-    if (result.success) {
-      return {
-        success: true,
-        url: result.data.url,
-        fileName: file.name,
-        originalName: file.name,
-        size: file.size
-      };
-    } else {
-      throw new Error(result.message || 'SM.MS上传失败');
-    }
   }
 
   /**
    * 上传到 Chevereto
    */
-  async uploadToChevereto(file, imageBed = null) {
+  async uploadToChevereto(file, imageBed = null, onProgress) {
     const config = imageBed || this.config.imageBed;
     
     const formData = new FormData();
     formData.append('source', file);
 
-    const response = await fetch(config.apiUrl, {
-      method: 'POST',
-      headers: config.headers || {},
-      body: formData
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      // 监听上传进度
+      if (onProgress && xhr.upload) {
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            onProgress(progress);
+          }
+        });
+      }
+      
+      // 监听请求完成
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            if (result.status_code === 200) {
+              resolve({
+                success: true,
+                url: result.data.url,
+                fileName: file.name,
+                originalName: file.name,
+                size: file.size
+              });
+            } else {
+              reject(new Error(result.error?.message || 'Chevereto上传失败'));
+            }
+          } catch (error) {
+            reject(new Error('Chevereto响应解析失败'));
+          }
+        } else {
+          reject(new Error(`Chevereto上传失败: ${xhr.status} ${xhr.statusText}`));
+        }
+      });
+      
+      // 监听错误
+      xhr.addEventListener('error', () => {
+        reject(new Error('Chevereto上传网络错误'));
+      });
+      
+      // 监听超时
+      xhr.addEventListener('timeout', () => {
+        reject(new Error('Chevereto上传超时'));
+      });
+      
+      // 打开连接
+      xhr.open('POST', config.apiUrl);
+      
+      // 设置请求头
+      if (config.headers) {
+        Object.keys(config.headers).forEach(key => {
+          xhr.setRequestHeader(key, config.headers[key]);
+        });
+      }
+      
+      // 发送数据
+      xhr.send(formData);
     });
-
-    if (!response.ok) {
-      throw new Error(`Chevereto上传失败: ${response.status} ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    
-    if (result.status_code === 200) {
-      return {
-        success: true,
-        url: result.data.url,
-        fileName: file.name,
-        originalName: file.name,
-        size: file.size
-      };
-    } else {
-      throw new Error(result.error?.message || 'Chevereto上传失败');
-    }
   }
 
   /**
    * 上传到 Lsky Pro
    */
-  async uploadToLsky(file, imageBed = null) {
+  async uploadToLsky(file, imageBed = null, onProgress) {
     const config = imageBed || this.config.imageBed;
     
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(config.apiUrl, {
-      method: 'POST',
-      headers: config.headers || {},
-      body: formData
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      // 监听上传进度
+      if (onProgress && xhr.upload) {
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            onProgress(progress);
+          }
+        });
+      }
+      
+      // 监听请求完成
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            if (result.status) {
+              resolve({
+                success: true,
+                url: result.data.url,
+                fileName: file.name,
+                originalName: file.name,
+                size: file.size
+              });
+            } else {
+              reject(new Error(result.message || 'Lsky上传失败'));
+            }
+          } catch (error) {
+            reject(new Error('Lsky响应解析失败'));
+          }
+        } else {
+          reject(new Error(`Lsky上传失败: ${xhr.status} ${xhr.statusText}`));
+        }
+      });
+      
+      // 监听错误
+      xhr.addEventListener('error', () => {
+        reject(new Error('Lsky上传网络错误'));
+      });
+      
+      // 监听超时
+      xhr.addEventListener('timeout', () => {
+        reject(new Error('Lsky上传超时'));
+      });
+      
+      // 打开连接
+      xhr.open('POST', config.apiUrl);
+      
+      // 设置请求头
+      if (config.headers) {
+        Object.keys(config.headers).forEach(key => {
+          xhr.setRequestHeader(key, config.headers[key]);
+        });
+      }
+      
+      // 发送数据
+      xhr.send(formData);
     });
-
-    if (!response.ok) {
-      throw new Error(`Lsky上传失败: ${response.status} ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    
-    if (result.status) {
-      return {
-        success: true,
-        url: result.data.url,
-        fileName: file.name,
-        originalName: file.name,
-        size: file.size
-      };
-    } else {
-      throw new Error(result.message || 'Lsky上传失败');
-    }
   }
 
   /**
    * 自定义图床上传
    */
-  async uploadToCustom(file, imageBed = null) {
+  async uploadToCustom(file, imageBed = null, onProgress) {
     const config = imageBed || this.config.imageBed;
     
     const formData = new FormData();
@@ -386,49 +554,88 @@ class WebDAVUploadService {
       });
     }
 
-    const response = await fetch(config.apiUrl, {
-      method: 'POST',
-      headers: config.headers || {},
-      body: formData
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      // 监听上传进度
+      if (onProgress && xhr.upload) {
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            onProgress(progress);
+          }
+        });
+      }
+      
+      // 监听请求完成
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            
+            // 尝试从不同格式的响应中提取URL
+            let imageUrl = null;
+            if (result.url) {
+              imageUrl = result.url;
+            } else if (result.data && result.data.url) {
+              imageUrl = result.data.url;
+            } else if (result.link) {
+              imageUrl = result.link;
+            } else if (result.src) {
+              imageUrl = result.src;
+            }
+            
+            if (imageUrl) {
+              resolve({
+                success: true,
+                url: imageUrl,
+                fileName: file.name,
+                originalName: file.name,
+                size: file.size
+              });
+            } else {
+              reject(new Error('无法从响应中获取图片URL'));
+            }
+          } catch (error) {
+            reject(new Error('自定义图床响应解析失败'));
+          }
+        } else {
+          reject(new Error(`自定义图床上传失败: ${xhr.status} ${xhr.statusText}`));
+        }
+      });
+      
+      // 监听错误
+      xhr.addEventListener('error', () => {
+        reject(new Error('自定义图床上传网络错误'));
+      });
+      
+      // 监听超时
+      xhr.addEventListener('timeout', () => {
+        reject(new Error('自定义图床上传超时'));
+      });
+      
+      // 打开连接
+      xhr.open('POST', config.apiUrl);
+      
+      // 设置请求头
+      if (config.headers) {
+        Object.keys(config.headers).forEach(key => {
+          xhr.setRequestHeader(key, config.headers[key]);
+        });
+      }
+      
+      // 发送数据
+      xhr.send(formData);
     });
-
-    if (!response.ok) {
-      throw new Error(`自定义图床上传失败: ${response.status} ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    
-    // 尝试从不同格式的响应中提取URL
-    let imageUrl = null;
-    if (result.url) {
-      imageUrl = result.url;
-    } else if (result.data && result.data.url) {
-      imageUrl = result.data.url;
-    } else if (result.link) {
-      imageUrl = result.link;
-    } else if (result.src) {
-      imageUrl = result.src;
-    }
-    
-    if (imageUrl) {
-      return {
-        success: true,
-        url: imageUrl,
-        fileName: file.name,
-        originalName: file.name,
-        size: file.size
-      };
-    } else {
-      throw new Error('无法从响应中获取图片URL');
-    }
   }
 
   /**
    * 上传图片（根据配置选择上传方式）
    * @param {File} file - 要上传的文件
+   * @param {Function} onProgress - 进度回调函数
    * @returns {Promise<Object>} 上传结果
    */
-  async uploadImage(file) {
+  async uploadImage(file, onProgress) {
     if (!this.config.enabled) {
       throw new Error('图片上传功能已禁用');
     }
@@ -447,9 +654,9 @@ class WebDAVUploadService {
       let result;
       
       if (this.config.uploadMethod === 'webdav') {
-        result = await this.uploadToWebDAV(file);
+        result = await this.uploadToWebDAV(file, onProgress);
       } else if (this.config.uploadMethod === 'imagebed') {
-        result = await this.uploadToImageBed(file);
+        result = await this.uploadToImageBed(file, onProgress);
       } else {
         throw new Error('不支持的上传方式');
       }

@@ -215,6 +215,7 @@ export default {
         deviceLimit: '在线设备',
         unlimited: '不限制',
         nextResetTime: '下次重置时间',
+        autoRenewal: '自动续费',
 
         importTitle: '选择导入方式',
         copySubscription: '复制订阅地址',
@@ -376,7 +377,11 @@ export default {
         popup: {
             close_btn: '关闭',
             wait_close_btn: '{seconds}秒后关闭'
-        }
+        },
+        
+        imageUpload: '图片上传',
+        imageUploadSuccess: '图片上传成功',
+        imageUploadError: '图片上传失败'
     },
     
     // 图片上传相关
@@ -399,7 +404,8 @@ export default {
         copyAllMarkdown: '复制所有图片链接',
         insertAllMarkdown: '插入所有图片链接',
         markdownCopied: '图片链接已复制到剪贴板',
-        markdownInserted: '图片链接已插入到文本框'
+        markdownInserted: '图片链接已插入到文本框',
+        uploadingImage: '正在上传图片...'
     },
     profile: {
         title: '用户中心',
@@ -859,7 +865,8 @@ export default {
     wallet: {
         balance: {
             title: '账户余额',
-            description: '充值后的余额仅限消费'
+            description: '充值后的余额仅限消费',
+            autorenew: '自动续费'
         },
         deposit: {
             title: '充值余额',
@@ -878,6 +885,13 @@ export default {
         welcome: {
             title: '账户充值',
             description: '在这里您可以轻松地为您的账户充值，选择预设金额或输入自定义金额进行充值。充值后的余额将立即到账并可用于购买我们的服务。'
+        },
+        autoRenewal: '自动续费',
+        autoRenewalStatus: {
+            title: '自动续费',
+            enabled: '自动续费已开启',
+            disabled: '自动续费已关闭',
+            error: '切换自动续费失败'
         }
     }
 }; 

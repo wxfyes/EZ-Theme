@@ -8,7 +8,7 @@ const getConfig = (key, defaultValue) => {
     if (typeof window !== 'undefined' && window.EZ_CONFIG && window.EZ_CONFIG[key] !== undefined) {
         return window.EZ_CONFIG[key];
     }
-    return defaultValue;
+    return defaultValue || {};
 };
 
 const mergeDeep = (target, source) => {
@@ -144,38 +144,65 @@ const DEFAULT_SECURITY_CONFIG = {
     enableLicenseCheck: true,
 };
 
-export const SECURITY_CONFIG = mergeDeep(DEFAULT_SECURITY_CONFIG, getConfig('SECURITY_CONFIG'));
+export const SECURITY_CONFIG = (() => {
+  // 确保配置总是可用
+  if (typeof window !== 'undefined' && window.EZ_CONFIG && window.EZ_CONFIG.SECURITY_CONFIG) {
+    return mergeDeep(DEFAULT_SECURITY_CONFIG, window.EZ_CONFIG.SECURITY_CONFIG);
+  }
+  // 如果配置未加载，返回默认配置
+  return DEFAULT_SECURITY_CONFIG;
+})();
 
 // 授权的前端域名列表
-const DEFAULT_AUTHORIZED_DOMAINS = [
-    'panghu.com',
-    // 在此处添加您授权的其他域名
-];
-
-export const AUTHORIZED_DOMAINS = getConfig('AUTHORIZED_DOMAINS', DEFAULT_AUTHORIZED_DOMAINS);
+export const AUTHORIZED_DOMAINS = getConfig('AUTHORIZED_DOMAINS', []);
 
 /**
  * 验证码配置
- * 控制注册和登录页面的验证方式
+ * 控制验证码功能的行为
  */
 const DEFAULT_CAPTCHA_CONFIG = {
-    // 验证方式: 'google' 或 'cloudflare'
-    captchaType: 'google',
+    // 是否启用验证码 (true=启用, false=禁用)
+    enableCaptcha: true,
 
-    // Google reCAPTCHA 配置 默认v2
-    google: {
-        // 验证API地址
-        verifyUrl: 'https://www.google.com/recaptcha/api/siteverify'
+    // 验证码类型 ('recaptcha' 或 'turnstile')
+    captchaType: 'recaptcha',
+
+    // reCAPTCHA配置
+    recaptcha: {
+        // reCAPTCHA站点密钥
+        siteKey: '6Lcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+
+        // reCAPTCHA密钥类型 ('v2' 或 'v3')
+        version: 'v2',
+
+        // reCAPTCHA主题 ('light' 或 'dark')
+        theme: 'light',
+
+        // reCAPTCHA大小 ('normal' 或 'compact')
+        size: 'normal'
     },
 
-    // Cloudflare Turnstile 配置
-    cloudflare: {
-        // 验证API地址
-        verifyUrl: 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+    // Cloudflare Turnstile配置
+    turnstile: {
+        // Turnstile站点密钥
+        siteKey: '0x4AAAAAAABnMY389qqkrKAT',
+
+        // Turnstile主题 ('light' 或 'dark')
+        theme: 'light',
+
+        // Turnstile大小 ('normal' 或 'compact')
+        size: 'normal'
     }
 };
 
-export const CAPTCHA_CONFIG = mergeDeep(DEFAULT_CAPTCHA_CONFIG, getConfig('CAPTCHA_CONFIG'));
+export const CAPTCHA_CONFIG = (() => {
+  // 确保配置总是可用
+  if (typeof window !== 'undefined' && window.EZ_CONFIG && window.EZ_CONFIG.CAPTCHA_CONFIG) {
+    return mergeDeep(DEFAULT_CAPTCHA_CONFIG, window.EZ_CONFIG.CAPTCHA_CONFIG);
+  }
+  // 如果配置未加载，返回默认配置
+  return DEFAULT_CAPTCHA_CONFIG;
+})();
 
 /**
  * 自定义请求标头配置
@@ -396,7 +423,14 @@ const DEFAULT_TRAFFICLOG_CONFIG = {
     sumDailyTraffic: false
 };
 
-export const TRAFFICLOG_CONFIG = mergeDeep(DEFAULT_TRAFFICLOG_CONFIG, getConfig('TRAFFICLOG_CONFIG'));
+export const TRAFFICLOG_CONFIG = (() => {
+  // 确保配置总是可用
+  if (typeof window !== 'undefined' && window.EZ_CONFIG && window.EZ_CONFIG.TRAFFICLOG_CONFIG) {
+    return mergeDeep(DEFAULT_TRAFFICLOG_CONFIG, window.EZ_CONFIG.TRAFFICLOG_CONFIG);
+  }
+  // 如果配置未加载，返回默认配置
+  return DEFAULT_TRAFFICLOG_CONFIG;
+})();
 
 /**
  * 客户端下载配置

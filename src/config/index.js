@@ -26,9 +26,9 @@ export const config  = {
         // 支持字符串形式(单个API地址)或数组形式(多个备选API地址)
         // 多个地址时，会按顺序检测可用性，并使用第一个可用的地址
         staticBaseUrl: [
-            'https://w5x8mu2a9943r.ezdemo.xyz/api/v1',
-            'https://skhsn6q4pnv95.ezdemo.xyz/api/v1',
-            'https://gy1v06omopzc8.ezdemo.xyz/api/v1'
+            'https://go.126581.xyz/api/v1',
+            '/api/v1',
+            '/api/v1'
         ],
 
         // 自动获取模式配置 (urlMode = 'auto'时使用)
@@ -46,7 +46,7 @@ export const config  = {
 
     // 是否启用中间件代理API请求
     // 设置为true时，所有API请求将通过中间件转发
-    API_MIDDLEWARE_ENABLED: true,
+    API_MIDDLEWARE_ENABLED: false,
 
     // 中间件服务器URL (不含路径)
     API_MIDDLEWARE_URL: 'https://tko16g9ugx8bc.ezdemo.xyz',
@@ -268,7 +268,7 @@ export const config  = {
         showMacOS: true,
         showWindows: true,
         showLinux: true,
-        showOpenWrt: true,
+        showOpenWrt: false,
 
         // 客户端下载链接  //可以改成文档链接直接在新标签页打开
         clientLinks: {
@@ -326,7 +326,7 @@ export const config  = {
   // 用户中心页面配置
   PROFILE_CONFIG: {
     // 是否显示礼品卡兑换栏目 (true=显示, false=隐藏)
-    showGiftCardRedeem: false, // 只有Xiao-V2board支持礼品卡兑换
+    showGiftCardRedeem: true, // 只有Xiao-V2board支持礼品卡兑换
     
     // 是否显示最近登录设备栏目 (true=显示, false=隐藏)
     showRecentDevices: false
@@ -784,3 +784,4 @@ export const config  = {
     ]
   }
 };
+window.EZ_CONFIG = config

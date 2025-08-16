@@ -7,10 +7,10 @@
     </div>
 
     <!-- 图片预览区域 -->
-    <div class="image-preview-area" v-if="images.length > 0">
+    <div class="image-preview-area" v-if="images.length > 0" :key="'preview-' + images.length">
       <div 
         v-for="(image, index) in images" 
-        :key="index"
+        :key="image.id || index"
         class="image-preview-item"
       >
         <img :src="image.url" :alt="`图片 ${index + 1}`" class="preview-image" />
@@ -27,11 +27,11 @@
             <IconCopy :size="14" />
           </button>
         </div>
-        <div class="upload-progress" v-if="image.uploading">
+        <div class="upload-progress" v-if="image.uploading || image.progress > 0" :key="'progress-' + image.id">
           <div class="progress-bar">
             <div class="progress-fill" :style="{ width: image.progress + '%' }"></div>
           </div>
-          <span class="progress-text">{{ image.progress }}%</span>
+          <span class="progress-text">{{ Math.round(image.progress) }}%</span>
         </div>
         <div v-if="image.markdown" class="markdown-indicator">
           <IconCode :size="12" />
@@ -86,6 +86,10 @@ import { TICKET_CONFIG } from '@/utils/baseConfig.js';
 const { t } = useI18n();
 
 const props = defineProps({
+  images: {
+    type: Array,
+    default: () => []
+  },
   maxFiles: {
     type: Number,
     default: null
@@ -111,9 +115,11 @@ const props = defineProps({
 const emit = defineEmits(['update:images', 'upload-success', 'upload-error', 'markdown-ready']);
 
 const fileInput = ref(null);
-const images = ref([]);
 const isDragOver = ref(false);
 const error = ref('');
+
+// 使用computed来处理v-model
+const images = computed(() => props.images || []);
 
 // 获取配置
 const config = computed(() => TICKET_CONFIG.imageUpload);
@@ -132,7 +138,8 @@ const uploadText = computed(() => {
 });
 
 const uploadHint = computed(() => {
-  return t('imageUpload.supportedFormats', { maxSize: formatFileSize(actualMaxSize.value) });
+  const baseHint = t('imageUpload.supportedFormats', { maxSize: formatFileSize(actualMaxSize.value) });
+  return `${baseHint} • ${t('imageUpload.pasteImage')}`;
 });
 
 // 触发文件选择
@@ -163,6 +170,41 @@ const handleDrop = (event) => {
   isDragOver.value = false;
   const files = Array.from(event.dataTransfer.files);
   processFiles(files);
+};
+
+// 处理粘贴事件
+const handlePaste = (event) => {
+  if (props.disabled || !isConfigValid.value) return;
+  
+  const items = event.clipboardData?.items;
+  if (!items) return;
+  
+  const imageFiles = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) {
+        imageFiles.push(file);
+      }
+    }
+  }
+  
+  if (imageFiles.length > 0) {
+    event.preventDefault();
+    processFiles(imageFiles);
+  }
+};
+
+// 监听全局粘贴事件
+const handleGlobalPaste = (event) => {
+  // 检查是否在图片上传组件内
+  const target = event.target;
+  const isInUploadArea = target.closest('.image-upload-container');
+  
+  if (isInUploadArea) {
+    handlePaste(event);
+  }
 };
 
 // 处理文件
@@ -201,15 +243,27 @@ const addImage = async (file) => {
     markdown: null
   };
 
-  images.value.push(imageData);
-  emit('update:images', images.value);
+  const newImages = [...images.value, imageData];
+  emit('update:images', newImages);
 
   try {
-    const result = await webdavUploadService.uploadImage(imageData.file);
+    // 创建进度回调函数
+    const onProgress = (progress) => {
+      imageData.progress = progress;
+      // 强制更新视图
+      const updatedImages = [...images.value];
+      emit('update:images', updatedImages);
+      console.log('ImageUpload progress:', progress + '%');
+    };
+
+
+    const result = await webdavUploadService.uploadImage(imageData.file, onProgress);
     
     imageData.progress = 100;
     imageData.uploadedUrl = result.url;
     imageData.uploading = false;
+    const finalImages = [...images.value];
+    emit('update:images', finalImages);
     
     if (props.enableMarkdown && result.markdown) {
       imageData.markdown = result.markdown;
@@ -239,17 +293,18 @@ const removeImage = (index) => {
   if (image.url && image.url.startsWith('blob:')) {
     URL.revokeObjectURL(image.url);
   }
-  images.value.splice(index, 1);
-  emit('update:images', images.value);
+  const newImages = [...images.value];
+  newImages.splice(index, 1);
+  emit('update:images', newImages);
 };
 
 // 复制 Markdown
 const copyMarkdown = async (markdown) => {
   try {
     await navigator.clipboard.writeText(markdown);
-    console.log('Markdown copied to clipboard');
+
   } catch (error) {
-    console.error('Failed to copy markdown:', error);
+
   }
 };
 
@@ -262,7 +317,15 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
+onMounted(() => {
+  // 添加全局粘贴事件监听
+  document.addEventListener('paste', handleGlobalPaste);
+});
+
 onUnmounted(() => {
+  // 移除全局粘贴事件监听
+  document.removeEventListener('paste', handleGlobalPaste);
+  
   // 清理blob URLs
   images.value.forEach(image => {
     if (image.url && image.url.startsWith('blob:')) {
@@ -293,8 +356,14 @@ onUnmounted(() => {
 .image-preview-area {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
   margin-bottom: 12px;
+  max-width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  border: 1px dashed rgba(0, 0, 0, 0.1);
 }
 
 .image-preview-item {
@@ -303,7 +372,11 @@ onUnmounted(() => {
   height: 80px;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-color, #d1d5db);
+  flex-shrink: 0;
+  z-index: 1;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .preview-image {
@@ -368,30 +441,96 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 4px;
+  background: rgba(0, 0, 0, 0.98);
+  padding: 8px;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-radius: 0 0 8px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .progress-bar {
   width: 100%;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 1px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
   overflow: hidden;
+  position: relative;
+  margin-bottom: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .progress-fill {
   height: 100%;
-  background: var(--theme-color);
-  transition: width 0.3s;
+  background: linear-gradient(90deg, #007bff, #0056b3);
+  transition: width 0.3s ease;
+  border-radius: 3px;
+  position: relative;
+  box-shadow: 0 0 6px rgba(0, 123, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .progress-text {
-  font-size: 10px;
+  font-size: 12px;
   color: white;
   text-align: center;
   display: block;
-  margin-top: 2px;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .image-preview-area {
+    gap: 8px;
+    min-height: 80px;
+  }
+  
+  .image-preview-item {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .upload-progress {
+    padding: 6px;
+  }
+  
+  .progress-text {
+    font-size: 11px;
+  }
+  
+  .progress-bar {
+    height: 5px;
+    margin-bottom: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .image-preview-area {
+    gap: 6px;
+    min-height: 70px;
+  }
+  
+  .image-preview-item {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .upload-progress {
+    padding: 4px;
+  }
+  
+  .progress-text {
+    font-size: 10px;
+  }
+  
+  .progress-bar {
+    height: 4px;
+    margin-bottom: 4px;
+  }
 }
 
 .markdown-indicator {
@@ -410,58 +549,84 @@ onUnmounted(() => {
 }
 
 .upload-area {
-  border: 2px dashed var(--border-color);
-  border-radius: 8px;
-  padding: 24px;
+  border: 2px dashed var(--border-color, #d1d5db);
+  border-radius: 12px;
+  padding: 20px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s;
-  background: var(--card-background);
+  transition: all 0.3s ease;
+  background: var(--card-background, #ffffff);
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
 }
 
 .upload-area:hover:not(.disabled) {
-  border-color: var(--theme-color);
-  background: rgba(var(--theme-color-rgb), 0.05);
+  border-color: var(--theme-color, #3b82f6);
+  background: rgba(59, 130, 246, 0.02);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
 }
 
 .upload-area.drag-over {
-  border-color: var(--theme-color);
-  background: rgba(var(--theme-color-rgb), 0.1);
-  transform: scale(1.02);
+  border-color: var(--theme-color, #3b82f6);
+  background: rgba(59, 130, 246, 0.05);
+  transform: scale(1.01);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
 .upload-area.has-images {
   border-style: solid;
   border-width: 1px;
-  padding: 16px;
+  padding: 12px;
+  min-height: 80px;
+  align-items: flex-start;
+  transform: scale(0.9);
+  transition: all 0.3s ease;
+  margin-top: 8px;
+  opacity: 0.9;
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .upload-area.disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  background: var(--bg-secondary, #f9fafb);
 }
 
 .upload-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  width: 100%;
 }
 
 .upload-icon {
-  color: var(--text-secondary);
+  color: var(--text-muted, #6b7280);
+  opacity: 0.8;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 4px;
 }
 
 .upload-text {
-  font-weight: 500;
-  color: var(--text-primary);
+  font-size: 14px;
+  color: var(--text-color, #374151);
   margin: 0;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .upload-hint {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--text-muted, #6b7280);
   margin: 0;
+  opacity: 0.8;
+  line-height: 1.3;
+  max-width: 200px;
+  text-align: center;
 }
 
 .error-message {
@@ -472,17 +637,27 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
+  .image-preview-area {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 8px;
+  }
+  
   .image-preview-item {
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
   }
   
   .upload-area {
     padding: 16px;
+    min-height: 100px;
   }
   
   .upload-text {
-    font-size: 14px;
+    font-size: 13px;
+  }
+  
+  .upload-hint {
+    font-size: 11px;
   }
   
   .upload-hint {
