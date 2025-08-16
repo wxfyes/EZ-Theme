@@ -253,7 +253,7 @@ const addImage = async (file) => {
       // 强制更新视图
       const updatedImages = [...images.value];
       emit('update:images', updatedImages);
-      console.log('ImageUpload progress:', progress + '%');
+      // console.log('ImageUpload progress:', progress + '%');
     };
 
 

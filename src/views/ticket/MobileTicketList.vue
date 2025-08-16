@@ -1038,19 +1038,8 @@ const sendReply = async () => {
 
   try {
 
-    // 处理图片信息
-    let messageWithImages = replyMessage.value;
-    if (replyImages.value.length > 0) {
-      const imageMarkdowns = replyImages.value
-        .filter(img => img.markdown)
-        .map(img => img.markdown)
-        .join('\n\n');
-      if (imageMarkdowns) {
-        messageWithImages += '\n\n' + imageMarkdowns;
-      }
-    }
-
-    const data = await replyTicket(selectedTicket.value.id, messageWithImages);
+    // 处理图片信息 - 由于markdown已经通过handleMarkdownReady插入到消息中，这里不需要重复处理
+    const data = await replyTicket(selectedTicket.value.id, replyMessage.value);
 
     
 
@@ -1084,7 +1073,7 @@ const sendReply = async () => {
 
 // 图片上传成功处理
 const handleImageUploadSuccess = (result) => {
-  console.log('Image upload success:', result);
+  // console.log('Image upload success:', result);
   showToast(t('tickets.imageUploadSuccess'), 'success');
 };
 
@@ -1286,19 +1275,8 @@ const submitTicket = async () => {
 
   try {
 
-    // 处理图片信息
-    let messageWithImages = newTicket.value.message;
-    if (newTicketImages.value.length > 0) {
-      const imageMarkdowns = newTicketImages.value
-        .filter(img => img.markdown)
-        .map(img => img.markdown)
-        .join('\n\n');
-      if (imageMarkdowns) {
-        messageWithImages += '\n\n' + imageMarkdowns;
-      }
-    }
-    
-    let messageContent = messageWithImages;
+    // 处理图片信息 - 由于markdown已经通过handleMarkdownReady插入到消息中，这里不需要重复处理
+    let messageContent = newTicket.value.message;
 
     
 

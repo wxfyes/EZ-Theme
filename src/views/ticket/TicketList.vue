@@ -915,19 +915,8 @@ const submitTicket = async () => {
 
     
 
-    // 处理图片信息
-    let messageWithImages = newTicket.value.message;
-    if (newTicketImages.value.length > 0) {
-      const imageMarkdowns = newTicketImages.value
-        .filter(img => img.markdown)
-        .map(img => img.markdown)
-        .join('\n\n');
-      if (imageMarkdowns) {
-        messageWithImages += '\n\n' + imageMarkdowns;
-      }
-    }
-    
-    const messageWithUserInfo = `${messageWithImages}\n\n${userInfoText}`;
+    // 处理图片信息 - 由于markdown已经通过handleMarkdownReady插入到消息中，这里不需要重复处理
+    const messageWithUserInfo = `${newTicket.value.message}\n\n${userInfoText}`;
 
     
 
@@ -1108,20 +1097,8 @@ const sendReply = async () => {
 
   try {
 
-    // 处理图片上传
+    // 处理图片上传 - 由于markdown已经通过handleMarkdownReady插入到消息中，这里不需要重复处理
     let finalMessage = replyMessage.value;
-    
-    // 如果有图片，将图片URL添加到消息中
-    if (replyImages.value.length > 0) {
-      const imageUrls = replyImages.value
-        .filter(img => img.uploadedUrl)
-        .map(img => img.markdown || `![图片](${img.uploadedUrl})`)
-        .join('\n\n');
-      
-      if (imageUrls) {
-        finalMessage += '\n\n' + imageUrls;
-      }
-    }
     
     const data = await replyTicket(selectedTicket.value.id, finalMessage);
 
@@ -1294,7 +1271,7 @@ const handleSearch = () => {
 
 // 图片上传处理函数
 const handleImageUploadSuccess = (result) => {
-  console.log('Image upload success:', result);
+  // console.log('Image upload success:', result);
   showToast(t('tickets.imageUploadSuccess'), 'success');
 };
 
@@ -1356,7 +1333,7 @@ const handleTextareaPaste = async (event) => {
           imageData.progress = progress;
           // 强制更新视图
           replyImages.value = [...replyImages.value];
-          console.log('Paste upload progress:', progress + '%');
+          // console.log('Paste upload progress:', progress + '%');
         };
         
         const result = await uploadService.uploadImage(file, onProgress);

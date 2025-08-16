@@ -246,16 +246,16 @@ export const SITE_CONFIG = mergeDeep(DEFAULT_SITE_CONFIG, getConfig('SITE_CONFIG
 
 // 默认语言和主题配置
 const DEFAULT_BASE_CONFIG = {
-    // 默认语言 ('zh-CN' 或 'en-US') TODO
+    // 默认语言 ('zh-CN' 或 'en-US')
     defaultLanguage: 'zh-CN',
 
-    // 默认主题 ('light' 或 'dark') TODO
+    // 默认主题 ('light' 或 'dark')
     defaultTheme: 'dark',
 
-    // 主题色 (16进制颜色值) TODO
+    // 主题色 (16进制颜色值)
     primaryColor: '#00947c',
 
-    // 是否启用落地页 (true=启用, false=禁用) TODO
+    // 是否启用落地页 (true=启用, false=禁用)
     enableLandingPage: true
 };
 
@@ -300,7 +300,7 @@ export const PAYMENT_CONFIG = mergeDeep(DEFAULT_PAYMENT_CONFIG, getConfig('PAYME
  * 控制用户中心页面的功能显示
  */
 const DEFAULT_PROFILE_CONFIG = {
-    // 是否显示礼品卡兑换栏目 (true=显示, false=隐藏) TODO
+    // 是否显示礼品卡兑换栏目 (true=显示, false=隐藏)
     showGiftCardRedeem: false,
 
     // 是否显示最近登录设备栏目 (true=显示, false=隐藏)
@@ -437,7 +437,7 @@ export const TRAFFICLOG_CONFIG = (() => {
  * 用于控制仪表板中的客户端下载选项
  */
 const DEFAULT_CLIENT_CONFIG = {
-    // 整个下载卡片显示控制 TODO
+    // 整个下载卡片显示控制
     showDownloadCard: false,  // 设置为false将隐藏整个客户端下载卡片
 
     // 平台显示控制 (true=显示, false=隐藏)
