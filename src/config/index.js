@@ -26,7 +26,7 @@ export const config  = {
         // 支持字符串形式(单个API地址)或数组形式(多个备选API地址)
         // 多个地址时，会按顺序检测可用性，并使用第一个可用的地址
         staticBaseUrl: [
-            'https://go.126581.xyz/api/v1',
+            '/api/v1',
             '/api/v1',
             '/api/v1'
         ],
@@ -49,7 +49,7 @@ export const config  = {
     API_MIDDLEWARE_ENABLED: false,
 
     // 中间件服务器URL (不含路径)
-    API_MIDDLEWARE_URL: 'https://tko16g9ugx8bc.ezdemo.xyz',
+    API_MIDDLEWARE_URL: '',
 
     // 中间件路由前缀 (与中间件服务器配置保持一致)
     API_MIDDLEWARE_PATH: '/ez/ez',
@@ -58,8 +58,8 @@ export const config  = {
 
     // ====================  网站基础配置  ====================
     SITE_CONFIG: {
-        siteName: 'EZ THEME',
-        siteDescription: 'EZ UI',
+        siteName: '天阙',
+        siteDescription: '天阙 UI',
         // copyright会自动使用当前年份
         copyright: `© ${new Date().getFullYear()} EZ THEME. All Rights Reserved.`,
 
@@ -95,7 +95,7 @@ export const config  = {
         primaryColor: '#355cc2',
 
         // 是否启用落地页 (true=启用, false=禁用)
-        enableLandingPage: true // 默认启用
+        enableLandingPage: false // 默认启用
     },
 
     // 认证页面功能配置
@@ -134,7 +134,7 @@ export const config  = {
     // 认证页面布局配置
     AUTH_LAYOUT_CONFIG: {
         // 布局类型: 'center' 为居中卡片布局, 'split' 为左右分栏布局
-        layoutType: 'center',
+        layoutType: 'split',
 
         // 左右分栏布局配置 (仅当 layoutType 为 'split' 时生效)
         splitLayout: {
@@ -255,6 +255,7 @@ export const config  = {
         
         // 是否显示导入订阅
         showImportSubscription: true,
+
     },
 
     // 客户端下载配置
@@ -272,12 +273,12 @@ export const config  = {
 
         // 客户端下载链接  //可以改成文档链接直接在新标签页打开
         clientLinks: {
-            ios: 'https://apps.apple.com/app/xxx',
-            android: 'https://play.google.com/store/apps/xxx',
-            macos: 'https://github.com/xxx/releases/latest',
-            windows: 'https://github.com/xxx/releases/latest',
-            linux: 'https://github.com/xxx/releases/latest',
-            openwrt: 'https://github.com/xxx/releases/latest'
+      ios: 'https://apps.apple.com/ca/app/shadowrocket/id932747118',
+      android: 'https://pyxy.126581.xyz/https://github.com/chen08209/FlClash/releases/download/v0.8.72/FlClash-0.8.72-android-arm64-v8a.apk',
+      macos: 'https://pyxy.126581.xyz/https://github.com/wxfyes/v2rayN/releases/download/17.7.9/v2rayN-macos-64.dmg',
+      windows: 'https://pyxy.126581.xyz/https://github.com/wxfyes/v2rayN/releases/download/17.7.9/v2rayN-windows-64-SelfContained.zip',
+      linux: 'https://pyxy.126581.xyz/https://github.com/wxfyes/v2rayN/releases/download/17.7.9/v2rayN-linux-64.zip',
+      openwrt: 'https://github.com/xxx/releases/latest'
         },
 
         // 订阅导入客户端显示控制 部分面板不支持SingBox导入请您注意检查

@@ -256,7 +256,7 @@ const DEFAULT_BASE_CONFIG = {
     primaryColor: '#00947c',
 
     // 是否启用落地页 (true=启用, false=禁用)
-    enableLandingPage: true
+    enableLandingPage: false
 };
 
 export const DEFAULT_CONFIG = mergeDeep(DEFAULT_BASE_CONFIG, getConfig('DEFAULT_CONFIG'));

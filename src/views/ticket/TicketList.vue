@@ -539,6 +539,8 @@
 
                 rows="5"
 
+                @paste="handleNewTicketPaste"
+
               ></textarea>
 
             </div>
@@ -563,7 +565,7 @@
 
                 @upload-error="handleImageUploadError"
 
-                @markdown-ready="handleMarkdownReady"
+                @markdown-ready="handleNewTicketMarkdownReady"
 
               />
 
@@ -1363,7 +1365,88 @@ const handleTextareaPaste = async (event) => {
   }
 };
 
+// 处理新建工单文本框粘贴图片
+const handleNewTicketPaste = async (event) => {
+  const items = event.clipboardData?.items;
+  if (!items) return;
+  
+  const imageFiles = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) {
+        imageFiles.push(file);
+      }
+    }
+  }
+  
+  if (imageFiles.length > 0) {
+    event.preventDefault();
+    
+    // 将粘贴的图片添加到newTicketImages数组，让ImageUpload组件处理
+    for (const file of imageFiles) {
+      // 创建图片数据对象
+      const imageData = {
+        file,
+        url: URL.createObjectURL(file),
+        uploading: true,
+        progress: 0,
+        id: Date.now() + Math.random(),
+        markdown: null
+      };
+      
+      // 添加到newTicketImages数组
+      newTicketImages.value.push(imageData);
+      
+      // 模拟ImageUpload组件的上传过程
+      try {
+        const webdavUploadService = await import('@/utils/webdavUpload.js');
+        const uploadService = webdavUploadService.default;
+        
+        // 创建进度回调函数
+        const onProgress = (progress) => {
+          imageData.progress = progress;
+          // 强制更新视图
+          newTicketImages.value = [...newTicketImages.value];
+        };
+        
+        const result = await uploadService.uploadImage(file, onProgress);
+        
+        // 更新图片数据
+        imageData.progress = 100;
+        imageData.uploadedUrl = result.url;
+        imageData.uploading = false;
+        imageData.markdown = result.markdown;
+        
+        // 触发markdown-ready事件
+        if (result.markdown) {
+          handleNewTicketMarkdownReady(result.markdown);
+        }
+        
+        showToast(t('tickets.imageUploadSuccess'), 'success');
+      } catch (error) {
+        console.error('Paste image upload failed:', error);
+        showToast(error.message || t('imageUpload.uploadFailed'), 'error');
+        // 移除失败的图片
+        const index = newTicketImages.value.indexOf(imageData);
+        if (index > -1) {
+          newTicketImages.value.splice(index, 1);
+        }
+      }
+    }
+  }
+};
 
+// 处理新建工单的Markdown插入
+const handleNewTicketMarkdownReady = (markdown) => {
+  // 将 Markdown 插入到新建工单消息输入框
+  if (newTicket.value.message) {
+    newTicket.value.message += '\n\n' + markdown;
+  } else {
+    newTicket.value.message = markdown;
+  }
+};
 
 const selectTicket = (ticket) => {
 
