@@ -296,6 +296,86 @@ const DEFAULT_TICKET_CONFIG = {
         content: '<p>请您准确描述您的问题，再提交工单，以便我们更快帮助您。</p>',
         cooldownHours: 24,
         closeWaitSeconds: 0
+    },
+    // 图片上传配置
+    imageUpload: {
+        // 是否启用图片上传功能
+        enabled: true,
+        // 上传方式: 
+        // 'backend' = 后端API上传 (需要后端支持)
+        // 'webdav' = WebDAV直接上传 (坚果云、OneDrive等)
+        // 'imagebed' = 图床API上传 (ImgBB、SM.MS、Chevereto等)
+        uploadMethod: 'imagebed',
+        // 最大文件数量
+        maxFiles: 5,
+        // 最大文件大小 (字节)
+        maxSize: 5 * 1024 * 1024, // 5MB
+        
+        // WebDAV配置
+        webdav: {
+            // WebDAV服务器地址
+            // 坚果云: https://dav.jianguoyun.com/dav
+            // OneDrive: https://your-domain.com/dav
+            // 自建: https://your-webdav-server.com
+            serverUrl: 'https://your-webdav-server.com',
+            // 用户名 (邮箱地址或用户名)
+            username: 'your-username',
+            // 密码 (应用专用密码，不是登录密码)
+            password: 'your-password',
+            // 上传路径 (在WebDAV中创建的文件夹)
+            uploadPath: '/images',
+            // 图片访问URL前缀 (需要手动创建分享链接)
+            publicUrl: 'https://your-cdn.com/images'
+        },
+        
+        // 图床配置 (支持多个图床)
+        imageBeds: [
+            // 主图床 (ImgBB)
+            {
+                name: 'ImgBB',
+                type: 'imgbb',
+                apiUrl: 'https://api.imgbb.com/1/upload',
+                apiKey: 'your-imgbb-api-key',
+                enabled: true,
+                priority: 1,
+                description: '免费图床，支持直接链接'
+            },
+            
+            // 备用图床 (SM.MS)
+            {
+                name: 'SM.MS',
+                type: 'smms',
+                apiUrl: 'https://sm.ms/api/v2/upload',
+                apiKey: 'your-smms-api-key',
+                headers: {
+                    'Authorization': 'your-smms-token'
+                },
+                enabled: true,
+                priority: 2,
+                description: '免费图床，需要注册'
+            }
+        ],
+        
+        // 图床选择策略
+        imageBedStrategy: {
+            // 选择策略: 'priority'=按优先级选择, 'round-robin'=轮询选择, 'random'=随机选择
+            method: 'priority',
+            // 是否启用故障转移 (当主图床失败时自动切换到备用图床)
+            enableFailover: true,
+            // 故障转移重试次数
+            maxRetries: 3,
+            // 重试间隔 (毫秒)
+            retryDelay: 1000
+        },
+        
+        // 兼容旧配置 (单个图床配置)
+        imageBed: {
+            type: 'imgbb',
+            apiUrl: 'https://api.imgbb.com/1/upload',
+            apiKey: 'your-api-key',
+            headers: {},
+            params: {}
+        }
     }
 };
 

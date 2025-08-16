@@ -378,6 +378,29 @@ export default {
             wait_close_btn: '{seconds}秒后关闭'
         }
     },
+    
+    // 图片上传相关
+    imageUpload: {
+        title: '图片上传',
+        dragDropOrClick: '拖拽图片到此处或点击上传',
+        addMoreImages: '添加更多图片',
+        supportedFormats: '支持 JPG、PNG、GIF 格式，最大 {maxSize}',
+        tooManyFiles: '最多只能上传 {max} 张图片',
+        invalidFileType: '只支持图片文件格式',
+        fileTooLarge: '文件大小不能超过 {maxSize}',
+        uploadFailed: '图片上传失败，请重试',
+        uploadSuccess: '图片上传成功',
+        uploadError: '图片上传失败',
+        pasteImage: '粘贴图片 (Ctrl+V)',
+        removeImage: '删除图片',
+        configInvalid: '图片上传配置无效，请检查 WebDAV 或图床配置',
+        uploadMethod: '上传方式：{method}',
+        copyMarkdown: '复制图片链接',
+        copyAllMarkdown: '复制所有图片链接',
+        insertAllMarkdown: '插入所有图片链接',
+        markdownCopied: '图片链接已复制到剪贴板',
+        markdownInserted: '图片链接已插入到文本框'
+    },
     profile: {
         title: '用户中心',
         basicInfo: '基本信息',

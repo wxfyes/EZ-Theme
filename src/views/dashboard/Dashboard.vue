@@ -216,6 +216,11 @@
         </template>
       </div>
 
+      <!-- 流量趋势图 -->
+      <div v-if="TRAFFICLOG_CONFIG.enableTrafficLog" class="dashboard-card">
+        <TrafficTrendChart :days-to-show="TRAFFICLOG_CONFIG.daysToShow" />
+      </div>
+
       <!-- 订阅导入卡片 -->
       <transition name="slide-fade">
         <div v-if="showImportCard && userPlan.subscribeUrl" class="dashboard-card import-card">
@@ -742,6 +747,7 @@ import {
   IconCalendarPlus
 } from '@tabler/icons-vue';
 import CommonDialog from '@/components/popup/CommonDialog.vue';
+import TrafficTrendChart from '@/components/dashboard/TrafficTrendChart.vue';
 import {getNotices, getSubscribe, getUserConfig, getUserInfo, getUserStats, setNextPeriod} from '@/api/dashboard';
 import {useToast} from '@/composables/useToast';
 import {submitOrder} from '@/api/shop';
@@ -854,7 +860,8 @@ export default {
     IconAlertTriangle,
     IconX,
     IconCalendarPlus,
-    CommonDialog
+    CommonDialog,
+    TrafficTrendChart
   },
   setup() {
     const {t, locale} = useI18n();
