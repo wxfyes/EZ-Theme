@@ -48,6 +48,20 @@ export const config  = {
     // 设置为true时，所有API请求将通过中间件转发
     API_MIDDLEWARE_ENABLED: false,
 
+    // 是否启用静默API可用性检测
+    // 设置为true时，API检测将在后台进行，不会显示检测页面
+    SILENT_API_CHECK: true,
+
+    // API检测超时时间（毫秒）
+    API_CHECK_TIMEOUT: 3000,
+
+    // 是否启用API检测缓存
+    // 设置为true时，检测结果会缓存一段时间，避免重复检测
+    API_CHECK_CACHE_ENABLED: true,
+
+    // API检测缓存时间（毫秒）
+    API_CHECK_CACHE_DURATION: 300000, // 5分钟
+
     // 中间件服务器URL (不含路径)
     API_MIDDLEWARE_URL: '',
 
@@ -274,10 +288,10 @@ export const config  = {
         // 客户端下载链接  //可以改成文档链接直接在新标签页打开
         clientLinks: {
       ios: 'https://apps.apple.com/ca/app/shadowrocket/id932747118',
-      android: 'https://pyxy.126581.xyz/https://github.com/chen08209/FlClash/releases/download/v0.8.72/FlClash-0.8.72-android-arm64-v8a.apk',
-      macos: 'https://pyxy.126581.xyz/https://github.com/wxfyes/v2rayN/releases/download/17.7.9/v2rayN-macos-64.dmg',
-      windows: 'https://pyxy.126581.xyz/https://github.com/wxfyes/v2rayN/releases/download/17.7.9/v2rayN-windows-64-SelfContained.zip',
-      linux: 'https://pyxy.126581.xyz/https://github.com/wxfyes/v2rayN/releases/download/17.7.9/v2rayN-linux-64.zip',
+      android: 'https://pyxy.126581.xyz/https://github.com/wxfyes/FlClash/releases/download/v0.8.87.5/FlClash-0.8.87-android-arm64-v8a.apk',
+      macos: 'https://pyxy.126581.xyz/https://github.com/wxfyes/FlClash/releases/download/v0.8.87.5/FlClash-0.8.87-macos-amd64.dmg',
+      windows: 'https://pyxy.126581.xyz/https://github.com/wxfyes/FlClash/releases/download/v0.8.87.5/FlClash-0.8.87-windows-amd64-setup.exe',
+      linux: 'https://pyxy.126581.xyz/https://github.com/wxfyes/FlClash/releases/download/v0.8.87.5/FlClash-0.8.87-linux-amd64.deb',
       openwrt: 'https://github.com/xxx/releases/latest'
         },
 
@@ -330,7 +344,7 @@ export const config  = {
     showGiftCardRedeem: true, // 只有Xiao-V2board支持礼品卡兑换
     
     // 是否显示最近登录设备栏目 (true=显示, false=隐藏)
-    showRecentDevices: false
+    showRecentDevices: true
   },
 
   // =======================================================

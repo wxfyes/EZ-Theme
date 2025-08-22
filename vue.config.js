@@ -86,8 +86,47 @@ module.exports = defineConfig({
         splitChunks: {
           chunks: "all",
           cacheGroups: {
-            vendors: { name: "chunk-vendors", test: /[\\/]node_modules[\\/]/, priority: -10, chunks: "initial" },
-            common: { name: "chunk-common", minChunks: 2, priority: -20, chunks: "initial", reuseExistingChunk: true },
+            vendors: { 
+              name: "chunk-vendors", 
+              test: /[\\/]node_modules[\\/]/, 
+              priority: -10, 
+              chunks: "initial" 
+            },
+            // 语言包单独分割
+            i18n: {
+              name: "chunk-i18n",
+              test: /[\\/]src[\\/]i18n[\\/]/,
+              priority: -5,
+              chunks: "async"
+            },
+            // 图表库单独分割
+            charts: {
+              name: "chunk-charts",
+              test: /[\\/]node_modules[\\/](chart\.js|echarts)[\\/]/,
+              priority: -5,
+              chunks: "async"
+            },
+            // 加密库单独分割
+            crypto: {
+              name: "chunk-crypto",
+              test: /[\\/]node_modules[\\/](crypto-js|jsencrypt)[\\/]/,
+              priority: -5,
+              chunks: "async"
+            },
+            // UI 组件库单独分割
+            ui: {
+              name: "chunk-ui",
+              test: /[\\/]node_modules[\\/](@tabler|@vueuse)[\\/]/,
+              priority: -5,
+              chunks: "async"
+            },
+            common: { 
+              name: "chunk-common", 
+              minChunks: 2, 
+              priority: -20, 
+              chunks: "initial", 
+              reuseExistingChunk: true 
+            },
           },
         },
         minimize: true,
