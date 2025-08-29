@@ -87,6 +87,7 @@ export default {
     emailVerificationSent: '認証コードをメールに送信済み',
     emailVerificationFailed: '認証コード送信失敗',
     verificationCodePlaceholder: '認証コードを入力',
+    codePlaceholder: '認証コードを入力',
     inviteCodePlaceholder: '招待コードを入力（任意）',
     forgotPasswordTitle: 'パスワードの再取得',
     forgotPasswordSubtitle: 'メールに認証コードを送信します',
@@ -173,7 +174,7 @@ export default {
     configLoadFailed: '設定読み込み失敗。ページを更新してください'
   },
   landing: {
-    mainText: SITE_CONFIG.landingText['ja-JP'] || 'グローバルネットワークの無限の可能性を探る',
+    mainText: 'グローバルネットワークの無限の可能性',
     scrollText: '下にスクロールしてログイン',
     exploreButton: '探索開始'
   },

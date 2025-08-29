@@ -86,8 +86,9 @@ export default {
     confirmPasswordPlaceholder: 'پسورد را دوباره وارد کنید',
     emailVerificationSent: 'کد تایید به ایمیل شما ارسال شد',
     emailVerificationFailed: 'ارسال کد تایید شکست خورد',
-    verificationCodePlaceholder: 'کد تایید را وارد کنید',
-    inviteCodePlaceholder: 'کد دعوت را وارد کنید (اختیاری)',
+            verificationCodePlaceholder: 'کد تایید را وارد کنید',
+        codePlaceholder: 'کد تایید را وارد کنید',
+        inviteCodePlaceholder: 'کد دعوت را وارد کنید (اختیاری)',
     forgotPasswordTitle: 'بازیابی پسورد',
     forgotPasswordSubtitle: 'کد تایید به ایمیل شما ارسال می شود',
     registerSuccess: 'ثبت نام موفق',
@@ -173,7 +174,7 @@ export default {
     configLoadFailed: 'بارگذاری تنظیمات شکست خورد، صفحه را تازه کنید'
   },
   landing: {
-    mainText: SITE_CONFIG.landingText['fa-IR'] || 'امکانات نامحدود شبکه جهانی را کاوش کنید',
+    mainText: 'امکانات نامحدود شبکه جهانی را کاوش کنید',
     scrollText: 'برای ورود به پایین بکشید',
     exploreButton: 'شروع کاوش'
   },

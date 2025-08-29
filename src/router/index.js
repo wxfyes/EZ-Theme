@@ -584,60 +584,59 @@ router.beforeEach(async (to, from, next) => {
 
   
 
-  // 直接跳过 API 检测，避免显示加载页面
-  // const { shouldCheckApiAvailability, silentCheckApiAvailability } = await import('@/utils/apiAvailabilityChecker');
-  // if (shouldCheckApiAvailability() && to.name !== 'ApiValidation') {
-  //   const availableUrl = sessionStorage.getItem('ez_api_available_url');
-  //   if (!availableUrl) {
-  //     // 如果启用静默检测，则不跳转到检测页面
-  //     if (window.EZ_CONFIG?.SILENT_API_CHECK === true) {
-  //       // 静默检测API可用性
-  //       await silentCheckApiAvailability();
-  //       // 检测完成后继续导航
-  //       next();
-  //       return;
-  //     } else {
-  //       // 显示检测页面
-  //       const apiRedirectQuery = {
-  //       redirect: to.path,
-  //       ...to.query
-  //     };
-  //     next({ 
-  //       name: 'ApiValidation',
-  //       query: apiRedirectQuery
-  //     });
-  //       return;
-  //     }
-  //   }
-  // }
+  // API可用性检测已在应用启动时完成，这里只检查结果
+  try {
+    const { shouldCheckApiAvailability } = await import('@/utils/apiAvailabilityChecker');
+    if (shouldCheckApiAvailability() && to.name !== 'ApiValidation') {
+      const availableUrl = sessionStorage.getItem('ez_api_available_url');
+      if (!availableUrl) {
+        // 没有可用的API地址，但检测已在启动时完成，继续导航
+      }
+    }
+  } catch (error) {
+    // API可用性检查失败，继续导航
+  }
 
   
 
-  const getTitle = () => {
-
+  // 设置页面标题
+  const setPageTitle = () => {
     if (to.meta.titleKey) {
-
       try {
-
-        const title = i18n.global.t(to.meta.titleKey);
-
-        return `${title} - ${SITE_CONFIG.siteName}`;
-
+        // 直接尝试获取翻译
+        if (i18n.global && i18n.global.t) {
+          const title = i18n.global.t(to.meta.titleKey);
+          if (title && title !== to.meta.titleKey) {
+            document.title = `${title} - ${SITE_CONFIG.siteName}`;
+            return;
+          }
+        }
       } catch (error) {
-
-        return SITE_CONFIG.siteName;
-
+        console.warn('获取页面标题失败:', error);
       }
-
     }
-
-    return SITE_CONFIG.siteName;
-
+    // 如果翻译失败，使用默认标题
+    document.title = SITE_CONFIG.siteName;
   };
 
+  // 立即设置标题
+  setPageTitle();
   
-
-  document.title = getTitle();
+  // 延迟再次尝试设置标题，确保语言包完全加载
+  setTimeout(() => {
+    if (to.meta.titleKey) {
+      try {
+        if (i18n.global && i18n.global.t) {
+          const title = i18n.global.t(to.meta.titleKey);
+          if (title && title !== to.meta.titleKey) {
+            document.title = `${title} - ${SITE_CONFIG.siteName}`;
+          }
+        }
+      } catch (error) {
+        // 忽略延迟设置时的错误
+      }
+    }
+  }, 100);
 
   
 

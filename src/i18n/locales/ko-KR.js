@@ -87,6 +87,7 @@ export default {
     emailVerificationSent: '인증 코드가 이메일로 전송되었습니다',
     emailVerificationFailed: '인증 코드 전송 실패',
     verificationCodePlaceholder: '인증 코드를 입력하세요',
+    codePlaceholder: '인증 코드를 입력하세요',
     inviteCodePlaceholder: '초대 코드를 입력하세요 (선택)',
     forgotPasswordTitle: '비밀번호 찾기',
     forgotPasswordSubtitle: '이메일로 인증 코드를 전송합니다',
@@ -173,7 +174,7 @@ export default {
     configLoadFailed: '구성 로드 실패, 페이지를 새로고침하세요'
   },
   landing: {
-    mainText: SITE_CONFIG.landingText['ko-KR'] || '글로벌 네트워크의 무한한 가능성을 탐험하세요',
+    mainText: '글로벌 네트워크의 무한한 가능성을 탐색하세요',
     scrollText: '아래로 스크롤하여 로그인',
     exploreButton: '탐험 시작'
   },

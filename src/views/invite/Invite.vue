@@ -421,16 +421,16 @@
             </div>
             
             <div class="share-buttons mt-3">
-              <button class="btn-outline wechat-btn" @click="shareToWechat">
+              <button v-if="socialShareConfig.wechat" class="btn-outline wechat-btn" @click="shareToWechat">
                 <IconBrandWechat class="btn-icon" /> {{ $t('invite.share.wechat') }}
               </button>
-              <button class="btn-outline qq-btn" @click="shareToQQ">
+              <button v-if="socialShareConfig.qq" class="btn-outline qq-btn" @click="shareToQQ">
                 <IconBrandQq class="btn-icon" /> {{ $t('invite.share.qq') }}
               </button>
-              <button class="btn-outline twitter-btn" @click="shareToTwitter">
+              <button v-if="socialShareConfig.twitter" class="btn-outline twitter-btn" @click="shareToTwitter">
                 <IconBrandTwitter class="btn-icon" /> {{ $t('invite.share.twitter') }}
               </button>
-              <button class="btn-outline telegram-btn" @click="shareToTelegram">
+              <button v-if="socialShareConfig.telegram" class="btn-outline telegram-btn" @click="shareToTelegram">
                 <IconBrandTelegram class="btn-icon" /> {{ $t('invite.share.telegram') }}
               </button>
             </div>
@@ -658,6 +658,16 @@ export default {
   setup() {
     const { showToast } = useToast();
     const { t } = useI18n();
+    
+    // 获取社交分享配置
+    const socialShareConfig = computed(() => {
+      return INVITE_CONFIG.socialShare || {
+        wechat: true,
+        qq: true,
+        twitter: true,
+        telegram: true
+      };
+    });
     
     const loading = reactive({
       inviteData: true,
@@ -1345,7 +1355,7 @@ export default {
       withdrawError,
       withdrawLoading,
       minWithdrawAmount,
-      toggleWithdrawCard,
+      toggleTransferCard,
       closeWithdrawCard,
       toggleMethodDropdown,
       selectWithdrawMethod,
@@ -1367,7 +1377,8 @@ export default {
       togglePageSizeDropdown,
       selectPageSize,
       closePageSizeDropdownOnClickOutside,
-      isMobile 
+      isMobile,
+      socialShareConfig
     };
   }
 };

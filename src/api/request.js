@@ -4,6 +4,58 @@ import { API_BASE_URL, getApiBaseUrl, isXiaoV2board, isXboard, CUSTOM_HEADERS_CO
 import { mapApiPath } from './utils/pathMapper';
 import { getAvailableApiUrl } from '@/utils/apiAvailabilityChecker';
 
+// 将后端返回的英文错误信息本地化
+function localizeBackendMessage(backendMessage) {
+  // 获取当前语言设置
+  const currentLanguage = localStorage.getItem('language') || 'zh-CN';
+  
+  // 只对中文语言进行本地化
+  if (currentLanguage.startsWith('zh')) {
+    const messageMap = {
+      // 登录相关错误
+      'The given data was invalid.': '输入的数据无效，请检查您的邮箱和密码',
+      'Invalid credentials.': '邮箱或密码错误',
+      'User not found.': '用户不存在',
+      'Email or password is incorrect.': '邮箱或密码不正确',
+      'Authentication failed.': '认证失败',
+      'Login failed.': '登录失败',
+      
+      // 注册相关错误
+      'Email already exists.': '邮箱已被注册',
+      'User already exists.': '用户已存在',
+      'Registration failed.': '注册失败',
+      'Invalid email format.': '邮箱格式无效',
+      'Password too short.': '密码长度不足',
+      'Password too weak.': '密码强度不足',
+      
+      // 通用错误
+      'Server error.': '服务器错误',
+      'Network error.': '网络错误',
+      'Request timeout.': '请求超时',
+      'Service unavailable.': '服务不可用',
+      'Access denied.': '访问被拒绝',
+      'Forbidden.': '禁止访问',
+      'Not found.': '未找到',
+      'Bad request.': '请求错误',
+      'Unauthorized.': '未授权',
+      
+      // 验证相关错误
+      'Verification code invalid.': '验证码无效',
+      'Verification code expired.': '验证码已过期',
+      'Verification code required.': '验证码不能为空',
+      'Token invalid.': '令牌无效',
+      'Token expired.': '令牌已过期',
+      'Token required.': '令牌不能为空'
+    };
+    
+    // 如果找到对应的中文翻译，返回中文；否则返回原英文
+    return messageMap[backendMessage] || backendMessage;
+  }
+  
+  // 非中文语言直接返回原英文
+  return backendMessage;
+}
+
 const request = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000, 
@@ -145,7 +197,9 @@ request.interceptors.response.use(
     console.error('请求错误:', error);
     
     if (error.response && error.response.data && error.response.data.message) {
-      error.response.message = error.response.data.message;
+      // 将后端返回的英文错误信息本地化为中文
+      const backendMessage = error.response.data.message;
+      error.response.message = localizeBackendMessage(backendMessage);
     } else if (error.response) {
       const statusCode = error.response.status;
       switch (statusCode) {

@@ -28,6 +28,16 @@ const initApp = async () => {
     const toast = useToast();
     app.provide('$toast', toast);
 
+    // 在应用挂载前确保语言包加载完成
+    try {
+      const { setLanguage } = await import('./i18n');
+      const currentLang = localStorage.getItem('language') || 'zh-CN';
+      await setLanguage(currentLang);
+      console.log('应用启动时语言包加载完成:', currentLang);
+    } catch (error) {
+      console.warn('应用启动时语言包加载失败:', error);
+    }
+
     app.use(router)
        .use(store)
        .use(i18n)
@@ -37,6 +47,26 @@ const initApp = async () => {
 
     // 初始化用户信息
     await store.dispatch('initUserInfo');
+    
+    // 立即进行API可用性检测，确保API备选地址正常工作
+    try {
+      if (window.EZ_CONFIG && 
+          window.EZ_CONFIG.API_CONFIG && 
+          window.EZ_CONFIG.API_CONFIG.urlMode === 'static' &&
+          Array.isArray(window.EZ_CONFIG.API_CONFIG.staticBaseUrl) &&
+          window.EZ_CONFIG.API_CONFIG.staticBaseUrl.length > 1) {
+        
+        const { silentCheckApiAvailability } = await import('./utils/apiAvailabilityChecker');
+        const availableUrl = await silentCheckApiAvailability();
+        
+        if (availableUrl) {
+          // 设置全局可用URL
+          window.EZ_CONFIG._AVAILABLE_API_URL = availableUrl;
+        }
+      }
+    } catch (error) {
+      console.error('❌ 应用启动时API可用性检测失败:', error);
+    }
     
     // 如果用户已登录，重新加载语言包以确保加载完整版本
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');

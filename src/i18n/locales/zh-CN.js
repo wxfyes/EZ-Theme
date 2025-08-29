@@ -86,6 +86,7 @@ export default {
         emailVerificationSent: '验证码已发送至您的邮箱',
         emailVerificationFailed: '验证码发送失败',
         verificationCodePlaceholder: '请输入验证码',
+        codePlaceholder: '请输入验证码',
         inviteCodePlaceholder: '请输入邀请码（可选）',
         forgotPasswordTitle: '找回密码',
         forgotPasswordSubtitle: '我们将发送验证码到您的邮箱',
@@ -172,7 +173,7 @@ export default {
         configLoadFailed: '配置加载失败，请刷新页面重试'
     },
     landing: {
-        mainText: SITE_CONFIG.landingText['zh-CN'] || '探索全球网络无限可能',
+        mainText: '探索全球网络无限可能',
         scrollText: '向下滑动以登录',
         exploreButton: '开始探索'
     },

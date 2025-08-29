@@ -87,6 +87,7 @@ export default {
     emailVerificationSent: '驗證碼已傳送至您的電子郵件',
     emailVerificationFailed: '驗證碼傳送失敗',
     verificationCodePlaceholder: '請輸入驗證碼',
+    codePlaceholder: '請輸入驗證碼',
     inviteCodePlaceholder: '請輸入邀請碼（選填）',
     forgotPasswordTitle: '找回密碼',
     forgotPasswordSubtitle: '我們將傳送驗證碼至您的電子郵件',
@@ -173,7 +174,7 @@ export default {
     configLoadFailed: '配置載入失敗，請重新整理頁面重試'
   },
   landing: {
-    mainText: SITE_CONFIG.landingText['zh-TW'] || '探索全球網路的無限可能',
+    mainText: '探索全球網路的無限可能',
     scrollText: '向下滑動以登入',
     exploreButton: '開始探索'
   },

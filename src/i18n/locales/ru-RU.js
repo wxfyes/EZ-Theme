@@ -86,8 +86,9 @@ export default {
     confirmPasswordPlaceholder: 'Повторите пароль',
     emailVerificationSent: 'Код подтверждения отправлен на вашу почту',
     emailVerificationFailed: 'Ошибка отправки кода подтверждения',
-    verificationCodePlaceholder: 'Введите код подтверждения',
-    inviteCodePlaceholder: 'Введите код приглашения (необязательно)',
+            verificationCodePlaceholder: 'Введите код подтверждения',
+        codePlaceholder: 'Введите код подтверждения',
+        inviteCodePlaceholder: 'Введите код приглашения (необязательно)',
     forgotPasswordTitle: 'Восстановить пароль',
     forgotPasswordSubtitle: 'Код подтверждения будет отправлен на вашу почту',
     registerSuccess: 'Регистрация успешна',
@@ -173,7 +174,7 @@ export default {
     configLoadFailed: 'Ошибка загрузки конфигурации, обновите страницу'
   },
   landing: {
-    mainText: SITE_CONFIG.landingText['ru-RU'] || 'Исследуйте безграничные возможности глобальной сети',
+    mainText: 'Исследуйте безграничные возможности глобальной сети',
     scrollText: 'Прокрутите вниз для входа',
     exploreButton: 'Начать исследование'
   },

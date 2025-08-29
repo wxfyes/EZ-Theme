@@ -97,7 +97,6 @@ async function silentCheckApiAvailability() {
         const cacheDuration = window.EZ_CONFIG.API_CHECK_CACHE_DURATION || 300000;
         
         if (Date.now() - timestamp < cacheDuration) {
-          console.log('使用缓存的API URL:', url);
           sessionStorage.setItem('ez_api_available_url', url);
           return url;
         }
@@ -106,19 +105,18 @@ async function silentCheckApiAvailability() {
     
     const storedUrl = sessionStorage.getItem('ez_api_available_url');
     if (storedUrl) {
-      console.log('使用已验证的API URL:', storedUrl);
       return storedUrl;
     }
     
     const apiConfig = window.EZ_CONFIG.API_CONFIG;
     const staticBaseUrls = apiConfig.staticBaseUrl;
     
-    console.log('开始静默检测API可用性...');
+    // 开始静默检测API可用性
     
     // 并行检测所有API端点，提高检测速度
     const checkPromises = staticBaseUrls.map(async (url, index) => {
       try {
-        const isAvailable = await testApiEndpoint(url);
+        const isAvailable = await enhancedTestApiEndpoint(url);
         return { url, isAvailable, index };
       } catch (error) {
         return { url, isAvailable: false, index };
@@ -131,7 +129,6 @@ async function silentCheckApiAvailability() {
     const availableResult = results.find(result => result.isAvailable);
     
     if (availableResult) {
-      console.log('找到可用的API节点:', availableResult.url);
       sessionStorage.setItem('ez_api_available_url', availableResult.url);
       
       // 设置缓存
@@ -149,7 +146,6 @@ async function silentCheckApiAvailability() {
       
       return availableResult.url;
     } else {
-      console.warn('没有找到可用的API节点，将使用默认的第一个节点');
       const defaultUrl = staticBaseUrls[0];
       sessionStorage.setItem('ez_api_available_url', defaultUrl);
       
@@ -173,10 +169,18 @@ async function silentCheckApiAvailability() {
 // 测试API端点的函数
 async function testApiEndpoint(baseUrl) {
   try {
-    const testUrl = `${baseUrl}/user/info`;
+    // 使用不需要认证的端点来测试API可用性
+    const testUrl = `${baseUrl}/guest/comm/config`;
     const controller = new AbortController();
     const timeout = window.EZ_CONFIG?.API_CHECK_TIMEOUT || 3000;
     const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    // 首先尝试解析域名
+    try {
+      const url = new URL(testUrl);
+    } catch (parseError) {
+      return false;
+    }
     
     const response = await fetch(testUrl, {
       method: 'GET',
@@ -188,14 +192,76 @@ async function testApiEndpoint(baseUrl) {
     
     clearTimeout(timeoutId);
     
-    if (response.ok) {
+    // 对于API可用性检测，我们只关心网络连接是否正常
+    // 即使返回401或403，也说明API服务器是可达的
+    if (response.status >= 200 && response.status < 500) {
+      return true;
+    } else {
+      return false;
+    }
+    
+  } catch (error) {
+    // 对于网络错误，我们认为API不可用
+    return false;
+  }
+}
+
+// 增强的API可用性检测函数
+async function enhancedTestApiEndpoint(baseUrl) {
+  try {
+    // 方法1: 使用fetch检测
+    const fetchResult = await testApiEndpoint(baseUrl);
+    if (fetchResult) {
+      return true;
+    }
+    
+    // 方法2: 使用XMLHttpRequest作为备选检测方法
+    const xhrResult = await testApiEndpointWithXHR(baseUrl);
+    if (xhrResult) {
       return true;
     }
     
     return false;
+    
   } catch (error) {
     return false;
   }
+}
+
+// 使用XMLHttpRequest检测API端点
+async function testApiEndpointWithXHR(baseUrl) {
+  return new Promise((resolve) => {
+    try {
+      const testUrl = `${baseUrl}/guest/comm/config`;
+      const xhr = new XMLHttpRequest();
+      const timeout = window.EZ_CONFIG?.API_CHECK_TIMEOUT || 3000;
+      
+      xhr.timeout = timeout;
+      xhr.open('GET', testUrl, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      
+      xhr.onload = function() {
+        if (xhr.status >= 200 && xhr.status < 500) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      };
+      
+      xhr.onerror = function() {
+        resolve(false);
+      };
+      
+      xhr.ontimeout = function() {
+        resolve(false);
+      };
+      
+      xhr.send();
+      
+    } catch (error) {
+      resolve(false);
+    }
+  });
 }
 
 async function initApiAvailabilityChecker(redirect = true) {
@@ -206,7 +272,6 @@ async function initApiAvailabilityChecker(redirect = true) {
   try {
     const storedUrl = sessionStorage.getItem('ez_api_available_url');
     if (storedUrl) {
-      console.log('使用已验证的API URL:', storedUrl);
       return storedUrl;
     }
     

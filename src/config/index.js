@@ -27,7 +27,6 @@ export const config  = {
         // 多个地址时，会按顺序检测可用性，并使用第一个可用的地址
         staticBaseUrl: [
             '/api/v1',
-            '/api/v1',
             '/api/v1'
         ],
 
@@ -229,13 +228,13 @@ export const config  = {
         // 下单前二次确认
         confirmOrder: true,
         // 下单前二次确认内容
-        confirmOrderContent: "<p><strong style='color: red'>无法提供相关教程和使用说明。</strong></p><p><strong style='color: red'>不会使用请勿购买，没有退款政策</strong></p>",
+        confirmOrderContent: "<p><strong style='color: red'>官网提供相关教程和使用说明！</strong></p><p><strong style='color: red'>不会使用请勿购买，没有退款政策</strong></p>",
 
     },
     // 仪表盘页面配置
     DASHBOARD_CONFIG: {
         // 是否在欢迎卡片中显示用户邮箱 (true=显示, false=隐藏)
-        showUserEmail: false,
+        showUserEmail: true,
 
         // 是否为导入订阅按钮添加高光效果和填充底色 (true=添加效果, false=不添加效果)
         importButtonHighlightBtnbgcolor: true,
@@ -460,6 +459,18 @@ export const config  = {
       linkMode: 'auto',
       // 自定义域名，当linkMode为'custom'时使用
       customDomain: 'https://example.com'
+    },
+
+    // 社交分享配置
+    socialShare: {
+      // 是否启用微信分享
+      wechat: true,
+      // 是否启用QQ分享
+      qq: true,
+      // 是否启用Twitter分享
+      twitter: false,
+      // 是否启用Telegram分享
+      telegram: true
     }
   },
 

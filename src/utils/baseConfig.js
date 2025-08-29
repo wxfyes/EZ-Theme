@@ -80,7 +80,13 @@ export const getApiBaseUrl = () => {
                     if (availableUrl) {
                         return availableUrl;
                     }
-                    // 如果没有可用URL，返回数组中的第一个URL
+                    
+                    // 如果没有可用URL，检查是否有全局的可用URL
+                    if (window.EZ_CONFIG._AVAILABLE_API_URL) {
+                        return window.EZ_CONFIG._AVAILABLE_API_URL;
+                    }
+                    
+                    // 如果都没有，返回第一个URL作为备选
                     return apiConfig.staticBaseUrl[0];
                 }
                 // 如果staticBaseUrl是数组但只有一个元素，返回该元素

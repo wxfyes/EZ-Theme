@@ -86,6 +86,7 @@ export default {
         emailVerificationSent: 'Verification code sent to your email',
         emailVerificationFailed: 'Failed to send verification code',
         verificationCodePlaceholder: 'Please enter the verification code',
+        codePlaceholder: 'Please enter the verification code',
         inviteCodePlaceholder: 'Please enter the invite code (optional)',
         forgotPasswordTitle: 'Recover Password',
         forgotPasswordSubtitle: 'We will send a verification code to your email',
@@ -172,7 +173,7 @@ export default {
         configLoadFailed: 'Configuration loading failed, please refresh the page'
     },
     landing: {
-        mainText: SITE_CONFIG.landingText['en-US'] || 'Explore the infinite possibilities of the global network',
+        mainText: 'Explore Unlimited Possibilities of Global Network',
         scrollText: 'Scroll down to login',
         exploreButton: 'Start Exploring'
     },
