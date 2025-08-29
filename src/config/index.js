@@ -468,7 +468,7 @@ export const config  = {
       // 是否启用QQ分享
       qq: true,
       // 是否启用Twitter分享
-      twitter: false,
+      twitter: true,
       // 是否启用Telegram分享
       telegram: true
     }
