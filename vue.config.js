@@ -55,23 +55,34 @@ module.exports = defineConfig({
               content = content.replace(/window\.EZ_CONFIG\s*=\s*config\s*;?/g, "");
               content = content.replace(/export\s+const\s+config\s*=/, "window.EZ_CONFIG =");
               
-              const obfuscated = JavaScriptObfuscator.obfuscate(content, {
-                compact: true,
-                controlFlowFlattening: true,
-                controlFlowFlatteningThreshold: 0.75,
-                numbersToExpressions: true,
-                simplify: true,
-                stringArray: true,
-                stringArrayEncoding: ["rc4"],
-                stringArrayThreshold: 0.75,
-                transformObjectKeys: true,
-                unicodeEscapeSequence: true
-              }).getObfuscatedCode();
+              // 检查配置文件中的混淆开关
+              let finalContent = content;
+              let isObfuscated = false;
+              
+              try {
+                // 从配置中提取混淆设置
+                const obfuscationMatch = content.match(/enableObfuscation:\s*(true|false)/);
+                const obfuscationOptionsMatch = content.match(/obfuscationOptions:\s*{[\s\S]*?}/);
+                
+                if (obfuscationMatch && obfuscationMatch[1] === 'true' && obfuscationOptionsMatch) {
+                  // 启用混淆
+                  const obfuscationOptionsStr = obfuscationOptionsMatch[0];
+                  const obfuscationOptions = eval(`(${obfuscationOptionsStr})`);
+                  
+                  finalContent = JavaScriptObfuscator.obfuscate(content, obfuscationOptions).getObfuscatedCode();
+                  isObfuscated = true;
+                  console.log(`生成混淆独立 JS 文件: ${extraScriptFileName}`);
+                } else {
+                  // 不启用混淆
+                  console.log(`生成未混淆独立 JS 文件: ${extraScriptFileName}`);
+                }
+              } catch (err) {
+                console.warn("混淆处理失败，使用原代码:", err);
+                finalContent = content;
+              }
               
               // 写入 dist
-              fs.writeFileSync(distPath, obfuscated, "utf-8");
-              
-              console.log(`生成混淆独立 JS 文件: ${extraScriptFileName}`);
+              fs.writeFileSync(distPath, finalContent, "utf-8");
             } catch (err) {
               console.warn("生成独立 JS 文件失败:", err);
             }
@@ -132,7 +143,11 @@ module.exports = defineConfig({
         minimize: true,
         minimizer: [
           new TerserPlugin({
-            terserOptions: { compress: { drop_console: true, drop_debugger: true }, mangle: true, format: { comments: false, ascii_only: true } },
+            terserOptions: { 
+              compress: { drop_console: true, drop_debugger: true }, 
+              mangle: true, 
+              format: { comments: false, ascii_only: true } 
+            },
             extractComments: false,
           }),
         ],
@@ -159,15 +174,26 @@ module.exports = defineConfig({
     loaderOptions: {
       sass: {
         implementation: require("sass"),
-        sassOptions: { outputStyle: "expanded", fiber: false, indentedSyntax: false, includePaths: ["node_modules"] },
+        sassOptions: { 
+          outputStyle: "expanded", 
+          fiber: false, 
+          indentedSyntax: false, 
+          includePaths: ["node_modules"] 
+        },
         additionalData: `@use "@/assets/styles/base/variables.scss" as *;`,
       },
     },
   },
   
   pages: {
-    index: { entry: "src/main.js", template: "public/index.html", filename: "index.html" },
+    index: { 
+      entry: "src/main.js", 
+      template: "public/index.html", 
+      filename: "index.html" 
+    },
   },
   
-  devServer: { client: { overlay: false } },
+  devServer: { 
+    client: { overlay: false } 
+  },
 });

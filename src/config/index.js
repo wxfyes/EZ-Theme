@@ -5,6 +5,27 @@
  */
 
 export const config  = {
+    // 构建配置
+    BUILD_CONFIG: {
+        // 是否启用代码混淆 (true=启用, false=禁用)
+        // 注意: 混淆会增加构建时间，但可以提高代码安全性，https://obfuscator.io/手动混淆
+        enableObfuscation: false,
+        
+        // 混淆配置选项 (仅在 enableObfuscation = true 时生效)
+        obfuscationOptions: {
+            compact: true,
+            controlFlowFlattening: true,
+            controlFlowFlatteningThreshold: 0.75,
+            numbersToExpressions: true,
+            simplify: true,
+            stringArray: true,
+            stringArrayEncoding: ["rc4"],
+            stringArrayThreshold: 0.75,
+            transformObjectKeys: true,
+            unicodeEscapeSequence: true
+        }
+    },
+
     // 面板类型配置 - 请选择您使用的面板类型
     PANEL_TYPE: 'Xiao-V2board', // 可选值: 'V2board', 'Xiao-V2board' 或 'Xboard'
     // 说明:
