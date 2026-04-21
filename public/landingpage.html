@@ -1711,12 +1711,23 @@
             const card = document.createElement('div');
             card.className = `pricing-card ${index === 1 ? 'featured' : ''}`;
             
-            const price = plan.month_price ? (plan.month_price / 100).toFixed(2) : '免费';
+            let priceText = '免费';
+            let unitText = '/月起';
+            
+            if (plan.month_price) {
+              priceText = (plan.month_price / 100).toFixed(2);
+            } else if (plan.onetime_price) {
+              priceText = (plan.onetime_price / 100).toFixed(2);
+              unitText = '/一次性';
+            } else if (plan.year_price) {
+              priceText = (plan.year_price / 100).toFixed(2);
+              unitText = '/年起';
+            }
             
             card.innerHTML = `
               ${index === 1 ? '<div class="pricing-badge">最受欢迎</div>' : ''}
               <div class="plan-name">${plan.name}</div>
-              <div class="plan-price">¥${price}<span>/月起</span></div>
+              <div class="plan-price">¥${priceText}<span>${unitText}</span></div>
               <ul class="plan-features">
                 <li>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
