@@ -6,13 +6,13 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="icon" href="./images/logo.png">
     <!-- 设置初始标题 -->
-    <title>EZ</title>
-    <!-- 预加载字体 -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <title>天阙</title>
+    <!-- 优化字体加载：使用国内镜像 -->
+    <link rel="preconnect" href="https://fonts.loli.net">
+    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
+    <link href="https://fonts.loli.net/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.loli.net/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     </noscript>
     <%= typeof injectCustomScript !== 'undefined' ? injectCustomScript : '' %>
 
@@ -164,10 +164,8 @@
         }
     };
     
-    // 立即隐藏加载状态，避免显示加载圈
-    setTimeout(() => {
-        window.hideAppLoading();
-    }, 100);
+    // 在应用真正加载完成后再手动或自动关闭，不建议在这里写死 100ms 强制关闭，否则可能导致白屏
+    // window.addEventListener('load', window.hideAppLoading);
 
     // 国产浏览器兼容性处理 - 检测本身能让浏览器更宽容
     const userAgent = navigator.userAgent.toLowerCase();

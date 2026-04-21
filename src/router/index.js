@@ -1,4 +1,4 @@
-﻿
+
 
 import { createRouter, createWebHashHistory } from 'vue-router';
 
@@ -584,18 +584,8 @@ router.beforeEach(async (to, from, next) => {
 
   
 
-  // API可用性检测已在应用启动时完成，这里只检查结果
-  try {
-    const { shouldCheckApiAvailability } = await import('@/utils/apiAvailabilityChecker');
-    if (shouldCheckApiAvailability() && to.name !== 'ApiValidation') {
-      const availableUrl = sessionStorage.getItem('ez_api_available_url');
-      if (!availableUrl) {
-        // 没有可用的API地址，但检测已在启动时完成，继续导航
-      }
-    }
-  } catch (error) {
-    // API可用性检查失败，继续导航
-  }
+  // 跳过阻塞检测，直接导航
+  // ... (保留注释结构)
 
   
 

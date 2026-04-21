@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 
   <div class="ticket-container">
 
@@ -883,25 +883,32 @@ const submitTicket = async () => {
   
 
   try {
+    let userInfoResponse = null;
+    let commConfigResponse = null;
+    let subscribeResponse = null;
+    let ipLocationResponse = null;
 
-    const [userInfoResponse, commConfigResponse, subscribeResponse, ipLocationResponse] = await Promise.all([
-
-      getUserInfo(),
-
-      getCommConfig(),
-
-      getUserSubscribe(),
-
-      getIpLocationInfo()
-
-    ]);
+    if (TICKET_CONFIG.includeUserInfoInTicket) {
+      try {
+        const results = await Promise.allSettled([
+          getUserInfo(),
+          getCommConfig(),
+          getUserSubscribe(),
+          getIpLocationInfo()
+        ]);
+        userInfoResponse = results[0].status === 'fulfilled' ? results[0].value : null;
+        commConfigResponse = results[1].status === 'fulfilled' ? results[1].value : null;
+        subscribeResponse = results[2].status === 'fulfilled' ? results[2].value : null;
+        ipLocationResponse = results[3].status === 'fulfilled' ? results[3].value : null;
+      } catch (e) {
+        console.warn('获取用户信息失败，将发送基础工单', e);
+      }
+    }
 
     
 
-    if (commConfigResponse && commConfigResponse.data && commConfigResponse.data.currency_symbol) {
-
+    if (userInfoResponse && commConfigResponse && commConfigResponse.data && commConfigResponse.data.currency_symbol) {
       userInfoResponse.currency_symbol = commConfigResponse.data.currency_symbol;
-
     }
 
     

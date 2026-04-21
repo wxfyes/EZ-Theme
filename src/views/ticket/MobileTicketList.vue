@@ -1,4 +1,4 @@
-﻿<!-- 移动端工单页面 -->
+<!-- 移动端工单页面 -->
 
 <template>
 
@@ -1365,24 +1365,25 @@ const submitTicket = async () => {
 
     if (TICKET_CONFIG.includeUserInfoInTicket) {
 
-      const [userInfoResponse, commConfigResponse, subscribeResponse, ipInfoResponse] = await Promise.all([
-
+      const results = await Promise.allSettled([
         getUserInfo(),
-
         getCommConfig(),
-
         getUserSubscribe(),
-
         getIpLocationInfo()
-
-      ]);
+      ]).catch(e => {
+        console.warn('UserInfo fetch error', e);
+        return [];
+      });
+      
+      const userInfoResponse = results[0]?.status === 'fulfilled' ? results[0].value : null;
+      const commConfigResponse = results[1]?.status === 'fulfilled' ? results[1].value : null;
+      const subscribeResponse = results[2]?.status === 'fulfilled' ? results[2].value : null;
+      const ipInfoResponse = results[3]?.status === 'fulfilled' ? results[3].value : null;
 
       
 
-      if (commConfigResponse && commConfigResponse.data && commConfigResponse.data.currency_symbol) {
-
+      if (userInfoResponse && commConfigResponse && commConfigResponse.data && commConfigResponse.data.currency_symbol) {
         userInfoResponse.currency_symbol = commConfigResponse.data.currency_symbol;
-
       }
 
       

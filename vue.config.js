@@ -1,4 +1,4 @@
-﻿const { defineConfig } = require("@vue/cli-service");
+const { defineConfig } = require("@vue/cli-service");
 const path = require("path");
 const fs = require("fs");
 const webpack = require("webpack");
@@ -194,6 +194,16 @@ module.exports = defineConfig({
   },
   
   devServer: { 
-    client: { overlay: false } 
+    client: { overlay: false },
+    proxy: {
+      '/api': {
+        target: 'https://154.219.104.214:2561',
+        changeOrigin: true,
+        secure: false, // 忽略自签名证书
+        pathRewrite: {
+          '^/api': '/api'
+        }
+      }
+    }
   },
 });

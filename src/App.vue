@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <!-- 静态布局容器，包含不需要过渡效果的菜单和按钮 -->
     <div class="static-layout" v-if="$route.meta.requiresAuth">
@@ -239,8 +239,13 @@ export default {
         }
       }).catch(err => {
         console.error('检查登录状态出错:', err);
+      }).finally(() => {
+        // 无论检查结果如何，应用已经初始化完成，可以去掉加载动画了
+        if (typeof window.hideAppLoading === 'function') {
+          window.hideAppLoading();
+        }
       });
-      
+
       handleRedirectParam();
     });
     

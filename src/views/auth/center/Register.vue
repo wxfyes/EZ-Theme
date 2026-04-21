@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 
   <div class="auth-container">
 
@@ -3927,4 +3927,4 @@ export default {
 
 }
 
-</style>
+</style>
