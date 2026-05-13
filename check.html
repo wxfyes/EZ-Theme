@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Redirect</title>
+    <style>
+        /* 导入现代化字体 */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        /* 基本全局样式 */
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: white;
+            text-align: center;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 动态背景粒子效果 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.1)"><animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite"/></circle><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.1)"><animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite"/></circle><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"><animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite"/></circle></svg>') repeat;
+            animation: float 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            100% {
+                transform: translateY(-100px);
+            }
+        }
+
+        /* 居中内容的样式 */
+        .center-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 700px;
+            width: 90%;
+            box-sizing: border-box;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+            animation: slideInUp 1s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 欢迎语样式 */
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin: 0 0 20px 0;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease-in-out infinite, glow 2s ease-in-out infinite alternate;
+            line-height: 1.2;
+        }
+
+        @keyframes gradientShift {
+
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        @keyframes glow {
+            from {
+                filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+            }
+
+            to {
+                filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.6));
+            }
+        }
+
+        /* 状态显示区域 */
+        .status-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* 倒计时和状态文字 */
+        #timer {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin: 0;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.8;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        /* 加载动画 */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            border-radius: 2px;
+            animation: progress 3s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% {
+                width: 0%;
+            }
+
+            50% {
+                width: 70%;
+            }
+
+            100% {
+                width: 100%;
+            }
+        }
+
+        /* 装饰性元素 */
+        .decoration {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: rotate 10s linear infinite;
+        }
+
+        .decoration:nth-child(1) {
+            top: -50px;
+            right: -50px;
+            animation-delay: 0s;
+        }
+
+        .decoration:nth-child(2) {
+            bottom: -50px;
+            left: -50px;
+            animation-delay: 5s;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 针对手机和平板的媒体查询 */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            #timer {
+                font-size: 1rem;
+            }
+
+            .center-content {
+                padding: 30px 20px;
+                margin: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            #timer {
+                font-size: 0.9rem;
+            }
+
+            .center-content {
+                padding: 20px 15px;
+                margin: 15px;
+            }
+        }
+
+        /* 高对比度模式支持 */
+        @media (prefers-contrast: high) {
+            .center-content {
+                background: rgba(0, 0, 0, 0.8);
+                border: 2px solid #ffffff;
+            }
+        }
+
+        /* 减少动画模式支持 */
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+    <script>
+        // 配置中心 (Base64 编码保护域名，防止被安全扫描器轻易提取)
+        const CONFIG = {
+            // 国内备选域名池
+            cnPool: [
+                'aHR0cHM6Ly95b3V4dWFuLjg4ODU1NjY2Lnh5eg==', // youxuan.88855666.xyz
+                'aHR0cHM6Ly9lLWNvbW1lcmNlLXZpZS44ODg1NTY2Ni54eXo=', // e-commerce-vie...
+                'aHR0cHM6Ly9lLWNvbW1lcmNlLXl5Ljg4ODU1NjY2Lnh5eg==', // e-commerce-yy...
+                'aHR0cHM6Ly9kZWZhdWx0Ljg4ODU1NjY2Lnh5eg=='  // default.88855666.xyz
+            ],
+
+            // 海外备选
+            overseasPool: [
+                'aHR0cHM6Ly9oay50aWFucXVlZ2UudG9w',
+                'aHR0cHM6Ly9qcC50aWFucXVlZ2UudG9w',
+                'aHR0cHM6Ly9zZy50aWFucXVlZ2UudG9w',
+                'aHR0cHM6Ly91cy50aWFucXVlZ2UudG9w'
+            ],
+            // 保底跳转域名
+            defaultUrl: 'aHR0cHM6Ly9oay50aWFucXVlZ2UudG9w',
+            // IP 检测 API 列表
+            ipApis: [
+                'https://ipapi.co/json/',
+                'https://ipinfo.io/json'
+            ],
+            timeout: 3000 // 探测超时时间
+        };
+
+        // 探测函数：通过加载小图标来快速判断连通性
+        function probe(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const start = Date.now();
+                // 只要有任何回应(加载成功或报错)都代表服务器可达
+                img.onload = img.onerror = () => resolve({ url, time: Date.now() - start });
+                img.src = `${url}/favicon.ico?t=${start}`;
+                setTimeout(() => reject(new Error('timeout')), CONFIG.timeout);
+            });
+        }
+
+        async function initRedirect() {
+            const timer = document.getElementById("timer");
+            const spinner = document.querySelector('.loading-spinner');
+
+            // 1. 并发获取地理位置（多个 API 竞速，取最快返回的结果）
+            let countryCode = 'CN'; // 默认国内
+            try {
+                timer.innerText = "正在分析网络环境...";
+                countryCode = await Promise.any(CONFIG.ipApis.map(api =>
+                    fetch(api).then(r => r.json()).then(d => d.country_code || d.country)
+                ));
+            } catch (e) {
+                console.warn("IP 检测失败，使用默认配置");
+            }
+
+            // 2. 根据归属地选择对应的域名池
+            let encodedPool = (countryCode === 'CN') ? CONFIG.cnPool : CONFIG.overseasPool;
+            let decodedPool = encodedPool.map(d => atob(d));
+
+            // 3. 智能记忆：优先尝试上次成功的域名
+            const lastWin = localStorage.getItem('last_success_domain');
+            if (lastWin && decodedPool.includes(lastWin)) {
+                decodedPool = [lastWin, ...decodedPool.filter(d => d !== lastWin)];
+            }
+
+            timer.innerText = countryCode === 'CN' ? "正在为您挑选最快的国内线路..." : "正在连接全球加速网络...";
+
+            // 4. 并发测速竞速 (Race Strategy)
+            // 同时对所有域名发起探测，谁先返回谁就赢
+            try {
+                const winner = await Promise.any(decodedPool.map(url => probe(url)));
+
+                // 记录这次成功的域名
+                localStorage.setItem('last_success_domain', winner.url);
+
+                timer.innerText = "找到最佳线路，正在进入...";
+                spinner.style.display = 'none';
+
+                // 最终跳转
+                window.location.href = winner.url;
+            } catch (e) {
+                // 如果全部探测失败，则直接尝试池子里的第一个
+                console.error("所有线路检测失败，尝试强制跳转");
+                window.location.href = decodedPool[0] || atob(CONFIG.defaultUrl);
+            }
+        }
+
+        // 页面资源载入后立即开始跳转逻辑
+        document.addEventListener('DOMContentLoaded', initRedirect);
+    </script>
+
+</head>
+
+<body>
+    <div class="center-content">
+        <!-- 装饰性元素 -->
+        <div class="decoration"></div>
+        <div class="decoration"></div>
+
+        <h1>欢迎来到天阙</h1>
+        <p style="font-size: 1.1rem; margin: 10px 0; opacity: 0.9;">正在为您挑选合适线路并自动跳转载入</p>
+
+        <div class="status-container">
+            <div class="loading-spinner"></div>
+            <p id="timer">正在初始化...</p>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

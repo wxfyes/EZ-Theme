@@ -233,6 +233,9 @@ const DEFAULT_SITE_CONFIG = {
     // 是否显示标题中的网站Logo (true=显示, false=隐藏)
     showLogo: true,
 
+    // 是否在落地页显示价格表 (true=显示, false=隐藏)
+    showPricing: true,
+
     // Landing页面多语言标语
     landingText: {
         'zh-CN': '探索全球网络无限可能',

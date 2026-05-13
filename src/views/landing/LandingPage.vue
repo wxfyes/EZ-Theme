@@ -8,7 +8,7 @@
       <nav class="nav-links">
         <a href="javascript:void(0)" @click="scrollToSection('features')">特性</a>
         <a href="javascript:void(0)" @click="scrollToSection('download')">客户端</a>
-        <a href="javascript:void(0)" @click="scrollToSection('pricing')">价格</a>
+        <a v-if="siteConfig.showPricing" href="javascript:void(0)" @click="scrollToSection('pricing')">价格</a>
         <a href="javascript:void(0)" @click="navigateTo('tickets')">支持</a>
       </nav>
       <div class="nav-buttons">
@@ -35,7 +35,7 @@
         <a href="javascript:void(0)" @click="navigateTo('register'); toggleMobileMenu();">注册账户</a>
         <a href="javascript:void(0)" @click="scrollToSection('features'); toggleMobileMenu();">特性介绍</a>
         <a href="javascript:void(0)" @click="scrollToSection('download'); toggleMobileMenu();">客户端下载</a>
-        <a href="javascript:void(0)" @click="scrollToSection('pricing'); toggleMobileMenu();">价格方案</a>
+        <a v-if="siteConfig.showPricing" href="javascript:void(0)" @click="scrollToSection('pricing'); toggleMobileMenu();">价格方案</a>
         <a href="javascript:void(0)" @click="navigateTo('tickets'); toggleMobileMenu();">联系支持</a>
       </div>
     </div>
@@ -83,7 +83,7 @@
       </div>
     </section>
 
-    <section class="pricing" id="pricing">
+    <section v-if="siteConfig.showPricing" class="pricing" id="pricing">
       <div class="section-title">
         <h3>选择适合您的方案</h3>
         <p>多种套餐灵活搭配，满足您的不同需求</p>
@@ -158,7 +158,7 @@
       <div class="footer-links">
         <a href="javascript:void(0)" @click="handleDownload('githubRepo')">关于我们</a>
         <a href="javascript:void(0)" @click="handleDownload('githubReleases')">Github下载客户端</a>
-        <a href="javascript:void(0)" @click="navigateTo('shop')">价格</a>
+        <a v-if="siteConfig.showPricing" href="javascript:void(0)" @click="navigateTo('shop')">价格</a>
         <a href="javascript:void(0)" @click="navigateTo('tickets')">支持</a>
       </div>
       <p class="copyright">{{ siteConfig.copyright || '© 2026. All Rights Reserved.' }}</p>
@@ -294,7 +294,9 @@ export default {
 
     onMounted(() => {
       window.addEventListener('scroll', onScroll);
-      fetchPlans();
+      if (siteConfig.value.showPricing) {
+        fetchPlans();
+      }
       setTimeout(setupAnimations, 500);
     });
 
