@@ -597,7 +597,7 @@ router.beforeEach(async (to, from, next) => {
         if (i18n.global && i18n.global.t) {
           const title = i18n.global.t(to.meta.titleKey);
           if (title && title !== to.meta.titleKey) {
-            document.title = `${title} - ${SITE_CONFIG.siteName}`;
+            document.title = SITE_CONFIG.siteName ? `${title} - ${SITE_CONFIG.siteName}` : title;
             return;
           }
         }
@@ -606,7 +606,7 @@ router.beforeEach(async (to, from, next) => {
       }
     }
     // 如果翻译失败，使用默认标题
-    document.title = SITE_CONFIG.siteName;
+    document.title = SITE_CONFIG.siteName || 'Dashboard';
   };
 
   // 立即设置标题

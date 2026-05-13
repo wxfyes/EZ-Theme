@@ -1,38 +1,21 @@
-﻿import disableDevtool from "disable-devtool";
+/**
+ * 核心启动入口
+ * 修复因漏掉 i18n 挂载导致的全局崩溃（白屏）
+ */
+import './appInit.js';
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router';
+import store from './store';
+import i18n from './i18n'; // 补回多语言
 
-const isProd = process.env.NODE_ENV === "production";
-const enableConfigJS = process.env.VUE_APP_CONFIGJS == "true";
-const enableAntiDebugging = process.env.VUE_APP_DEBUGGING == "true";
+const app = createApp(App);
 
-(async () => {
-  try {
-    if (!isProd || !enableConfigJS) {
-      const res = await import('./config/index.js');
-      if (typeof window !== 'undefined') {
-        window.EZ_CONFIG = res.config || res.default || res;
-      }
-    }
-    
-    // 反调试逻辑 - 使用更温和的配置
-    if (isProd && enableAntiDebugging) {
-      disableDevtool({
-        ignore: ['console.log'], // 允许console.log
-        disableMenu: true, // 禁用右键菜单
-        clearLog: false, // 不清除日志
-        disableSelect: false, // 允许选择文本
-        disableCopy: false, // 允许复制
-        disableCut: false, // 允许剪切
-        disablePaste: false, // 允许粘贴
-        blockDevTools: false, // 不强制阻止开发者工具
-        ondevtoolopen: () => {
-          console.warn('检测到开发者工具');
-        }
-      })
-    }
-    
-    // ⚠️ 确保在 config 加载后再初始化应用
-    await import('./appInit.js');
-  } catch (error) {
-    console.error(error);
-  }
-})();
+// 必须按顺序挂载所有插件
+app.use(i18n); 
+app.use(store);
+app.use(router);
+
+app.mount('#app');
+
+console.log('App successfully mounted with i18n');

@@ -5,8 +5,8 @@
 import {getAvailableApiUrl} from '@/utils/apiAvailabilityChecker';
 
 const getConfig = (key, defaultValue) => {
-    if (typeof window !== 'undefined' && window.EZ_CONFIG && window.EZ_CONFIG[key] !== undefined) {
-        return window.EZ_CONFIG[key];
+    if (typeof window !== 'undefined' && window.__SYS_CFG__ && window.__SYS_CFG__[key] !== undefined) {
+        return window.__SYS_CFG__[key];
     }
     return defaultValue || {};
 };
@@ -53,12 +53,12 @@ export const isXboard = () => {
 // 获取API基础URL的函数
 export const getApiBaseUrl = () => {
     // 完全依赖config.js中的配置
-    if (typeof window !== 'undefined' && window.EZ_CONFIG) {
+    if (typeof window !== 'undefined' && window.__SYS_CFG__) {
         // 首先检查是否启用中间件代理
-        if (window.EZ_CONFIG.API_MIDDLEWARE_ENABLED === true && window.EZ_CONFIG.API_MIDDLEWARE_URL) {
+        if (window.__SYS_CFG__.API_MIDDLEWARE_ENABLED === true && window.__SYS_CFG__.API_MIDDLEWARE_URL) {
             // 使用中间件URL和路径
-            const middlewareUrl = window.EZ_CONFIG.API_MIDDLEWARE_URL.trim();
-            const middlewarePath = window.EZ_CONFIG.API_MIDDLEWARE_PATH;
+            const middlewareUrl = window.__SYS_CFG__.API_MIDDLEWARE_URL.trim();
+            const middlewarePath = window.__SYS_CFG__.API_MIDDLEWARE_PATH;
 
             // 确保URL末尾没有斜杠，且路径开头有斜杠，防止出现重复或缺少斜杠
             const formattedUrl = middlewareUrl.endsWith('/') ? middlewareUrl.slice(0, -1) : middlewareUrl;
@@ -68,8 +68,8 @@ export const getApiBaseUrl = () => {
         }
 
         // 然后检查是否存在API_CONFIG
-        if (window.EZ_CONFIG.API_CONFIG) {
-            const apiConfig = window.EZ_CONFIG.API_CONFIG;
+        if (window.__SYS_CFG__.API_CONFIG) {
+            const apiConfig = window.__SYS_CFG__.API_CONFIG;
 
             // 静态URL模式
             if (apiConfig.urlMode === 'static' && apiConfig.staticBaseUrl) {
@@ -82,8 +82,8 @@ export const getApiBaseUrl = () => {
                     }
                     
                     // 如果没有可用URL，检查是否有全局的可用URL
-                    if (window.EZ_CONFIG._AVAILABLE_API_URL) {
-                        return window.EZ_CONFIG._AVAILABLE_API_URL;
+                    if (window.__SYS_CFG__._AVAILABLE_API_URL) {
+                        return window.__SYS_CFG__._AVAILABLE_API_URL;
                     }
                     
                     // 如果都没有，返回第一个URL作为备选
@@ -152,8 +152,8 @@ const DEFAULT_SECURITY_CONFIG = {
 
 export const SECURITY_CONFIG = (() => {
   // 确保配置总是可用
-  if (typeof window !== 'undefined' && window.EZ_CONFIG && window.EZ_CONFIG.SECURITY_CONFIG) {
-    return mergeDeep(DEFAULT_SECURITY_CONFIG, window.EZ_CONFIG.SECURITY_CONFIG);
+  if (typeof window !== 'undefined' && window.__SYS_CFG__ && window.__SYS_CFG__.SECURITY_CONFIG) {
+    return mergeDeep(DEFAULT_SECURITY_CONFIG, window.__SYS_CFG__.SECURITY_CONFIG);
   }
   // 如果配置未加载，返回默认配置
   return DEFAULT_SECURITY_CONFIG;
@@ -203,8 +203,8 @@ const DEFAULT_CAPTCHA_CONFIG = {
 
 export const CAPTCHA_CONFIG = (() => {
   // 确保配置总是可用
-  if (typeof window !== 'undefined' && window.EZ_CONFIG && window.EZ_CONFIG.CAPTCHA_CONFIG) {
-    return mergeDeep(DEFAULT_CAPTCHA_CONFIG, window.EZ_CONFIG.CAPTCHA_CONFIG);
+  if (typeof window !== 'undefined' && window.__SYS_CFG__ && window.__SYS_CFG__.CAPTCHA_CONFIG) {
+    return mergeDeep(DEFAULT_CAPTCHA_CONFIG, window.__SYS_CFG__.CAPTCHA_CONFIG);
   }
   // 如果配置未加载，返回默认配置
   return DEFAULT_CAPTCHA_CONFIG;
@@ -226,9 +226,9 @@ export const CUSTOM_HEADERS_CONFIG = mergeDeep(DEFAULT_CUSTOM_HEADERS_CONFIG, ge
 
 // 网站名称配置
 const DEFAULT_SITE_CONFIG = {
-    siteName: 'EZ THEME',
-    siteDescription: 'EZ UI',
-    copyright: `© ${new Date().getFullYear()} EZ THEME. All Rights Reserved.`,
+    siteName: '',
+    siteDescription: '',
+    copyright: `© ${new Date().getFullYear()} Portal. All Rights Reserved.`,
 
     // 是否显示标题中的网站Logo (true=显示, false=隐藏)
     showLogo: true,
@@ -431,8 +431,8 @@ const DEFAULT_TRAFFICLOG_CONFIG = {
 
 export const TRAFFICLOG_CONFIG = (() => {
   // 确保配置总是可用
-  if (typeof window !== 'undefined' && window.EZ_CONFIG && window.EZ_CONFIG.TRAFFICLOG_CONFIG) {
-    return mergeDeep(DEFAULT_TRAFFICLOG_CONFIG, window.EZ_CONFIG.TRAFFICLOG_CONFIG);
+  if (typeof window !== 'undefined' && window.__SYS_CFG__ && window.__SYS_CFG__.TRAFFICLOG_CONFIG) {
+    return mergeDeep(DEFAULT_TRAFFICLOG_CONFIG, window.__SYS_CFG__.TRAFFICLOG_CONFIG);
   }
   // 如果配置未加载，返回默认配置
   return DEFAULT_TRAFFICLOG_CONFIG;

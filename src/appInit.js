@@ -1,4 +1,4 @@
-﻿window.__VUE_OPTIONS_API__ = true;
+window.__VUE_OPTIONS_API__ = true;
 window.__VUE_PROD_DEVTOOLS__ = false;
 window.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = false;
 
@@ -12,31 +12,30 @@ import { useToast } from './composables/useToast';
 import initPageTitle from './utils/exposeConfig';
 import { handleUnauthorizedDomain } from './utils/domainChecker';
 
-if (!handleUnauthorizedDomain()) {
-  throw new Error('Unauthorized domain');
-}
+// 移除域名硬拦截以提升兼容性
 
 const initApp = async () => {
   try {
     initPageTitle();
 
-    // 并行加载样式和应用初始化
-    const [app, styles] = await Promise.all([
-      createApp(App),
-      import('./assets/styles/index.scss')
-    ]);
+    // 创建应用
+    const app = createApp(App);
+    
+    // 异步加载样式，不阻塞主逻辑
+    import('./assets/styles/index.scss').catch(err => console.warn('样式加载延迟:', err));
     const toast = useToast();
     app.provide('$toast', toast);
 
-    // 在应用挂载前确保语言包加载完成
-    try {
-      const { setLanguage } = await import('./i18n');
-      const currentLang = localStorage.getItem('language') || 'zh-CN';
+    // 异步加载语言包，不阻塞主应用挂载
+    import('./i18n').then(async ({ setLanguage }) => {
+      let currentLang = 'zh-CN';
+      try {
+        currentLang = localStorage.getItem('language') || 'zh-CN';
+      } catch (e) {
+        console.warn('无法访问 localStorage');
+      }
       await setLanguage(currentLang);
-      console.log('应用启动时语言包加载完成:', currentLang);
-    } catch (error) {
-      console.warn('应用启动时语言包加载失败:', error);
-    }
+    }).catch(err => console.warn('语言包预加载失败:', err));
 
     app.use(router)
        .use(store)
@@ -45,28 +44,18 @@ const initApp = async () => {
 
     app.mount('#app');
 
-    // 初始化用户信息
-    await store.dispatch('initUserInfo');
-    
-    // 立即进行API可用性检测，确保API备选地址正常工作
-    try {
-      if (window.EZ_CONFIG && 
-          window.EZ_CONFIG.API_CONFIG && 
-          window.EZ_CONFIG.API_CONFIG.urlMode === 'static' &&
-          Array.isArray(window.EZ_CONFIG.API_CONFIG.staticBaseUrl) &&
-          window.EZ_CONFIG.API_CONFIG.staticBaseUrl.length > 1) {
-        
-        const { silentCheckApiAvailability } = await import('./utils/apiAvailabilityChecker');
-        const availableUrl = await silentCheckApiAvailability();
-        
-        if (availableUrl) {
-          // 设置全局可用URL
-          window.EZ_CONFIG._AVAILABLE_API_URL = availableUrl;
-        }
-      }
-    } catch (error) {
-      console.error('❌ 应用启动时API可用性检测失败:', error);
+    // 挂载完成后立即隐藏加载动画，实现秒开感官
+    if (window.hideAppLoading) {
+      window.hideAppLoading();
+    } else {
+      const loadingElement = document.getElementById('app-loading');
+      if (loadingElement) loadingElement.style.display = 'none';
     }
+
+    // 后台初始化用户信息，不阻塞首屏显示
+    store.dispatch('initUserInfo');
+    
+    // API 检测已禁用，直连后端加速
     
     // 如果用户已登录，重新加载语言包以确保加载完整版本
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -88,16 +77,7 @@ const initApp = async () => {
       }
     }
     
-    // 应用挂载完成后立即隐藏加载状态
-    if (window.hideAppLoading) {
-      window.hideAppLoading();
-    } else {
-      // 如果没有 hideAppLoading 函数，直接隐藏加载元素
-      const loadingElement = document.getElementById('app-loading');
-      if (loadingElement) {
-        loadingElement.style.display = 'none';
-      }
-    }
+    // 已在上方提前调用
   } catch (error) {
     console.error('应用初始化失败:', error);
     
@@ -109,19 +89,16 @@ const initApp = async () => {
       app.use(router).use(store).use(i18n).use(MotionPlugin);
       app.mount('#app');
       
-      // 初始化用户信息
-      await store.dispatch('initUserInfo');
-      
-      // 应用挂载完成后立即隐藏加载状态
+      // 【关键修复】挂载完成后立即隐藏加载动画，不等待后续 API
       if (window.hideAppLoading) {
         window.hideAppLoading();
       } else {
-        // 如果没有 hideAppLoading 函数，直接隐藏加载元素
         const loadingElement = document.getElementById('app-loading');
-        if (loadingElement) {
-          loadingElement.style.display = 'none';
-        }
+        if (loadingElement) loadingElement.style.display = 'none';
       }
+
+      // 后台初始化用户信息，不阻塞首屏显示
+      store.dispatch('initUserInfo');
     } catch (fallbackError) {
       console.error('应用初始化完全失败:', fallbackError);
     }

@@ -1,4 +1,4 @@
-﻿
+
 
 
 
@@ -26,15 +26,15 @@ const getRouterInstance = async () => {
 
 function shouldCheckApiAvailability() {
 
-  if (typeof window === 'undefined' || !window.EZ_CONFIG) return false;
+  if (typeof window === 'undefined' || !window.__SYS_CFG__) return false;
 
   
 
-  if (window.EZ_CONFIG.API_MIDDLEWARE_ENABLED === true) return false;
+  if (window.__SYS_CFG__.API_MIDDLEWARE_ENABLED === true) return false;
 
   
 
-  const apiConfig = window.EZ_CONFIG.API_CONFIG;
+  const apiConfig = window.__SYS_CFG__.API_CONFIG;
 
   if (!apiConfig || apiConfig.urlMode !== 'static') return false;
 
@@ -51,35 +51,20 @@ function shouldCheckApiAvailability() {
 
 
 function getAvailableApiUrl() {
-
   if (!shouldCheckApiAvailability()) {
-
-    if (window.EZ_CONFIG?.API_CONFIG?.staticBaseUrl) {
-
-      const urls = window.EZ_CONFIG.API_CONFIG.staticBaseUrl;
-
+    if (window.__SYS_CFG__?.API_CONFIG?.staticBaseUrl) {
+      const urls = window.__SYS_CFG__.API_CONFIG.staticBaseUrl;
       return Array.isArray(urls) ? urls[0] : urls;
-
     }
-
     return '';
-
   }
-
   
-
-  const availableUrl = sessionStorage.getItem('ez_api_available_url');
-
+  const availableUrl = sessionStorage.getItem('__sys_api_url__');
   if (availableUrl) {
-
     return availableUrl;
-
   }
-
   
-
-  return window.EZ_CONFIG.API_CONFIG.staticBaseUrl[0];
-
+  return window.__SYS_CFG__.API_CONFIG.staticBaseUrl[0];
 }
 
 // 静默检测API可用性
@@ -90,30 +75,28 @@ async function silentCheckApiAvailability() {
   
   try {
     // 检查缓存
-    if (window.EZ_CONFIG?.API_CHECK_CACHE_ENABLED === true) {
-      const cachedData = sessionStorage.getItem('ez_api_cache_data');
+    if (window.__SYS_CFG__?.API_CHECK_CACHE_ENABLED === true) {
+      const cachedData = sessionStorage.getItem('__sys_api_cache__');
       if (cachedData) {
         const { url, timestamp } = JSON.parse(cachedData);
-        const cacheDuration = window.EZ_CONFIG.API_CHECK_CACHE_DURATION || 300000;
+        const cacheDuration = window.__SYS_CFG__.API_CHECK_CACHE_DURATION || 300000;
         
         if (Date.now() - timestamp < cacheDuration) {
-          sessionStorage.setItem('ez_api_available_url', url);
+          sessionStorage.setItem('__sys_api_url__', url);
           return url;
         }
       }
     }
     
-    const storedUrl = sessionStorage.getItem('ez_api_available_url');
+    const storedUrl = sessionStorage.getItem('__sys_api_url__');
     if (storedUrl) {
       return storedUrl;
     }
     
-    const apiConfig = window.EZ_CONFIG.API_CONFIG;
+    const apiConfig = window.__SYS_CFG__.API_CONFIG;
     const staticBaseUrls = apiConfig.staticBaseUrl;
     
     // 开始静默检测API可用性
-    
-    // 并行检测所有API端点，提高检测速度
     const checkPromises = staticBaseUrls.map(async (url, index) => {
       try {
         const isAvailable = await enhancedTestApiEndpoint(url);
@@ -124,38 +107,34 @@ async function silentCheckApiAvailability() {
     });
     
     const results = await Promise.all(checkPromises);
-    
-    // 找到第一个可用的API
     const availableResult = results.find(result => result.isAvailable);
     
     if (availableResult) {
-      sessionStorage.setItem('ez_api_available_url', availableResult.url);
+      sessionStorage.setItem('__sys_api_url__', availableResult.url);
       
-      // 设置缓存
-      if (window.EZ_CONFIG?.API_CHECK_CACHE_ENABLED === true) {
+      if (window.__SYS_CFG__?.API_CHECK_CACHE_ENABLED === true) {
         const cacheData = {
           url: availableResult.url,
           timestamp: Date.now()
         };
-        sessionStorage.setItem('ez_api_cache_data', JSON.stringify(cacheData));
+        sessionStorage.setItem('__sys_api_cache__', JSON.stringify(cacheData));
       }
       
-      if (window.EZ_CONFIG) {
-        window.EZ_CONFIG._AVAILABLE_API_URL = availableResult.url;
+      if (window.__SYS_CFG__) {
+        window.__SYS_CFG__._AVAILABLE_API_URL = availableResult.url;
       }
       
       return availableResult.url;
     } else {
       const defaultUrl = staticBaseUrls[0];
-      sessionStorage.setItem('ez_api_available_url', defaultUrl);
+      sessionStorage.setItem('__sys_api_url__', defaultUrl);
       
-      // 设置缓存
-      if (window.EZ_CONFIG?.API_CHECK_CACHE_ENABLED === true) {
+      if (window.__SYS_CFG__?.API_CHECK_CACHE_ENABLED === true) {
         const cacheData = {
           url: defaultUrl,
           timestamp: Date.now()
         };
-        sessionStorage.setItem('ez_api_cache_data', JSON.stringify(cacheData));
+        sessionStorage.setItem('__sys_api_cache__', JSON.stringify(cacheData));
       }
       
       return defaultUrl;
@@ -172,7 +151,7 @@ async function testApiEndpoint(baseUrl) {
     // 使用不需要认证的端点来测试API可用性
     const testUrl = `${baseUrl}/guest/comm/config`;
     const controller = new AbortController();
-    const timeout = window.EZ_CONFIG?.API_CHECK_TIMEOUT || 3000;
+    const timeout = window.__SYS_CFG__?.API_CHECK_TIMEOUT || 3000;
     const timeoutId = setTimeout(() => controller.abort(), timeout);
     
     // 首先尝试解析域名
@@ -234,7 +213,7 @@ async function testApiEndpointWithXHR(baseUrl) {
     try {
       const testUrl = `${baseUrl}/guest/comm/config`;
       const xhr = new XMLHttpRequest();
-      const timeout = window.EZ_CONFIG?.API_CHECK_TIMEOUT || 3000;
+      const timeout = window.__SYS_CFG__?.API_CHECK_TIMEOUT || 3000;
       
       xhr.timeout = timeout;
       xhr.open('GET', testUrl, true);
@@ -270,13 +249,13 @@ async function initApiAvailabilityChecker(redirect = true) {
   }
   
   try {
-    const storedUrl = sessionStorage.getItem('ez_api_available_url');
+    const storedUrl = sessionStorage.getItem('__sys_api_url__');
     if (storedUrl) {
       return storedUrl;
     }
     
     // 如果启用静默检测，则不跳转到检测页面
-    if (window.EZ_CONFIG?.SILENT_API_CHECK === true) {
+    if (window.__SYS_CFG__?.SILENT_API_CHECK === true) {
       return await silentCheckApiAvailability();
     }
     

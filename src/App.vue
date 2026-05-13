@@ -4,7 +4,7 @@
     <div class="static-layout" v-if="$route.meta.requiresAuth">
       <!-- 网站名称 -->
       <div class="site-logo">
-        <img v-if="siteConfig.showLogo" src="/images/logo.png" alt="Logo" class="site-logo-img" />
+        <img v-if="siteConfig.showLogo" src="/images/logo.png?v=2" alt="Logo" class="site-logo-img" />
         {{ siteConfig.siteName }}
       </div>
       
@@ -66,8 +66,8 @@
     <!-- Crisp嵌入组件（第二种客服系统方案） -->
     <CrispEmbed v-if="customerServiceConfig.embedMode === 'embed'" />
     
-    <!-- 资源预加载组件 -->
-    <ResourcePreloader />
+    <!-- 资源预加载组件 - 暂时禁用以提升首屏速度 -->
+    <!-- <ResourcePreloader /> -->
     
     <!-- SVG图标定义 -->
     <IconDefinitions />
@@ -94,17 +94,14 @@ import CustomContextMenu from '@/components/common/CustomContextMenu.vue';
 import CustomerServiceIcon from '@/components/common/CustomerServiceIcon.vue';
 import CrispEmbed from '@/components/common/CrispEmbed.vue';
 import ResourcePreloader from '@/components/common/ResourcePreloader.vue';
-import { IconGift } from '@tabler/icons-vue';
-import NProgress from 'nprogress';
-import 'nprogress/nprogress.css';
 import pageCache from '@/utils/pageCache';
-
-NProgress.configure({ 
-  showSpinner: true,   
-  easing: 'ease',      
-  speed: 400,          
-  minimum: 0.2         
-});
+import { IconGift } from '@tabler/icons-vue';
+// NProgress 已禁用以提升加载感官速度
+const NProgress = {
+  start: () => {},
+  done: () => {},
+  configure: () => {}
+};
 
 export default {
   name: 'App',
@@ -182,13 +179,6 @@ export default {
     
     const onLanguageChanged = () => {
       languageChangedSignal.value++;
-      
-      setTimeout(() => {
-        document.body.classList.add('language-transitioning');
-        setTimeout(() => {
-          document.body.classList.remove('language-transitioning');
-        }, 300);
-      }, 0);
     };
     
     const handleVisibilityChange = () => {
@@ -377,7 +367,7 @@ export default {
 
 .page-transition-enter-active,
 .page-transition-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.15s ease;
 }
 
 .page-transition-enter-from {
@@ -386,20 +376,6 @@ export default {
 
 .page-transition-leave-to {
   opacity: 0;
-}
-
-
-.language-transitioning .language-transition-item {
-  animation: language-fade 0.3s ease-out;
-}
-
-@keyframes language-fade {
-  0% {
-    opacity: 0.2;
-  }
-  100% {
-    opacity: 1;
-  }
 }
 
 
@@ -468,24 +444,6 @@ html {
 }
 
 
-.eztheme-btn {
-  text-decoration: none !important;
-  border-bottom: none !important;
-  background-image: none !important;
-  background-repeat: no-repeat !important;
-  background-position: initial !important;
-  background-size: initial !important;
-  
-  &:hover, &:active, &:focus, &:visited {
-    text-decoration: none !important;
-    border-bottom: none !important;
-  }
-  
-  &::after, &::before {
-    display: none !important;
-    content: none !important;
-  }
-}
 
 
 #nprogress {

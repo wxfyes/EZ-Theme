@@ -1,4 +1,4 @@
-﻿
+
 import axios from 'axios';
 import { API_BASE_URL, getApiBaseUrl, isXiaoV2board, isXboard, CUSTOM_HEADERS_CONFIG } from '@/utils/baseConfig';
 import { mapApiPath } from './utils/pathMapper';
@@ -68,7 +68,7 @@ request.interceptors.request.use(
   config => {
       config.baseURL = getApiBaseUrl();
     
-    if (window.EZ_CONFIG && window.EZ_CONFIG.API_MIDDLEWARE_ENABLED) {
+    if (window.__SYS_CFG__ && window.__SYS_CFG__.API_MIDDLEWARE_ENABLED) {
       const originalUrl = config.url;
       
       config.url = mapApiPath(config.url);
@@ -77,9 +77,9 @@ request.interceptors.request.use(
         console.log(`API路径映射: ${originalUrl} -> ${config.url}`);
       }
     } 
-    else if (window.EZ_CONFIG && window.EZ_CONFIG.API_BASE_URLS && 
-             Array.isArray(window.EZ_CONFIG.API_BASE_URLS) && 
-             window.EZ_CONFIG.API_BASE_URLS.length > 1) {
+    else if (window.__SYS_CFG__ && window.__SYS_CFG__.API_BASE_URLS && 
+             Array.isArray(window.__SYS_CFG__.API_BASE_URLS) && 
+             window.__SYS_CFG__.API_BASE_URLS.length > 1) {
       const availableApiUrl = getAvailableApiUrl();
       if (availableApiUrl) {
         config.baseURL = availableApiUrl;

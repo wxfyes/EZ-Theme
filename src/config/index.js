@@ -9,20 +9,22 @@ const config = {
   BUILD_CONFIG: {
     // 是否启用代码混淆 (true=启用, false=禁用)
     // 注意: 混淆会增加构建时间，但可以提高代码安全性，https://obfuscator.io/手动混淆
-    enableObfuscation: false,
+    enableObfuscation: true,
 
     // 混淆配置选项 (仅在 enableObfuscation = true 时生效)
     obfuscationOptions: {
       compact: true,
-      controlFlowFlattening: true,
-      controlFlowFlatteningThreshold: 0.75,
-      numbersToExpressions: true,
-      simplify: true,
+      controlFlowFlattening: false,
+      deadCodeInjection: false,
+      debugProtection: false,
+      disableConsoleOutput: true,
+      numbersToExpressions: false,
+      simplify: false,
       stringArray: true,
-      stringArrayEncoding: ["rc4"],
+      stringArrayEncoding: ['base64'],
       stringArrayThreshold: 0.75,
-      transformObjectKeys: true,
-      unicodeEscapeSequence: true
+      transformObjectKeys: false,
+      unicodeEscapeSequence: false
     }
   },
 
@@ -33,9 +35,7 @@ const config = {
   // 2. Xiao-V2board: Xiao修改版面板，使用特殊格式的请求参数
   // 3. Xboard: Xboard面板
 
-  // =======================================================
-
-  // API配置
+  // ==========================================    // API 检测逻辑已按需移除，实现直连后端加速
   // 可使用以下选项来配置API基础URL:
   // 1. 静态URL: 直接指定API基础URL 末尾要加 /api/v1 !!!!!!!!!!!!!!! 除非你自己改过路由要不然别不加
   // 2. 自动获取: 从当前域名自动生成API基础URL
@@ -68,10 +68,10 @@ const config = {
   API_MIDDLEWARE_ENABLED: false,
 
   // 是否启用静默API可用性检测
-  SILENT_API_CHECK: true,
+  SILENT_API_CHECK: false,
 
   // API检测超时时间（毫秒）
-  API_CHECK_TIMEOUT: 5000, 
+  API_CHECK_TIMEOUT: 5000,
 
   // 是否启用API检测缓存
   API_CHECK_CACHE_ENABLED: false,
@@ -83,16 +83,19 @@ const config = {
   API_MIDDLEWARE_URL: '',
 
   // 中间件路由前缀 (与中间件服务器配置保持一致)
-  API_MIDDLEWARE_PATH: '/ez/ez',
+  API_MIDDLEWARE_PATH: '/api/v',
 
   //=======================================================
 
   // ====================  网站基础配置  ====================
   SITE_CONFIG: {
-    siteName: '天阙',
-    siteDescription: '天阙 UI',
+    siteName: "天阙",
+    siteSubtitle: "Next TianQue",
+    landingSubtitle: "高速稳定、安全私密，助力业务数字化转型",
+    landingImage: "/images/zhanshi.jpg",
+    siteDescription: 'Management Portal',
     // copyright会自动使用当前年份
-    copyright: `© ${new Date().getFullYear()} EZ THEME. All Rights Reserved.`,
+    copyright: `© ${new Date().getFullYear()} Portal. All Rights Reserved.`,
 
     // 是否显示标题中的网站Logo (true=显示, false=隐藏)
     showLogo: true,
@@ -111,7 +114,7 @@ const config = {
     // 自定义landing页面路径（相对于public目录
     // 例如：'testlandingpage.html'
     // 如果为空则不启用自定义landing页面
-    customLandingPage: 'landingpage.html'
+    customLandingPage: ''
   },
 
   // 默认语言和主题配置
@@ -305,11 +308,19 @@ const config = {
     // 客户端下载链接  //可以改成文档链接直接在新标签页打开
     clientLinks: {
       ios: 'https://apps.apple.com/ca/app/shadowrocket/id932747118',
-      android: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v1.0.9%2B260413/TianQue-Mobile-arm64-v8a.apk',
-      macos: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases',
-      windows: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v1.0.9%2B260413/TianQue-1.0.9+260413-Windows-Setup.exe',
-      linux: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v1.0.9%2B260413/TianQue-1.0.9+260413-Linux.tar.gz',
-      openwrt: 'https://pyxy.126581.xyz/https://github.com/xxx/releases/latest'
+      android: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.0.5%2B260512/TianQue-Mobile-arm64-v8a.apk',
+      macos: 'https://download.qqccjj.top',
+      windows: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.0.5%2B260512/TianQue-2.0.5+260512-Windows-Setup.exe',
+      linux: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.0.5%2B260512/TianQue-2.0.5+260512-Linux.tar.gz',
+      下载页面: 'https://download.qqccjj.top',
+      // 安全收纳敏感链接，打包后自动混淆
+      githubRepo: 'https://github.com/tianquege/TianQueClient',
+      githubReleases: 'https://github.com/tianquege/TianQueClient/releases',
+      telegramGroup: 'https://t.me/tianquege',
+      twitterUrl: 'https://twitter.com/tianquege',
+      twitterSharePrefix: 'https://twitter.com/intent/tweet',
+      telegramSharePrefix: 'https://t.me/share/url',
+      qrCodeApiPrefix: 'https://api.qrserver.com/v1/create-qr-code/'
     },
 
     // 订阅导入客户端显示控制 部分面板不支持SingBox导入请您注意检查
@@ -381,12 +392,12 @@ const config = {
   // 验证码配置
   CAPTCHA_CONFIG: {
     // 验证方式: 'google' 或 'cloudflare'
-    captchaType: 'google',
+    captchaType: 'cloudflare',
 
     // Google reCAPTCHA 配置 默认v2版本
     google: {
-      // 验证API地址，可选，默认使用官方地址
-      verifyUrl: 'https://www.google.com/recaptcha/api/siteverify'
+      // 验证API地址，可选，使用 recaptcha.net 以提高国内访问稳定性
+      verifyUrl: 'https://www.recaptcha.net/recaptcha/api/siteverify'
     },
 
     // Cloudflare Turnstile 配置
@@ -829,5 +840,5 @@ const config = {
   }
 };
 
-window.EZ_CONFIG = config;
+window.__SYS_CFG__ = config;
 export default config;

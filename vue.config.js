@@ -21,7 +21,7 @@ const generateRandomFileName = (length = 8) => {
 };
 
 if (isProd && enableConfigJS) {
-  extraScriptFileName = generateRandomFileName();
+  extraScriptFileName = 'config.js';
 }
 
 module.exports = defineConfig({
@@ -52,37 +52,48 @@ module.exports = defineConfig({
             
             try {
               let content = fs.readFileSync(configPath, "utf-8");
-              content = content.replace(/window\.EZ_CONFIG\s*=\s*config\s*;?/g, "");
-              content = content.replace(/export\s+const\s+config\s*=/, "window.EZ_CONFIG =");
+              content = content.replace(/export\s+default\s+config\s*;?/g, "");
+              // 确保全局变量名正确
+              content = content.replace(/window\.EZ_CONFIG/g, "window.__SYS_CFG__");
               
               // 检查配置文件中的混淆开关
               let finalContent = content;
               let isObfuscated = false;
               
               try {
-                // 从配置中提取混淆设置
-                const obfuscationMatch = content.match(/enableObfuscation:\s*(true|false)/);
-                const obfuscationOptionsMatch = content.match(/obfuscationOptions:\s*{[\s\S]*?}/);
+                // 更加鲁棒的正则匹配
+                const obfuscationMatch = content.match(/enableObfuscation:\s*true/);
+                const obfuscationOptionsMatch = content.match(/obfuscationOptions:\s*({[\s\S]*?})/);
                 
-                if (obfuscationMatch && obfuscationMatch[1] === 'true' && obfuscationOptionsMatch) {
+                if (obfuscationMatch && obfuscationOptionsMatch) {
                   // 启用混淆
-                  const obfuscationOptionsStr = obfuscationOptionsMatch[0];
+                  const obfuscationOptionsStr = obfuscationOptionsMatch[1];
+                  // 使用更加安全的方式解析选项，或者直接使用 eval
                   const obfuscationOptions = eval(`(${obfuscationOptionsStr})`);
                   
-                  finalContent = JavaScriptObfuscator.obfuscate(content, obfuscationOptions).getObfuscatedCode();
+                  console.log(`[Obfuscator] 正在对 ${extraScriptFileName} 进行深度混淆...`);
+                  const obfuscationResult = JavaScriptObfuscator.obfuscate(content, obfuscationOptions);
+                  finalContent = obfuscationResult.getObfuscatedCode();
                   isObfuscated = true;
-                  console.log(`生成混淆独立 JS 文件: ${extraScriptFileName}`);
+                  console.log(`[Obfuscator] 混淆成功: ${extraScriptFileName}`);
                 } else {
-                  // 不启用混淆
-                  console.log(`生成未混淆独立 JS 文件: ${extraScriptFileName}`);
+                  console.log(`[Obfuscator] 未检测到混淆开启标记或选项，跳过混淆: ${extraScriptFileName}`);
                 }
               } catch (err) {
-                console.warn("混淆处理失败，使用原代码:", err);
+                console.warn("[Obfuscator] 混淆过程出错，降级使用原代码:", err.message);
                 finalContent = content;
               }
               
               // 写入 dist
               fs.writeFileSync(distPath, finalContent, "utf-8");
+              
+              // 同步更新 landingpage.html 中的引用
+              const landingPath = path.resolve(compiler.options.output.path, "landingpage.html");
+              if (fs.existsSync(landingPath)) {
+                let landingContent = fs.readFileSync(landingPath, "utf-8");
+                landingContent = landingContent.replace(/src="config\.js\?t=[^"]*"/g, `src="${extraScriptFileName}"`);
+                fs.writeFileSync(landingPath, landingContent, "utf-8");
+              }
             } catch (err) {
               console.warn("生成独立 JS 文件失败:", err);
             }
@@ -102,34 +113,6 @@ module.exports = defineConfig({
               test: /[\\/]node_modules[\\/]/, 
               priority: -10, 
               chunks: "initial" 
-            },
-            // 语言包单独分割
-            i18n: {
-              name: "chunk-i18n",
-              test: /[\\/]src[\\/]i18n[\\/]/,
-              priority: -5,
-              chunks: "async"
-            },
-            // 图表库单独分割
-            charts: {
-              name: "chunk-charts",
-              test: /[\\/]node_modules[\\/](chart\.js|echarts)[\\/]/,
-              priority: -5,
-              chunks: "async"
-            },
-            // 加密库单独分割
-            crypto: {
-              name: "chunk-crypto",
-              test: /[\\/]node_modules[\\/](crypto-js|jsencrypt)[\\/]/,
-              priority: -5,
-              chunks: "async"
-            },
-            // UI 组件库单独分割
-            ui: {
-              name: "chunk-ui",
-              test: /[\\/]node_modules[\\/](@tabler|@vueuse)[\\/]/,
-              priority: -5,
-              chunks: "async"
             },
             common: { 
               name: "chunk-common", 
@@ -162,7 +145,7 @@ module.exports = defineConfig({
         args[0].templateParameters = {
           ...args[0].templateParameters,
           injectCustomScript: `
-            ${enableConfigJS ? `<script src="./${extraScriptFileName}"></script>` : ""}
+            ${enableConfigJS ? `<script src="${extraScriptFileName}"></script>` : ""}
           `,
         };
         return args;

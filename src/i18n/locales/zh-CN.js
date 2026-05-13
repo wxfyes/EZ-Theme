@@ -1,4 +1,4 @@
-﻿import {SITE_CONFIG} from '../../utils/baseConfig';
+import {SITE_CONFIG} from '../../utils/baseConfig';
 
 export default {
     common: {
@@ -173,7 +173,7 @@ export default {
         configLoadFailed: '配置加载失败，请刷新页面重试'
     },
     landing: {
-        mainText: '探索全球网络无限可能',
+        mainText: '全方位数字化管理门户',
         scrollText: '向下滑动以登录',
         exploreButton: '开始探索'
     },

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="account-container">
     <!-- 自定义确认弹窗 -->
     <transition name="modal">
@@ -600,7 +600,7 @@
 import { useI18n } from 'vue-i18n';
 import { ref, computed, onMounted, onUnmounted, reactive, nextTick } from 'vue';
 import { useToast } from '@/composables/useToast';
-import { INVITE_CONFIG } from '@/utils/baseConfig';
+import { INVITE_CONFIG, SITE_CONFIG } from '@/utils/baseConfig';
 import { getInviteData, getInviteDetails, getCommissionConfig, generateInviteCode, transferCommission, withdrawCommission } from '@/api/invite';
 import {
   IconUsers,
@@ -857,7 +857,7 @@ export default {
         return;
       }
       
-      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteLink.value)}`;
+      const qrCodeUrl = `${SITE_CONFIG.qrCodeApiPrefix}?size=200x200&data=${encodeURIComponent(inviteLink.value)}`;
       
       const win = window.open('', '_blank', 'width=600,height=400');
       win.document.write(`
@@ -885,7 +885,7 @@ export default {
         showToast(t('invite.share.noLinkAvailable'), 'error');
         return;
       }
-      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(t('invite.share.shareDescription'))}&url=${encodeURIComponent(inviteLink.value)}`, '_blank');
+      window.open(`${SITE_CONFIG.twitterSharePrefix}?text=${encodeURIComponent(t('invite.share.shareDescription'))}&url=${encodeURIComponent(inviteLink.value)}`, '_blank');
     };
     
     const shareToTelegram = () => {
@@ -893,7 +893,7 @@ export default {
         showToast(t('invite.share.noLinkAvailable'), 'error');
         return;
       }
-      window.open(`https://t.me/share/url?url=${encodeURIComponent(inviteLink.value)}&text=${encodeURIComponent(t('invite.share.shareDescription'))}`, '_blank');
+      window.open(`${SITE_CONFIG.telegramSharePrefix}?url=${encodeURIComponent(inviteLink.value)}&text=${encodeURIComponent(t('invite.share.shareDescription'))}`, '_blank');
     };
     
     const shareToQQ = () => {
