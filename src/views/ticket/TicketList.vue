@@ -264,7 +264,7 @@
 
             <!-- 工单对话内容 -->
 
-            <div class="ticket-detail-content">
+            <div class="ticket-detail-content" ref="messagesContainer">
 
               <div class="ticket-messages">
 
@@ -691,7 +691,7 @@
 
 <script setup>
 
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 
 import { useI18n } from 'vue-i18n';
 
@@ -789,16 +789,28 @@ const errors = ref({
 
 
 const newTicket = ref({
-
   subject: '',
-
   message: '',
-
   level: '0'
-
 });
 
 const newTicketImages = ref([]);
+
+const messagesContainer = ref(null);
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    }
+  });
+};
+
+watch(ticketMessages, () => {
+  if (selectedTicket.value) {
+    scrollToBottom();
+  }
+}, { deep: true });
 
 
 

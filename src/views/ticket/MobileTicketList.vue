@@ -200,7 +200,7 @@
 
         <!-- 消息列表 -->
 
-        <div class="messages-container">
+        <div class="messages-container" ref="messagesContainer">
 
           <div v-if="loadingMessages" class="loading-state">
 
@@ -574,7 +574,7 @@
 
 <script setup>
 
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 
 import { useI18n } from 'vue-i18n';
 
@@ -668,6 +668,22 @@ const newTicket = ref({
 });
 
 const newTicketImages = ref([]);
+
+const messagesContainer = ref(null);
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    }
+  });
+};
+
+watch(ticketMessages, () => {
+  if (selectedTicket.value) {
+    scrollToBottom();
+  }
+}, { deep: true });
 
 
 
