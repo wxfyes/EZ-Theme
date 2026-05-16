@@ -1,4 +1,4 @@
-﻿
+
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { THEME_CONFIG } from '@/utils/baseConfig';
 
@@ -16,8 +16,10 @@ export function useTheme() {
     const themeVars = THEME_CONFIG[selectedTheme];
     
     if (selectedTheme === 'dark') {
+      root.classList.add('dark-theme');
       document.body.classList.add('dark-theme');
     } else {
+      root.classList.remove('dark-theme');
       document.body.classList.remove('dark-theme');
     }
     
@@ -30,7 +32,8 @@ export function useTheme() {
     root.style.setProperty('--primary-color-hover', themeVars.primaryColorHover);
     
     root.style.setProperty('--background-color', themeVars.backgroundColor);
-    root.style.setProperty('--card-background', themeVars.cardBackground);
+    root.style.setProperty('--card-background', themeVars.cardBackground);
+    root.style.setProperty('--card-bg-color', themeVars.cardBackground);
     root.style.setProperty('--text-color', themeVars.textColor);
     root.style.setProperty('--secondary-text-color', themeVars.secondaryTextColor);
     root.style.setProperty('--border-color', themeVars.borderColor);
