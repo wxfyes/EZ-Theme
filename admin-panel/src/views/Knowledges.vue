@@ -76,7 +76,7 @@
         </el-form-item>
 
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :xs="24" :sm="12">
             <el-form-item label="文章分类" prop="category">
               <el-select
                 v-model="form.category"
@@ -90,7 +90,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :xs="24" :sm="12">
             <el-form-item label="文章语言" prop="language">
               <el-select v-model="form.language" style="width: 100%">
                 <el-option label="简体中文" value="zh-CN" />
@@ -103,12 +103,20 @@
         </el-row>
 
         <el-form-item label="文章内容" prop="body">
-          <div class="split-editor-container" :class="{ 'is-fullscreen': isFullscreen }">
+          <div class="split-editor-container" :class="{ 'is-fullscreen': isFullscreen, 'is-mobile': isMobile }">
+            <!-- Mobile Toggle Tab -->
+            <div v-if="isMobile" class="mobile-tab-bar">
+              <el-radio-group v-model="activeTab" size="small" class="mobile-tab-group">
+                <el-radio-button label="edit">编辑模式</el-radio-button>
+                <el-radio-button label="preview">文章预览</el-radio-button>
+              </el-radio-group>
+            </div>
+
             <!-- Toolbar -->
             <div class="editor-toolbar">
               <template v-for="(item, i) in toolbarItems" :key="i">
                 <div v-if="item.divider" class="toolbar-divider" />
-                <el-tooltip v-else :content="item.label" placement="top" :enterable="false">
+                <el-tooltip v-else :content="item.label" placement="top" :enterable="false" :disabled="isMobile">
                   <button type="button" class="toolbar-btn" @click="item.action">
                     <span v-if="item.iconHtml" v-html="item.iconHtml"></span>
                     <el-icon v-else><component :is="item.iconName" /></el-icon>
@@ -118,7 +126,7 @@
             </div>
 
             <div class="editor-main-layout">
-              <div class="editor-pane">
+              <div class="editor-pane" v-show="!isMobile || activeTab === 'edit'">
                 <div class="pane-title">编辑 Markdown</div>
                 <el-input
                   type="textarea"
@@ -128,7 +136,7 @@
                   class="code-textarea"
                 />
               </div>
-              <div class="preview-pane">
+              <div class="preview-pane" v-show="!isMobile || activeTab === 'preview'">
                 <div class="pane-title">实时预览</div>
                 <div class="markdown-preview-body" v-html="renderedMarkdown"></div>
               </div>
@@ -153,10 +161,28 @@ import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { marked } from 'marked';
 
+const debouncedBody = ref('');
+let debounceTimer = null;
+
+const isMobile = ref(window.innerWidth <= 768);
+const activeTab = ref('edit');
+
+const updateMobileStatus = () => {
+  isMobile.value = window.innerWidth <= 768;
+};
+
+// Watch form.body and update debouncedBody with a 200ms delay to eliminate keyboard input lag
+watch(() => form.body, (newVal) => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    debouncedBody.value = newVal || '';
+  }, 200);
+});
+
 const renderedMarkdown = computed(() => {
-  if (!form.body) return '<div class="preview-placeholder">无内容预览</div>';
+  if (!debouncedBody.value) return '<div class="preview-placeholder">无内容预览</div>';
   try {
-    let html = marked.parse(form.body);
+    let html = marked.parse(debouncedBody.value);
     // 渲染 <!--access start--> 和 <!--access end--> 标签
     html = html.replace(/&lt;!--access start--&gt;|<!--access start-->/gi, '<div class="preview-access-block"><div class="access-header"><span class="el-tag el-tag--warning el-tag--small">付费/权限订阅可见内容</span></div><div class="access-content">');
     html = html.replace(/&lt;!--access end--&gt;|<!--access end-->/gi, '</div></div>');
@@ -229,6 +255,7 @@ watch(() => form.body, (newVal) => {
 const initHistory = (val) => {
   history.value = [val || ''];
   historyIndex.value = 0;
+  debouncedBody.value = val || '';
 };
 
 const triggerUndo = () => {
@@ -458,10 +485,12 @@ onMounted(() => {
   fetchCategories();
   fetchKnowledges();
   window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('resize', updateMobileStatus);
 });
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('resize', updateMobileStatus);
 });
 </script>
 
@@ -701,5 +730,85 @@ onUnmounted(() => {
 .markdown-preview-body :deep(.access-content) {
   font-size: 13px;
   color: var(--el-text-color-regular);
+}
+/* Mobile styling updates */
+.mobile-tab-bar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.mobile-tab-group {
+  width: 100%;
+  display: flex;
+}
+
+.mobile-tab-group :deep(.el-radio-button) {
+  flex: 1;
+}
+
+.mobile-tab-group :deep(.el-radio-button__inner) {
+  width: 100%;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  /* Make the dialog width look generous and fit mobile screen nicely */
+  :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 100vw !important;
+    margin: 10px auto !important;
+    top: 2vh !important;
+  }
+  
+  :deep(.el-dialog__body) {
+    padding: 10px 15px !important;
+  }
+
+  .editor-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px;
+    gap: 8px;
+    border-radius: 8px 8px 0 0;
+  }
+  
+  .editor-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .toolbar-btn {
+    flex-shrink: 0;
+  }
+
+  .editor-main-layout {
+    flex-direction: column;
+    padding: 10px;
+    border-radius: 0 0 8px 8px;
+  }
+
+  .editor-pane {
+    border-right: none;
+    padding-right: 0;
+  }
+
+  .code-textarea :deep(.el-textarea__inner) {
+    height: 280px !important;
+  }
+
+  .markdown-preview-body {
+    height: 280px !important;
+  }
+  
+  .split-editor-container.is-fullscreen .editor-main-layout {
+    height: calc(100vh - 150px) !important;
+  }
+  
+  .split-editor-container.is-fullscreen .code-textarea :deep(.el-textarea__inner),
+  .split-editor-container.is-fullscreen .markdown-preview-body {
+    height: calc(100vh - 210px) !important;
+  }
 }
 </style>

@@ -487,6 +487,7 @@ onUnmounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  margin-bottom: 20px;
 }
 
 .stat-card :deep(.el-card__body) {
@@ -585,6 +586,7 @@ onUnmounted(() => {
 .chart-card {
   border-radius: 16px;
   border: 1px solid var(--el-border-color-light);
+  margin-bottom: 20px;
 }
 
 .chart-title-text {
@@ -600,6 +602,7 @@ onUnmounted(() => {
 .rank-card {
   border-radius: 16px;
   border: 1px solid var(--el-border-color-light);
+  margin-bottom: 20px;
 }
 
 .rank-title-text {

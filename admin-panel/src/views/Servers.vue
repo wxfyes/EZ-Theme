@@ -197,7 +197,7 @@
           <div class="section-title mt-20">协议配置 ({{ nodeTypes[activeType] }})</div>
 
           <!-- Shadowsocks Options -->
-          <template v-if="activeType === 'shadowsocks'">
+          <template v-if="activeType === 'shadowsocks' || (activeType === 'v2node' && form.v2node_protocol === 'shadowsocks')">
             <el-form-item label="加密方式" prop="cipher">
               <el-select v-model="form.cipher" style="width: 100%">
                 <el-option label="aes-256-gcm" value="aes-256-gcm" />
@@ -224,7 +224,7 @@
           </template>
 
           <!-- VMess / Vless Visual Forms -->
-          <template v-if="activeType === 'vless' || activeType === 'vmess'">
+          <template v-if="activeType === 'vless' || activeType === 'vmess' || (activeType === 'v2node' && (form.v2node_protocol === 'vmess' || form.v2node_protocol === 'vless'))">
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="传输协议" prop="network">
@@ -250,7 +250,7 @@
               </el-col>
             </el-row>
 
-            <el-row :gutter="20" v-if="activeType === 'vless'">
+            <el-row :gutter="20" v-if="activeType === 'vless' || (activeType === 'v2node' && form.v2node_protocol === 'vless')">
               <el-col :span="12" v-if="form.network === 'tcp'">
                 <el-form-item label="XTLS流控算法" prop="flow">
                   <el-select v-model="form.flow" clearable placeholder="无流控" style="width: 100%">
@@ -269,7 +269,7 @@
               </el-col>
             </el-row>
 
-            <el-form-item label="VMess加密" v-if="activeType === 'vmess'" prop="vmess_security">
+            <el-form-item label="VMess加密" v-if="activeType === 'vmess' || (activeType === 'v2node' && form.v2node_protocol === 'vmess')" prop="vmess_security">
               <el-select v-model="form.vmess_security" style="width: 100%">
                 <el-option label="Auto" value="auto" />
                 <el-option label="AES-128-GCM" value="aes-128-gcm" />
@@ -451,7 +451,7 @@
               </el-tab-pane>
 
               <!-- Encryption Settings Tab (Vless only) -->
-              <el-tab-pane label="加密配置 (encryption_settings)" v-if="activeType === 'vless'">
+              <el-tab-pane label="加密配置 (encryption_settings)" v-if="activeType === 'vless' || (activeType === 'v2node' && form.v2node_protocol === 'vless')">
                 <div class="flex-between align-center mb-15">
                   <span class="sub-section-title">编辑加密配置</span>
                   <el-checkbox v-model="form.edit_encryption_raw">编辑原始 JSON</el-checkbox>
@@ -493,7 +493,7 @@
               </el-tab-pane>
 
               <!-- VMess Extra JSON parameters -->
-              <template v-if="activeType === 'vmess'">
+              <template v-if="activeType === 'vmess' || (activeType === 'v2node' && form.v2node_protocol === 'vmess')">
                 <el-tab-pane label="DNS 配置 (dnsSettings)">
                   <el-input type="textarea" :rows="8" v-model="form.dnsSettings_str" placeholder="{}" class="code-textarea" />
                 </el-tab-pane>
@@ -505,7 +505,7 @@
           </template>
 
           <!-- Trojan Options -->
-          <template v-if="activeType === 'trojan'">
+          <template v-if="activeType === 'trojan' || (activeType === 'v2node' && form.v2node_protocol === 'trojan')">
             <el-form-item label="SNI/域名" prop="server_name">
               <el-input v-model="form.server_name" placeholder="请输入 SNI / Server Name" />
             </el-form-item>
@@ -515,7 +515,7 @@
           </template>
 
           <!-- Hysteria Options -->
-          <template v-if="activeType === 'hysteria'">
+          <template v-if="activeType === 'hysteria' || (activeType === 'v2node' && form.v2node_protocol === 'hysteria2')">
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Hysteria 版本" prop="version">
@@ -561,7 +561,7 @@
           </template>
 
           <!-- Tuic Options -->
-          <template v-if="activeType === 'tuic'">
+          <template v-if="activeType === 'tuic' || (activeType === 'v2node' && form.v2node_protocol === 'tuic')">
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="SNI / ServerName" prop="server_name">
@@ -616,8 +616,35 @@
 
           <!-- V2node Options -->
           <template v-if="activeType === 'v2node'">
-            <el-form-item label="高级参数" prop="v2node_custom">
-              <el-input type="textarea" :rows="6" v-model="form.v2node_custom_str" placeholder="{}" class="code-textarea" />
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="监听地址">
+                  <el-input v-model="form.listen_ip" placeholder="默认 0.0.0.0" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="协议类型">
+                  <el-select v-model="form.v2node_protocol" style="width: 100%" @change="handleV2nodeProtocolChange">
+                    <el-option label="AnyTLS" value="anytls" />
+                    <el-option label="Hysteria2" value="hysteria2" />
+                    <el-option label="Shadowsocks" value="shadowsocks" />
+                    <el-option label="Trojan" value="trojan" />
+                    <el-option label="Tuic" value="tuic" />
+                    <el-option label="VLess" value="vless" />
+                    <el-option label="VMess" value="vmess" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </template>
+
+          <!-- V2node AnyTLS (raw JSON since padding_scheme is complex) -->
+          <template v-if="activeType === 'v2node' && form.v2node_protocol === 'anytls'">
+            <el-form-item label="TLS SNI">
+              <el-input v-model="form.server_name" placeholder="证书验证SNI域名" />
+            </el-form-item>
+            <el-form-item label="允许不安全">
+              <el-switch v-model="form.allow_insecure" :active-value="1" :inactive-value="0" />
             </el-form-item>
           </template>
 
@@ -827,9 +854,12 @@ const form = reactive({
   zero_rtt_handshake: 1,
   congestion_control: 'bbr',
 
-  // Custom configurations (for AnyTLS and V2node backup)
+  // Custom configurations (for AnyTLS)
   anytls_custom_str: '{}',
-  v2node_custom_str: '{}'
+
+  // V2node specific
+  listen_ip: '0.0.0.0',
+  v2node_protocol: 'vmess'
 });
 
 const rules = {
@@ -1079,6 +1109,55 @@ const handleNetworkChange = (newVal) => {
   syncNetworkSettingsToRaw();
 };
 
+// Build tls_settings object from form fields (shared between vless/vmess/v2node submit)
+const buildTlsSettings = () => {
+  if (form.tls === 1) {
+    const s = {
+      server_name: form.tls_settings.server_name,
+      cert_mode: form.tls_settings.cert_mode,
+      fingerprint: form.tls_settings.fingerprint,
+      allow_insecure: String(form.tls_settings.allow_insecure),
+      reject_unknown_sni: String(form.tls_settings.reject_unknown_sni)
+    };
+    if (form.tls_settings.cert_mode === 'dns') {
+      s.provider = form.tls_settings.provider;
+      s.dns_env = form.tls_settings.dns_env;
+    }
+    if (form.tls_settings.cert_mode !== 'none') {
+      if (form.tls_settings.cert_file) s.cert_file = form.tls_settings.cert_file;
+      if (form.tls_settings.key_file) s.key_file = form.tls_settings.key_file;
+    }
+    return s;
+  } else if (form.tls === 2) {
+    const s = {
+      server_name: form.tls_settings.server_name,
+      dest: form.tls_settings.dest,
+      server_port: form.tls_settings.server_port || '443',
+      xver: String(form.tls_settings.xver),
+      fingerprint: form.tls_settings.fingerprint,
+      allow_insecure: String(form.tls_settings.allow_insecure)
+    };
+    if (form.tls_settings.private_key) s.private_key = form.tls_settings.private_key;
+    if (form.tls_settings.public_key) s.public_key = form.tls_settings.public_key;
+    if (form.tls_settings.short_id) s.short_id = form.tls_settings.short_id;
+    return s;
+  }
+  return {};
+};
+
+// Reset sub-protocol fields when switching v2node protocol
+const handleV2nodeProtocolChange = (proto) => {
+  form.tls = ['hysteria2', 'trojan', 'tuic', 'anytls'].includes(proto) ? 1 : 0;
+  form.network = 'tcp';
+  form.network_settings = {};
+  form.network_settings_raw_str = '{}';
+  form.tls_settings = { server_name: '', cert_mode: 'self', provider: '', dns_env: '', cert_file: '', key_file: '', dest: '', server_port: '443', xver: 0, private_key: '', public_key: '', short_id: '', fingerprint: 'chrome', reject_unknown_sni: 0, allow_insecure: 0 };
+  form.tls_settings_raw_str = '{}';
+  form.server_name = '';
+  form.insecure = 0;
+  form.allow_insecure = 0;
+};
+
 const handleToggleShow = async (row, type, val) => {
   try {
     const securePath = getSecurePath();
@@ -1178,7 +1257,8 @@ const handleCreateCommand = (type) => {
   form.congestion_control = 'bbr';
 
   form.anytls_custom_str = '{}';
-  form.v2node_custom_str = '{}';
+  form.listen_ip = '0.0.0.0';
+  form.v2node_protocol = 'vmess';
   
   dialogVisible.value = true;
 };
@@ -1305,10 +1385,57 @@ const openEditDialog = (row, type) => {
     omit.forEach(k => delete custom[k]);
     form.anytls_custom_str = JSON.stringify(custom, null, 2);
   } else if (type === 'v2node') {
-    const custom = { ...row };
-    const omit = ['id', 'name', 'rate', 'group_id', 'host', 'port', 'server_port', 'parent_id', 'route_id', 'tags', 'show', 'type', 'created_at', 'updated_at', 'install_command'];
-    omit.forEach(k => delete custom[k]);
-    form.v2node_custom_str = JSON.stringify(custom, null, 2);
+    form.listen_ip = row.listen_ip || '0.0.0.0';
+    const proto = row.protocol || 'vmess';
+    form.v2node_protocol = proto;
+    // Reuse existing sub-protocol form fields
+    if (proto === 'shadowsocks') {
+      form.cipher = row.cipher || 'aes-256-gcm';
+    } else if (proto === 'vmess') {
+      form.network = row.network || 'tcp';
+      form.tls = row.tls || 0;
+      form.vmess_security = row.network_settings?.security || 'none';
+      const tls = row.tls_settings || {};
+      form.tls_settings = { server_name: tls.server_name || '', cert_mode: tls.cert_mode || 'self', provider: tls.provider || '', dns_env: tls.dns_env || '', cert_file: tls.cert_file || '', key_file: tls.key_file || '', dest: tls.dest || '', server_port: tls.server_port || '443', xver: tls.xver || 0, private_key: tls.private_key || '', public_key: tls.public_key || '', short_id: tls.short_id || '', fingerprint: tls.fingerprint || 'chrome', reject_unknown_sni: Number(tls.reject_unknown_sni) || 0, allow_insecure: Number(tls.allow_insecure) || 0 };
+      form.tls_settings_raw_str = JSON.stringify(tls, null, 2);
+      const ns = row.network_settings || {};
+      form.network_settings = JSON.parse(JSON.stringify(ns));
+      form.network_settings_raw_str = JSON.stringify(ns, null, 2);
+    } else if (proto === 'vless') {
+      form.tls = row.tls || 0;
+      form.network = row.network || 'tcp';
+      form.flow = row.flow || null;
+      form.encryption = row.encryption || 'none';
+      const tls = row.tls_settings || {};
+      form.tls_settings = { server_name: tls.server_name || '', cert_mode: tls.cert_mode || 'self', provider: tls.provider || '', dns_env: tls.dns_env || '', cert_file: tls.cert_file || '', key_file: tls.key_file || '', dest: tls.dest || '', server_port: tls.server_port || '443', xver: tls.xver || 0, private_key: tls.private_key || '', public_key: tls.public_key || '', short_id: tls.short_id || '', fingerprint: tls.fingerprint || 'chrome', reject_unknown_sni: Number(tls.reject_unknown_sni) || 0, allow_insecure: Number(tls.allow_insecure) || 0 };
+      form.tls_settings_raw_str = JSON.stringify(tls, null, 2);
+      const ns = row.network_settings || {};
+      form.network_settings = JSON.parse(JSON.stringify(ns));
+      form.network_settings_raw_str = JSON.stringify(ns, null, 2);
+    } else if (proto === 'trojan') {
+      form.server_name = row.server_name || '';
+      form.allow_insecure = row.allow_insecure || 0;
+    } else if (proto === 'hysteria2') {
+      form.up_mbps = row.up_mbps || 0;
+      form.down_mbps = row.down_mbps || 0;
+      form.obfs = row.obfs || '';
+      form.obfs_password = row.obfs_password || '';
+      const tls = row.tls_settings || {};
+      form.server_name = tls.server_name || '';
+      form.insecure = tls.insecure || 0;
+    } else if (proto === 'tuic') {
+      const tls = row.tls_settings || {};
+      form.server_name = tls.server_name || '';
+      form.insecure = tls.insecure || 0;
+      form.disable_sni = row.disable_sni || 0;
+      form.udp_relay_mode = row.udp_relay_mode || 'native';
+      form.zero_rtt_handshake = row.zero_rtt_handshake || 0;
+      form.congestion_control = row.congestion_control || 'bbr';
+    } else if (proto === 'anytls') {
+      const tls = row.tls_settings || {};
+      form.server_name = tls.server_name || '';
+      form.allow_insecure = tls.insecure || 0;
+    }
   }
 
   dialogVisible.value = true;
@@ -1468,8 +1595,49 @@ const handleSubmit = async () => {
         const custom = parseJSON(form.anytls_custom_str, '高级参数');
         Object.assign(payload, custom);
       } else if (activeType.value === 'v2node') {
-        const custom = parseJSON(form.v2node_custom_str, '高级参数');
-        Object.assign(payload, custom);
+        payload.listen_ip = form.listen_ip || '0.0.0.0';
+        payload.protocol = form.v2node_protocol;
+        const proto = form.v2node_protocol;
+        if (proto === 'shadowsocks') {
+          payload.cipher = form.cipher;
+        } else if (proto === 'vmess') {
+          payload.network = form.network;
+          payload.tls = form.tls;
+          const ns = form.edit_network_raw ? parseJSON(form.network_settings_raw_str, '传输配置') : JSON.parse(JSON.stringify(form.network_settings));
+          ns.security = form.vmess_security;
+          payload.network_settings = ns;
+          if (form.tls > 0) {
+            payload.tls_settings = form.edit_tls_raw ? parseJSON(form.tls_settings_raw_str, '安全性配置') : buildTlsSettings();
+          }
+        } else if (proto === 'vless') {
+          payload.tls = form.tls;
+          payload.network = form.network;
+          payload.flow = form.network === 'tcp' ? form.flow : null;
+          payload.encryption = form.encryption;
+          payload.network_settings = form.edit_network_raw ? parseJSON(form.network_settings_raw_str, '传输配置') : JSON.parse(JSON.stringify(form.network_settings));
+          if (form.tls > 0) {
+            payload.tls_settings = form.edit_tls_raw ? parseJSON(form.tls_settings_raw_str, '安全性配置') : buildTlsSettings();
+          }
+        } else if (proto === 'trojan') {
+          payload.server_name = form.server_name;
+          payload.allow_insecure = form.allow_insecure;
+        } else if (proto === 'hysteria2') {
+          payload.up_mbps = form.up_mbps;
+          payload.down_mbps = form.down_mbps;
+          payload.tls_settings = { server_name: form.server_name, insecure: form.insecure };
+          if (form.obfs) {
+            payload.obfs = form.obfs;
+            if (form.obfs_password) payload.obfs_password = form.obfs_password;
+          }
+        } else if (proto === 'tuic') {
+          payload.disable_sni = form.disable_sni;
+          payload.udp_relay_mode = form.udp_relay_mode;
+          payload.zero_rtt_handshake = form.zero_rtt_handshake;
+          payload.congestion_control = form.congestion_control;
+          payload.tls_settings = { server_name: form.server_name, insecure: form.insecure };
+        } else if (proto === 'anytls') {
+          payload.tls_settings = { server_name: form.server_name, insecure: form.allow_insecure };
+        }
       }
 
       await api.post(`/${securePath}/server/${activeType.value}/save`, payload);
