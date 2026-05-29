@@ -156,8 +156,9 @@
             type="textarea"
             :rows="3"
             v-model="replyText"
-            placeholder="请输入回复内容..."
+            placeholder="请输入回复内容... (支持拖拽或 Ctrl+V 直接粘贴上传截图)"
             @keyup.ctrl.enter="handleReply"
+            @paste="handlePaste"
           />
           <div class="flex-between align-center mt-10">
             <span class="font-11 text-secondary flex-center gap-10">
@@ -581,6 +582,35 @@ const handleImageFileSelect = async (event) => {
   } finally {
     imageUploading.value = false;
     event.target.value = '';
+  }
+};
+
+const handlePaste = async (event) => {
+  const items = event.clipboardData?.items;
+  if (!items) return;
+  
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) {
+        event.preventDefault();
+        imageUploading.value = true;
+        try {
+          const res = await uploadImage(file);
+          if (res && res.markdown) {
+            replyText.value = (replyText.value ? replyText.value + '\n' : '') + res.markdown;
+            ElMessage.success('已从剪贴板粘贴并上传图片');
+          }
+        } catch (err) {
+          console.error(err);
+          ElMessage.error(err.message || '图片上传失败');
+        } finally {
+          imageUploading.value = false;
+        }
+        break;
+      }
+    }
   }
 };
 
