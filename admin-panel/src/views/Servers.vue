@@ -179,11 +179,27 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="路由组" prop="route_id">
-                <el-select v-model="form.route_id" multiple collapse-tags placeholder="选择分流路由组" style="width: 100%">
-                  <el-option v-for="r in routeList" :key="r.id" :label="r.remarks" :value="r.id" />
-                </el-select>
-              </el-form-item>
+              <!-- V2node: 显示协议类型；其他节点: 显示路由组 -->
+              <template v-if="activeType === 'v2node'">
+                <el-form-item label="协议类型">
+                  <el-select v-model="form.v2node_protocol" style="width: 100%" @change="handleV2nodeProtocolChange">
+                    <el-option label="AnyTLS" value="anytls" />
+                    <el-option label="Hysteria2" value="hysteria2" />
+                    <el-option label="Shadowsocks" value="shadowsocks" />
+                    <el-option label="Trojan" value="trojan" />
+                    <el-option label="Tuic" value="tuic" />
+                    <el-option label="VLess" value="vless" />
+                    <el-option label="VMess" value="vmess" />
+                  </el-select>
+                </el-form-item>
+              </template>
+              <template v-else>
+                <el-form-item label="路由组" prop="route_id">
+                  <el-select v-model="form.route_id" multiple collapse-tags placeholder="选择分流路由组" style="width: 100%">
+                    <el-option v-for="r in routeList" :key="r.id" :label="r.remarks" :value="r.id" />
+                  </el-select>
+                </el-form-item>
+              </template>
             </el-col>
           </el-row>
 
@@ -244,7 +260,7 @@
                   <el-select v-model="form.tls" style="width: 100%">
                     <el-option label="无安全性" :value="0" />
                     <el-option label="TLS" :value="1" />
-                    <el-option label="Reality" :value="2" v-if="activeType === 'vless'" />
+                    <el-option label="Reality" :value="2" v-if="activeType === 'vless' || (activeType === 'v2node' && form.v2node_protocol === 'vless')" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -614,7 +630,7 @@
             </el-form-item>
           </template>
 
-          <!-- V2node Options -->
+          <!-- V2node Options: 监听地址 + 路由组（协议类型已移至基础配置区） -->
           <template v-if="activeType === 'v2node'">
             <el-row :gutter="20">
               <el-col :span="12">
@@ -623,15 +639,9 @@
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="协议类型">
-                  <el-select v-model="form.v2node_protocol" style="width: 100%" @change="handleV2nodeProtocolChange">
-                    <el-option label="AnyTLS" value="anytls" />
-                    <el-option label="Hysteria2" value="hysteria2" />
-                    <el-option label="Shadowsocks" value="shadowsocks" />
-                    <el-option label="Trojan" value="trojan" />
-                    <el-option label="Tuic" value="tuic" />
-                    <el-option label="VLess" value="vless" />
-                    <el-option label="VMess" value="vmess" />
+                <el-form-item label="路由组">
+                  <el-select v-model="form.route_id" multiple collapse-tags placeholder="选择分流路由组" style="width: 100%">
+                    <el-option v-for="r in routeList" :key="r.id" :label="r.remarks" :value="r.id" />
                   </el-select>
                 </el-form-item>
               </el-col>
