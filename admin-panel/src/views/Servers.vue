@@ -28,7 +28,7 @@
     <el-tabs v-model="activeTab" class="mt-20 node-tabs" @tab-change="handleTabChange">
       <el-tab-pane v-for="(label, type) in nodeTypes" :key="type" :label="label" :name="type">
         <el-card class="table-card" shadow="hover">
-          <el-table :data="type === 'all' ? allNodes : (nodeLists[type] || [])" v-loading="loading" stripe style="width: 100%">
+          <el-table :data="getPaginatedNodes(type)" v-loading="loading" stripe style="width: 100%">
             <el-table-column prop="id" label="ID" width="70" align="center" />
             
             <el-table-column v-if="type === 'all'" prop="type" label="协议类型" width="120" align="center">
@@ -71,15 +71,19 @@
               </template>
             </el-table-column>
 
-            <el-table-column prop="sort" label="排序" width="100" align="center">
+            <el-table-column label="排序" width="80" align="center">
               <template #default="scope">
-                <el-input-number 
-                  v-model="scope.row.sort" 
-                  :min="0" 
-                  :controls="false" 
-                  size="small" 
-                  style="width: 70px"
-                />
+                <el-tooltip content="按住鼠标拖动可直接调整节点顺序" placement="top">
+                  <div 
+                    class="drag-handle" 
+                    draggable="true" 
+                    @dragstart="handleDragStart(scope.$index)"
+                    @dragover.prevent="handleDragOver(scope.$index)"
+                    @dragend="handleDragEnd"
+                  >
+                    <el-icon :size="16"><Rank /></el-icon>
+                  </div>
+                </el-tooltip>
               </template>
             </el-table-column>
 
@@ -102,6 +106,17 @@
               </template>
             </el-table-column>
           </el-table>
+
+          <div class="pagination flex-between mt-20" v-if="getNodeListTotal(type) > nodePageSize">
+            <span class="pagination-info">共 {{ getNodeListTotal(type) }} 个节点</span>
+            <el-pagination
+              v-model:current-page="nodeCurrentPage"
+              v-model:page-size="nodePageSize"
+              :page-sizes="[50, 100, 150, 200]"
+              layout="sizes, prev, pager, next"
+              :total="getNodeListTotal(type)"
+            />
+          </div>
         </el-card>
       </el-tab-pane>
     </el-tabs>
@@ -878,8 +893,72 @@ const tcp_host_shortcut = computed({
 });
 
 const getGroupName = (id) => {
-  const g = groupList.value.find(item => item.id === id);
+  const g = groupList.value.find(item => Number(item.id) === Number(id));
   return g ? g.name : `组 ${id}`;
+};
+
+// Local pagination logic
+const nodePageSize = ref(50);
+const nodeCurrentPage = ref(1);
+
+const getNodeListTotal = (type) => {
+  const list = type === 'all' ? allNodes.value : (nodeLists[type] || []);
+  return list.length;
+};
+
+const getPaginatedNodes = (type) => {
+  const list = type === 'all' ? allNodes.value : (nodeLists[type] || []);
+  const start = (nodeCurrentPage.value - 1) * nodePageSize.value;
+  const end = start + nodePageSize.value;
+  return list.slice(start, end);
+};
+
+// Drag and drop sorting logic
+const dragIndex = ref(-1);
+
+const handleDragStart = (index) => {
+  const absoluteIndex = (nodeCurrentPage.value - 1) * nodePageSize.value + index;
+  dragIndex.value = absoluteIndex;
+};
+
+const handleDragOver = (index) => {
+  const absoluteIndex = (nodeCurrentPage.value - 1) * nodePageSize.value + index;
+  if (dragIndex.value === -1 || dragIndex.value === absoluteIndex) return;
+  swapNodes(dragIndex.value, absoluteIndex);
+  dragIndex.value = absoluteIndex;
+};
+
+const handleDragEnd = () => {
+  dragIndex.value = -1;
+};
+
+const swapNodes = (fromIndex, toIndex) => {
+  if (fromIndex < 0 || toIndex < 0) return;
+  
+  if (activeTab.value === 'all') {
+    const list = [...allNodes.value];
+    const temp = list[fromIndex];
+    list.splice(fromIndex, 1, list[toIndex]);
+    list.splice(toIndex, 1, temp);
+    
+    // Assign sequential sort values to original lists
+    list.forEach((node, idx) => {
+      const orig = nodeLists[node.type].find(n => n.id === node.id);
+      if (orig) {
+        orig.sort = idx;
+      }
+    });
+  } else {
+    const list = nodeLists[activeTab.value];
+    const temp = list[fromIndex];
+    list.splice(fromIndex, 1, list[toIndex]);
+    list.splice(toIndex, 1, temp);
+    
+    // Assign sequential sort values to current list
+    list.forEach((node, idx) => {
+      node.sort = idx;
+    });
+  }
 };
 
 const fetchGroups = async () => {
@@ -933,6 +1012,7 @@ const handleTabChange = (name) => {
   if (name !== 'all') {
     activeType.value = name;
   }
+  nodeCurrentPage.value = 1; // Reset local page when switching tabs
 };
 
 const saveSortLoading = ref(false);
@@ -1518,5 +1598,25 @@ onMounted(() => {
 
 .p-10 {
   padding: 10px;
+}
+
+.drag-handle {
+  cursor: grab;
+  color: var(--el-text-color-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+.drag-handle:active {
+  cursor: grabbing;
+  color: var(--el-color-primary);
+  background-color: var(--el-fill-color-light);
+}
+.drag-handle:hover {
+  color: var(--el-color-primary);
+  background-color: var(--el-fill-color-lighter);
 }
 </style>

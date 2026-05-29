@@ -54,50 +54,17 @@
     <el-card class="table-card mt-20" shadow="hover">
       <el-table :data="users" v-loading="loading" stripe style="width: 100%">
         <el-table-column prop="id" label="ID" width="70" align="center" />
-        <el-table-column prop="email" label="用户邮箱" min-width="180" show-overflow-tooltip>
+        
+        <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip>
           <template #default="scope">
-            <div class="email-cell flex-center" style="justify-content: flex-start; gap: 6px;">
+            <div class="email-cell flex-center" style="justify-content: flex-start; gap: 4px;">
+              <span :class="['status-dot', scope.row.alive_ip > 0 ? 'online' : 'offline']">●</span>
               <span>{{ scope.row.email }}</span>
-              <el-tooltip :content="`在线设备数: ${scope.row.alive_ip || 0} (${scope.row.ips || '无IP记录'})`" placement="top">
-                <el-badge v-if="scope.row.alive_ip > 0" :value="scope.row.alive_ip" type="success" class="online-badge" />
-              </el-tooltip>
             </div>
           </template>
         </el-table-column>
         
-        <el-table-column prop="plan_name" label="订阅计划" width="130">
-          <template #default="scope">
-            <el-tag :type="scope.row.plan_name ? 'primary' : 'info'" size="small">
-              {{ scope.row.plan_name || '无订阅' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="流量使用 (已用 / 总额)" min-width="200">
-          <template #default="scope">
-            <div class="traffic-progress">
-              <div class="flex-between traffic-text">
-                <span>{{ formatTraffic(scope.row.u + scope.row.d) }}</span>
-                <span>{{ formatTraffic(scope.row.transfer_enable) }}</span>
-              </div>
-              <el-progress 
-                :percentage="calculatePercentage(scope.row.u + scope.row.d, scope.row.transfer_enable)" 
-                :status="getProgressStatus(scope.row.u + scope.row.d, scope.row.transfer_enable)"
-                :show-text="false"
-              />
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="expired_at" label="到期时间" width="160">
-          <template #default="scope">
-            <span :class="{ 'text-danger': isExpired(scope.row.expired_at) }">
-              {{ formatTime(scope.row.expired_at) }}
-            </span>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="banned" label="状态" width="90" align="center">
+        <el-table-column prop="banned" label="状态" width="80" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.banned ? 'danger' : 'success'" size="small">
               {{ scope.row.banned ? '已封禁' : '正常' }}
@@ -105,7 +72,97 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="200" align="right" fixed="right">
+        <el-table-column prop="plan_name" label="订阅" width="120" show-overflow-tooltip>
+          <template #default="scope">
+            <el-tag :type="scope.row.plan_name ? 'primary' : 'info'" size="small">
+              {{ scope.row.plan_name || '无订阅' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="group_id" label="权限组" width="120" show-overflow-tooltip>
+          <template #default="scope">
+            <el-tag v-if="scope.row.group_id" type="warning" size="small">
+              {{ getGroupName(scope.row.group_id) }}
+            </el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="已用(G)" width="100" align="right">
+          <template #default="scope">
+            <span>{{ ((scope.row.u + scope.row.d) / 1073741824).toFixed(2) }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="流量(G)" width="100" align="right">
+          <template #default="scope">
+            <span>{{ (scope.row.transfer_enable / 1073741824).toFixed(2) }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="设备数" width="90" align="center">
+          <template #default="scope">
+            <span>{{ scope.row.alive_ip || 0 }} / {{ scope.row.device_limit !== null && scope.row.device_limit !== undefined ? scope.row.device_limit : '∞' }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="到期时间" width="150">
+          <template #default="scope">
+            <span :class="{ 'text-danger': isExpired(scope.row.expired_at) }">
+              {{ formatTime(scope.row.expired_at) }}
+            </span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="客户端登录时间" width="160">
+          <template #default="scope">
+            <span>{{ scope.row.client_login_at ? formatTime(scope.row.client_login_at) : '-' }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="客户端类型" width="180">
+          <template #default="scope">
+            <div v-if="parseClientHistory(scope.row.client_type).length > 0" class="client-type-text">
+              <span>{{ getClientTypeMain(scope.row.client_type) }}</span>
+              <el-tooltip placement="top" effect="dark" raw-content>
+                <template #content>
+                  <div class="client-tooltip-content">
+                    <div v-for="(log, idx) in parseClientHistory(scope.row.client_type)" :key="idx" class="client-tooltip-item">
+                      <span style="color: var(--el-color-primary)">{{ formatTime(log.time) }}</span><br/>
+                      <span>{{ log.type }} (IP: {{ log.ip }})</span><br/>
+                      <span style="color: var(--el-text-color-secondary); font-size: 11px">{{ log.ua }}</span>
+                    </div>
+                  </div>
+                </template>
+                <span v-if="parseClientHistory(scope.row.client_type).length > 1" class="client-more-tag">
+                  +{{ parseClientHistory(scope.row.client_type).length - 1 }}
+                </span>
+              </el-tooltip>
+            </div>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="余额" width="90" align="right">
+          <template #default="scope">
+            <span>{{ ((scope.row.balance || 0) / 100).toFixed(2) }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="佣金" width="90" align="right">
+          <template #default="scope">
+            <span>{{ ((scope.row.commission_balance || 0) / 100).toFixed(2) }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="加入时间" width="160">
+          <template #default="scope">
+            <span>{{ formatTime(scope.row.created_at) }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="操作" width="140" align="right" fixed="right">
           <template #default="scope">
             <el-button type="primary" link @click="openEditDialog(scope.row)">编辑</el-button>
             <el-dropdown trigger="click" @command="(cmd) => handleMoreCommand(cmd, scope.row)">
@@ -450,6 +507,41 @@ const fetchPlans = async () => {
   }
 };
 
+const groupList = ref([]);
+const fetchGroups = async () => {
+  try {
+    const securePath = getSecurePath();
+    const res = await api.get(`/${securePath}/server/group/fetch`);
+    if (res.data) {
+      groupList.value = res.data;
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const getGroupName = (id) => {
+  if (!id) return '-';
+  const g = groupList.value.find(item => Number(item.id) === Number(id));
+  return g ? g.name : `组 ${id}`;
+};
+
+const parseClientHistory = (jsonStr) => {
+  if (!jsonStr) return [];
+  try {
+    const arr = JSON.parse(jsonStr);
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    return [];
+  }
+};
+
+const getClientTypeMain = (jsonStr) => {
+  const history = parseClientHistory(jsonStr);
+  if (history.length === 0) return '-';
+  return history[0].type || '未知';
+};
+
 // Fetch user data with search filters
 const fetchUsers = async () => {
   loading.value = true;
@@ -676,6 +768,7 @@ const handleMoreCommand = async (command, row) => {
 
 onMounted(() => {
   fetchPlans();
+  fetchGroups();
   fetchUsers();
 });
 </script>
@@ -725,5 +818,44 @@ onMounted(() => {
 
 .gap-10 {
   gap: 10px;
+}
+
+.status-dot {
+  display: inline-block;
+  font-size: 14px;
+  line-height: 1;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+.status-dot.online {
+  color: var(--el-color-success);
+}
+.status-dot.offline {
+  color: var(--el-color-info);
+  opacity: 0.5;
+}
+
+.client-type-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.client-more-tag {
+  border-bottom: 1px dotted var(--el-text-color-secondary);
+  cursor: help;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+.client-tooltip-content {
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.client-tooltip-item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 0;
+}
+.client-tooltip-item:last-child {
+  border-bottom: none;
 }
 </style>

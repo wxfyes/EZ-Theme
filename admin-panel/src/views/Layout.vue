@@ -11,7 +11,7 @@
         :default-active="activeMenu"
         class="el-menu-vertical"
         :collapse="isCollapse"
-        unique-opened
+        :default-openeds="['server-group', 'finance-group', 'user-group']"
         router
       >
         <el-menu-item index="/dashboard">
@@ -87,6 +87,10 @@
         <el-menu-item index="/settings">
           <el-icon><Setting /></el-icon>
           <template #title>系统设置</template>
+        </el-menu-item>
+        <el-menu-item index="/queues">
+          <el-icon><Cpu /></el-icon>
+          <template #title>队列监控</template>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -223,6 +227,8 @@ onMounted(() => {
 .el-menu-vertical {
   border-right: none;
   flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .el-menu-vertical:not(.el-menu--collapse) {

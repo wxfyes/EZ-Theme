@@ -16,6 +16,7 @@ const Notices = () => import('../views/Notices.vue');
 const Tickets = () => import('../views/Tickets.vue');
 const Knowledges = () => import('../views/Knowledges.vue');
 const Settings = () => import('../views/Settings.vue');
+const Queues = () => import('../views/Queues.vue');
 
 const routes = [
   {
@@ -106,6 +107,12 @@ const routes = [
         name: 'Settings',
         component: Settings,
         meta: { title: '系统设置', requiresAuth: true }
+      },
+      {
+        path: 'queues',
+        name: 'Queues',
+        component: Queues,
+        meta: { title: '队列监控', requiresAuth: true }
       }
     ]
   }
