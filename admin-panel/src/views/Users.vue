@@ -718,18 +718,25 @@ const handleUpdateUser = async () => {
   submitLoading.value = true;
   try {
     const securePath = getSecurePath();
+    
+    const parseIntegerOrNull = (val) => {
+      if (val === null || val === undefined || val === '') return null;
+      const parsed = parseInt(val);
+      return isNaN(parsed) ? null : parsed;
+    };
+
     const payload = {
       id: editForm.id,
       email: editForm.email,
       balance: Math.round(editForm.balance * 100),
       commission_balance: Math.round(editForm.commission_balance * 100),
       plan_id: editForm.plan_id,
-      transfer_enable: editForm.transfer_enable_gb * 1073741824,
-      u: editForm.u_gb * 1073741824,
-      d: editForm.d_gb * 1073741824,
-      expired_at: editForm.expired_at ? parseInt(editForm.expired_at) : null,
-      device_limit: editForm.device_limit || null,
-      speed_limit: editForm.speed_limit || null,
+      transfer_enable: Math.round(editForm.transfer_enable_gb * 1073741824),
+      u: Math.round(editForm.u_gb * 1073741824),
+      d: Math.round(editForm.d_gb * 1073741824),
+      expired_at: parseIntegerOrNull(editForm.expired_at),
+      device_limit: parseIntegerOrNull(editForm.device_limit),
+      speed_limit: parseIntegerOrNull(editForm.speed_limit),
       banned: editForm.banned,
       is_admin: editForm.is_admin,
       is_staff: editForm.is_staff,
