@@ -262,7 +262,14 @@
 
                 </div>
 
-                <div class="message-text">{{ message.message }}</div>
+                <div class="message-text">
+                  <template v-for="(part, pIdx) in parseMessageContent(message.message)" :key="pIdx">
+                    <span v-if="part.type === 'text'" style="white-space: pre-wrap; word-break: break-all;">{{ part.content }}</span>
+                    <div v-else-if="part.type === 'image'" class="chat-image-wrapper" @click="previewImage(part.url)">
+                      <img :src="part.url" class="chat-image" />
+                    </div>
+                  </template>
+                </div>
 
               </div>
 
@@ -756,6 +763,34 @@ const getPriorityLabel = (level) => {
 };
 
 
+
+const parseMessageContent = (text) => {
+  if (!text) return [];
+  const regex = /!\[(.*?)\]\((.*?)\)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = regex.exec(text)) !== null) {
+    const textBefore = text.substring(lastIndex, match.index);
+    if (textBefore) {
+      parts.push({ type: 'text', content: textBefore });
+    }
+    parts.push({ type: 'image', alt: match[1], url: match[2] });
+    lastIndex = regex.lastIndex;
+  }
+  
+  const textAfter = text.substring(lastIndex);
+  if (textAfter) {
+    parts.push({ type: 'text', content: textAfter });
+  }
+  
+  return parts;
+};
+
+const previewImage = (url) => {
+  window.open(url, '_blank');
+};
 
 const formatDate = (timestamp) => {
 
@@ -3675,6 +3710,26 @@ fetchTickets();
       padding: 0.6rem 1.2rem;
       font-size: 0.9rem;
     }
+  }
+}
+
+.chat-image-wrapper {
+  margin-top: 8px;
+  max-width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.chat-image {
+  max-width: 250px;
+  max-height: 250px;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+  transition: transform 0.2s ease;
+  &:hover {
+    transform: scale(1.02);
   }
 }
 

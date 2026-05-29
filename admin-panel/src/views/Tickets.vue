@@ -275,7 +275,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -356,6 +356,52 @@ const replyText = ref('');
 const replyLoading = ref(false);
 const chatScrollRef = ref(null);
 
+const refreshInterval = ref(null);
+
+const clearRefreshInterval = () => {
+  if (refreshInterval.value) {
+    clearInterval(refreshInterval.value);
+    refreshInterval.value = null;
+  }
+};
+
+const setupRefreshInterval = (ticketId) => {
+  clearRefreshInterval();
+  if (activeTicket.value && activeTicket.value.status === 0) {
+    refreshInterval.value = setInterval(async () => {
+      if (chatVisible.value && activeTicket.value && activeTicket.value.id === ticketId) {
+        try {
+          const securePath = getSecurePath();
+          const res = await api.get(`/${securePath}/ticket/fetch`, { params: { id: ticketId } });
+          if (res.data) {
+            // Check if messages count or update time changed before replacing to prevent unnecessary DOM updates
+            const newMessages = res.data.message || [];
+            if (newMessages.length !== chatMessages.value.length) {
+              activeTicket.value = res.data;
+              chatMessages.value = newMessages;
+              scrollToBottom();
+            }
+          }
+        } catch (err) {
+          console.error('Auto refresh error:', err);
+        }
+      } else {
+        clearRefreshInterval();
+      }
+    }, 5000);
+  }
+};
+
+watch(chatVisible, (newVal) => {
+  if (!newVal) {
+    clearRefreshInterval();
+  }
+});
+
+onUnmounted(() => {
+  clearRefreshInterval();
+});
+
 const openTicketChat = async (row) => {
   activeTicket.value = row;
   chatMessages.value = [];
@@ -371,6 +417,8 @@ const openTicketChat = async (row) => {
       activeTicket.value = res.data;
       chatMessages.value = res.data.message || [];
       scrollToBottom();
+      
+      setupRefreshInterval(row.id);
     }
     
     // Asynchronously get user email
@@ -428,6 +476,7 @@ const handleCloseTicket = (row) => {
       ElMessage.success('工单已关闭');
       if (chatVisible.value && activeTicket.value.id === row.id) {
         activeTicket.value.status = 1;
+        clearRefreshInterval();
       }
       fetchTickets();
     } catch (err) {
