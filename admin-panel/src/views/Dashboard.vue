@@ -5,10 +5,35 @@
       <el-col :xs="24" :sm="12" :md="6" v-for="(card, index) in statCards" :key="index">
         <el-card class="stat-card" :class="{ 'clickable-card': card.route }" shadow="hover" @click="handleCardClick(card)">
           <div class="card-content flex-between">
-            <div class="card-info">
-              <span class="card-title">{{ card.title }}</span>
-              <h3 class="card-value">{{ card.value }}</h3>
-              <span class="card-sub">{{ card.sub }}</span>
+            <div class="card-info" style="flex: 1; min-width: 0; margin-right: 15px;">
+              <div class="flex-center" style="justify-content: flex-start; gap: 8px;">
+                <span class="card-title">{{ card.title }}</span>
+                <el-button
+                  v-if="index === 0"
+                  type="text"
+                  style="padding: 0; min-height: auto; font-size: 14px; color: var(--el-text-color-secondary);"
+                  @click.stop="toggleIncomeHidden"
+                >
+                  <el-icon><component :is="isIncomeHidden ? 'View' : 'Hide'" /></el-icon>
+                </el-button>
+              </div>
+              <template v-if="index === 0">
+                <h3 class="card-value">{{ isIncomeHidden ? '****' : card.value }}</h3>
+                <div class="income-details-list">
+                  <div class="income-detail-item">
+                    <span class="detail-label">本月收入</span>
+                    <span class="detail-value font-mono">{{ isIncomeHidden ? '****' : formatMoney(overrideData.month_income) }}</span>
+                  </div>
+                  <div class="income-detail-item">
+                    <span class="detail-label">上月收入</span>
+                    <span class="detail-value font-mono">{{ isIncomeHidden ? '****' : formatMoney(overrideData.last_month_income) }}</span>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <h3 class="card-value">{{ card.value }}</h3>
+                <span class="card-sub">{{ card.sub }}</span>
+              </template>
             </div>
             <div class="card-icon" :style="{ backgroundColor: card.bgColor, color: card.iconColor }">
               <el-icon><component :is="card.icon" /></el-icon>
@@ -37,7 +62,7 @@
       </el-col>
     </el-row>
 
-    <!-- Rankings Section -->
+    <!-- Node Rankings Section -->
     <el-row :gutter="20" class="mt-20">
       <el-col :xs="24" :md="12">
         <el-card class="rank-card" shadow="hover">
@@ -47,12 +72,12 @@
               <el-icon><Connection /></el-icon>
             </div>
           </template>
-          <el-table :data="serverRank" stripe style="width: 100%" height="320">
+          <el-table :data="serverTodayRank" stripe style="width: 100%" height="320">
             <el-table-column type="index" label="排名" width="60" align="center" />
             <el-table-column prop="server_name" label="节点名称" show-overflow-tooltip />
             <el-table-column prop="server_type" label="类型" width="100" align="center">
               <template #default="scope">
-                <el-tag size="small" effect="plain">{{ scope.row.server_type.toUpperCase() }}</el-tag>
+                <el-tag size="small" effect="plain">{{ scope.row.server_type ? scope.row.server_type.toUpperCase() : 'UNKNOWN' }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="total" label="流量 (GB)" width="120" align="right">
@@ -68,11 +93,59 @@
         <el-card class="rank-card" shadow="hover">
           <template #header>
             <div class="flex-between">
+              <span class="rank-title-text">昨日节点流量排名</span>
+              <el-icon><Connection /></el-icon>
+            </div>
+          </template>
+          <el-table :data="serverYesterdayRank" stripe style="width: 100%" height="320">
+            <el-table-column type="index" label="排名" width="60" align="center" />
+            <el-table-column prop="server_name" label="节点名称" show-overflow-tooltip />
+            <el-table-column prop="server_type" label="类型" width="100" align="center">
+              <template #default="scope">
+                <el-tag size="small" effect="plain">{{ scope.row.server_type ? scope.row.server_type.toUpperCase() : 'UNKNOWN' }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="total" label="流量 (GB)" width="120" align="right">
+              <template #default="scope">
+                {{ scope.row.total.toFixed(2) }} GB
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- User Rankings Section -->
+    <el-row :gutter="20" class="mt-20">
+      <el-col :xs="24" :md="12">
+        <el-card class="rank-card" shadow="hover">
+          <template #header>
+            <div class="flex-between">
               <span class="rank-title-text">今日用户流量排名</span>
               <el-icon><User /></el-icon>
             </div>
           </template>
-          <el-table :data="userRank" stripe style="width: 100%" height="320">
+          <el-table :data="userTodayRank" stripe style="width: 100%" height="320">
+            <el-table-column type="index" label="排名" width="60" align="center" />
+            <el-table-column prop="email" label="用户邮箱" show-overflow-tooltip />
+            <el-table-column prop="total" label="使用量" width="140" align="right">
+              <template #default="scope">
+                <span class="traffic-text">{{ scope.row.total.toFixed(2) }} GB</span>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+
+      <el-col :xs="24" :md="12">
+        <el-card class="rank-card" shadow="hover">
+          <template #header>
+            <div class="flex-between">
+              <span class="rank-title-text">昨日用户流量排名</span>
+              <el-icon><User /></el-icon>
+            </div>
+          </template>
+          <el-table :data="userYesterdayRank" stripe style="width: 100%" height="320">
             <el-table-column type="index" label="排名" width="60" align="center" />
             <el-table-column prop="email" label="用户邮箱" show-overflow-tooltip />
             <el-table-column prop="total" label="使用量" width="140" align="right">
@@ -111,9 +184,17 @@ const overrideData = reactive({
 });
 
 const statCards = ref([]);
-const serverRank = ref([]);
-const userRank = ref([]);
+const serverTodayRank = ref([]);
+const serverYesterdayRank = ref([]);
+const userTodayRank = ref([]);
+const userYesterdayRank = ref([]);
 let orderRawData = [];
+
+const isIncomeHidden = ref(localStorage.getItem('is_income_hidden') === 'true');
+const toggleIncomeHidden = () => {
+  isIncomeHidden.value = !isIncomeHidden.value;
+  localStorage.setItem('is_income_hidden', isIncomeHidden.value);
+};
 
 const handleCardClick = (card) => {
   if (card.route) {
@@ -139,7 +220,7 @@ const updateCards = () => {
     {
       title: '今日收入',
       value: formatMoney(overrideData.day_income),
-      sub: `本月收入: ${formatMoney(overrideData.month_income)} | 上月收入: ${formatMoney(overrideData.last_month_income)}`,
+      sub: '',
       icon: 'Money',
       bgColor: 'rgba(64, 158, 255, 0.1)',
       iconColor: 'var(--el-color-primary)',
@@ -188,14 +269,24 @@ const fetchOverride = async () => {
 const fetchRanks = async () => {
   try {
     const securePath = getSecurePath();
-    const serverRes = await api.get(`/${securePath}/stat/getServerTodayRank`);
-    if (serverRes.data) {
-      serverRank.value = serverRes.data.slice(0, 10);
+    const [serverTodayRes, serverYesterdayRes, userTodayRes, userYesterdayRes] = await Promise.all([
+      api.get(`/${securePath}/stat/getServerTodayRank`),
+      api.get(`/${securePath}/stat/getServerLastRank`),
+      api.get(`/${securePath}/stat/getUserTodayRank`),
+      api.get(`/${securePath}/stat/getUserLastRank`)
+    ]);
+
+    if (serverTodayRes.data) {
+      serverTodayRank.value = serverTodayRes.data.slice(0, 10);
     }
-    
-    const userRes = await api.get(`/${securePath}/stat/getUserTodayRank`);
-    if (userRes.data) {
-      userRank.value = userRes.data.slice(0, 10);
+    if (serverYesterdayRes.data) {
+      serverYesterdayRank.value = serverYesterdayRes.data.slice(0, 10);
+    }
+    if (userTodayRes.data) {
+      userTodayRank.value = userTodayRes.data.slice(0, 10);
+    }
+    if (userYesterdayRes.data) {
+      userYesterdayRank.value = userYesterdayRes.data.slice(0, 10);
     }
   } catch (err) {
     console.error(err);
@@ -375,6 +466,36 @@ onUnmounted(() => {
 .card-sub {
   font-size: 12px;
   color: var(--el-text-color-placeholder);
+}
+
+.income-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  border-top: 1px dashed var(--el-border-color-lighter);
+  padding-top: 8px;
+}
+
+.income-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.detail-label {
+  color: var(--el-text-color-secondary);
+}
+
+.detail-value {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.font-mono {
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 .card-icon {
