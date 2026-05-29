@@ -17,9 +17,17 @@
                   <el-icon><component :is="isIncomeHidden ? 'View' : 'Hide'" /></el-icon>
                 </el-button>
               </div>
-              <template v-if="index === 0">
-                <h3 class="card-value">{{ isIncomeHidden ? '****' : card.value }}</h3>
-                <div class="income-details-list">
+              <h3 class="card-value">
+                <template v-if="index === 0">
+                  {{ isIncomeHidden ? '****' : card.value }}
+                </template>
+                <template v-else>
+                  {{ card.value }}
+                </template>
+              </h3>
+              <div class="income-details-list">
+                <!-- Card 0: Income -->
+                <template v-if="index === 0">
                   <div class="income-detail-item">
                     <span class="detail-label">本月收入</span>
                     <span class="detail-value font-mono">{{ isIncomeHidden ? '****' : formatMoney(overrideData.month_income) }}</span>
@@ -28,12 +36,41 @@
                     <span class="detail-label">上月收入</span>
                     <span class="detail-value font-mono">{{ isIncomeHidden ? '****' : formatMoney(overrideData.last_month_income) }}</span>
                   </div>
-                </div>
-              </template>
-              <template v-else>
-                <h3 class="card-value">{{ card.value }}</h3>
-                <span class="card-sub">{{ card.sub }}</span>
-              </template>
+                </template>
+                <!-- Card 1: Users -->
+                <template v-else-if="index === 1">
+                  <div class="income-detail-item">
+                    <span class="detail-label">今日注册</span>
+                    <span class="detail-value font-mono">{{ overrideData.day_register_total }} 人</span>
+                  </div>
+                  <div class="income-detail-item">
+                    <span class="detail-label">本月注册</span>
+                    <span class="detail-value font-mono">{{ overrideData.month_register_total }} 人</span>
+                  </div>
+                </template>
+                <!-- Card 2: Traffic -->
+                <template v-else-if="index === 2">
+                  <div class="income-detail-item">
+                    <span class="detail-label">有效订阅</span>
+                    <span class="detail-value font-mono">{{ overrideData.total_user }} 人</span>
+                  </div>
+                  <div class="income-detail-item">
+                    <span class="detail-label">系统状态</span>
+                    <span class="detail-value text-success font-semibold">运行正常</span>
+                  </div>
+                </template>
+                <!-- Card 3: Tickets -->
+                <template v-else-if="index === 3">
+                  <div class="income-detail-item">
+                    <span class="detail-label">待审提现</span>
+                    <span class="detail-value font-mono">{{ overrideData.commission_pending_total }} 笔</span>
+                  </div>
+                  <div class="income-detail-item">
+                    <span class="detail-label">本月发佣</span>
+                    <span class="detail-value font-mono">{{ formatMoney(overrideData.commission_month_payout) }}</span>
+                  </div>
+                </template>
+              </div>
             </div>
             <div class="card-icon" :style="{ backgroundColor: card.bgColor, color: card.iconColor }">
               <el-icon><component :is="card.icon" /></el-icon>
@@ -181,6 +218,10 @@ const overrideData = reactive({
   day_traffic: 0,
   ticket_pending_total: 0,
   commission_pending_total: 0,
+  day_register_total: 0,
+  month_register_total: 0,
+  commission_month_payout: 0,
+  commission_last_month_payout: 0,
 });
 
 const statCards = ref([]);
@@ -496,6 +537,14 @@ onUnmounted(() => {
 
 .font-mono {
   font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+.text-success {
+  color: var(--el-color-success);
+}
+
+.font-semibold {
+  font-weight: 600;
 }
 
 .card-icon {

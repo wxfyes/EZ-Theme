@@ -69,7 +69,7 @@
     </el-card>
 
     <!-- Dialog -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="750px" top="8vh">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="1050px" top="6vh">
       <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
         <el-form-item label="文章标题" prop="title">
           <el-input v-model="form.title" placeholder="如：如何在 Windows 上配置客户端" />
@@ -103,13 +103,22 @@
         </el-row>
 
         <el-form-item label="文章内容" prop="body">
-          <el-input
-            type="textarea"
-            :rows="15"
-            v-model="form.body"
-            placeholder="支持 Markdown 语法内容..."
-            class="code-textarea"
-          />
+          <div class="split-editor-container">
+            <div class="editor-pane">
+              <div class="pane-title">编辑 Markdown</div>
+              <el-input
+                type="textarea"
+                :rows="18"
+                v-model="form.body"
+                placeholder="支持 Markdown 语法内容..."
+                class="code-textarea"
+              />
+            </div>
+            <div class="preview-pane">
+              <div class="pane-title">实时预览</div>
+              <div class="markdown-preview-body" v-html="renderedMarkdown"></div>
+            </div>
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -123,10 +132,24 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { marked } from 'marked';
+
+const renderedMarkdown = computed(() => {
+  if (!form.body) return '<div class="preview-placeholder">无内容预览</div>';
+  try {
+    let html = marked.parse(form.body);
+    // 渲染 <!--access start--> 和 <!--access end--> 标签
+    html = html.replace(/&lt;!--access start--&gt;|<!--access start-->/gi, '<div class="preview-access-block"><div class="access-header"><span class="el-tag el-tag--warning el-tag--small">付费/权限订阅可见内容</span></div><div class="access-content">');
+    html = html.replace(/&lt;!--access end--&gt;|<!--access end-->/gi, '</div></div>');
+    return html;
+  } catch (e) {
+    return `<div class="preview-placeholder">解析出错: ${e.message}</div>`;
+  }
+});
 
 const loading = ref(false);
 const sortLoading = ref(false);
@@ -325,5 +348,118 @@ onMounted(() => {
 .code-textarea :deep(.el-textarea__inner) {
   font-family: 'Courier New', Courier, monospace;
   font-size: 13px;
+}
+
+.split-editor-container {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+.editor-pane, .preview-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pane-title {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-bottom: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.markdown-preview-body {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  padding: 12px 16px;
+  height: 382px;
+  overflow-y: auto;
+  background-color: var(--el-fill-color-blank);
+  box-sizing: border-box;
+}
+
+/* Style markdown contents */
+.markdown-preview-body :deep(h1),
+.markdown-preview-body :deep(h2),
+.markdown-preview-body :deep(h3) {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+}
+
+.markdown-preview-body :deep(h1) { font-size: 1.4em; }
+.markdown-preview-body :deep(h2) { font-size: 1.2em; }
+.markdown-preview-body :deep(h3) { font-size: 1.1em; }
+
+.markdown-preview-body :deep(p) {
+  margin-top: 0;
+  margin-bottom: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-regular);
+}
+
+.markdown-preview-body :deep(a) {
+  color: var(--el-color-primary);
+  text-decoration: none;
+}
+.markdown-preview-body :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.markdown-preview-body :deep(img) {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+.markdown-preview-body :deep(code) {
+  font-family: monospace;
+  background-color: var(--el-fill-color-light);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.markdown-preview-body :deep(pre) {
+  background-color: var(--el-fill-color-light);
+  padding: 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.markdown-preview-body :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+}
+
+.preview-placeholder {
+  color: var(--el-text-color-placeholder);
+  text-align: center;
+  margin-top: 80px;
+  font-size: 14px;
+}
+
+/* Access / permission box styling */
+.markdown-preview-body :deep(.preview-access-block) {
+  border: 1px dashed var(--el-color-warning-light-3);
+  background-color: var(--el-color-warning-light-9);
+  border-radius: 8px;
+  margin: 15px 0;
+  padding: 12px;
+  position: relative;
+}
+
+.markdown-preview-body :deep(.access-header) {
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.markdown-preview-body :deep(.access-content) {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
 }
 </style>
