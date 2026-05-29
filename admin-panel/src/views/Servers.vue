@@ -75,9 +75,9 @@
     </el-tabs>
 
     <!-- Node Form Dialog -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px" top="8vh">
-      <el-scrollbar max-height="65vh">
-        <el-form :model="form" :rules="rules" ref="formRef" label-width="120px" style="padding-right: 15px;">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="750px" top="6vh">
+      <el-scrollbar max-height="72vh">
+        <el-form :model="form" :rules="rules" ref="formRef" label-width="130px" style="padding-right: 20px;">
           <!-- 基础设置 -->
           <div class="section-title">基础配置</div>
           <el-form-item label="节点名称" prop="name">
@@ -176,16 +176,16 @@
             </template>
           </template>
 
-          <!-- VMess Options -->
-          <template v-if="activeType === 'vmess'">
+          <!-- VMess / Vless Visual Forms -->
+          <template v-if="activeType === 'vless' || activeType === 'vmess'">
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="传输协议" prop="network">
-                  <el-select v-model="form.network" style="width: 100%">
+                  <el-select v-model="form.network" @change="handleNetworkChange" style="width: 100%">
                     <el-option label="TCP" value="tcp" />
                     <el-option label="WebSocket (WS)" value="ws" />
                     <el-option label="gRPC" value="grpc" />
-                    <el-option label="Hysteria" value="kcp" />
+                    <el-option label="KCP" value="kcp" />
                     <el-option label="QUIC" value="quic" />
                     <el-option label="HTTPUpgrade" value="httpupgrade" />
                     <el-option label="xhttp" value="xhttp" />
@@ -193,64 +193,17 @@
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="TLS 加密" prop="tls">
-                  <el-switch v-model="form.tls" :active-value="1" :inactive-value="0" />
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-form-item label="Vmess安全配置" prop="vmess_security">
-              <el-select v-model="form.vmess_security" style="width: 100%">
-                <el-option label="Auto" value="auto" />
-                <el-option label="AES-128-GCM" value="aes-128-gcm" />
-                <el-option label="CHACHA20-POLY1305" value="chacha20-poly1305" />
-                <el-option label="None" value="none" />
-              </el-select>
-            </el-form-item>
-
-            <el-tabs type="border-card" class="mt-15 advanced-json-tabs">
-              <el-tab-pane label="TLS 配置 (tlsSettings)">
-                <el-input type="textarea" :rows="6" v-model="form.tlsSettings_str" placeholder="{}" class="code-textarea" />
-              </el-tab-pane>
-              <el-tab-pane label="传输配置 (networkSettings)">
-                <el-input type="textarea" :rows="6" v-model="form.networkSettings_str" placeholder="{}" class="code-textarea" />
-              </el-tab-pane>
-              <el-tab-pane label="DNS 配置 (dnsSettings)">
-                <el-input type="textarea" :rows="6" v-model="form.dnsSettings_str" placeholder="{}" class="code-textarea" />
-              </el-tab-pane>
-              <el-tab-pane label="规则配置 (ruleSettings)">
-                <el-input type="textarea" :rows="6" v-model="form.ruleSettings_str" placeholder="{}" class="code-textarea" />
-              </el-tab-pane>
-            </el-tabs>
-          </template>
-
-          <!-- Vless Options -->
-          <template v-if="activeType === 'vless'">
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="安全性" prop="tls">
+                <el-form-item label="安全性 (TLS)" prop="tls">
                   <el-select v-model="form.tls" style="width: 100%">
                     <el-option label="无安全性" :value="0" />
                     <el-option label="TLS" :value="1" />
-                    <el-option label="Reality" :value="2" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="传输协议" prop="network">
-                  <el-select v-model="form.network" style="width: 100%">
-                    <el-option label="TCP" value="tcp" />
-                    <el-option label="WebSocket (WS)" value="ws" />
-                    <el-option label="gRPC" value="grpc" />
-                    <el-option label="Hysteria" value="kcp" />
-                    <el-option label="QUIC" value="quic" />
-                    <el-option label="HTTPUpgrade" value="httpupgrade" />
-                    <el-option label="xhttp" value="xhttp" />
+                    <el-option label="Reality" :value="2" v-if="activeType === 'vless'" />
                   </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
 
-            <el-row :gutter="20">
+            <el-row :gutter="20" v-if="activeType === 'vless'">
               <el-col :span="12" v-if="form.network === 'tcp'">
                 <el-form-item label="XTLS流控算法" prop="flow">
                   <el-select v-model="form.flow" clearable placeholder="无流控" style="width: 100%">
@@ -269,16 +222,238 @@
               </el-col>
             </el-row>
 
+            <el-form-item label="VMess加密" v-if="activeType === 'vmess'" prop="vmess_security">
+              <el-select v-model="form.vmess_security" style="width: 100%">
+                <el-option label="Auto" value="auto" />
+                <el-option label="AES-128-GCM" value="aes-128-gcm" />
+                <el-option label="CHACHA20-POLY1305" value="chacha20-poly1305" />
+                <el-option label="None" value="none" />
+              </el-select>
+            </el-form-item>
+
+            <!-- Advanced tabs mimicking React/UmiJS child drawers -->
             <el-tabs type="border-card" class="mt-15 advanced-json-tabs">
-              <el-tab-pane label="TLS 配置 (tls_settings)">
-                <el-input type="textarea" :rows="6" v-model="form.tls_settings_str" placeholder="{}" class="code-textarea" />
+              <!-- TLS Settings Tab -->
+              <el-tab-pane label="安全性配置 (tls_settings)" v-if="form.tls > 0">
+                <div class="flex-between align-center mb-15">
+                  <span class="sub-section-title">编辑安全性配置</span>
+                  <el-checkbox v-model="form.edit_tls_raw">编辑原始 JSON</el-checkbox>
+                </div>
+                
+                <template v-if="form.edit_tls_raw">
+                  <el-input type="textarea" :rows="8" v-model="form.tls_settings_raw_str" placeholder="{}" class="code-textarea" @input="syncTlsSettingsFromRaw" />
+                </template>
+                <template v-else>
+                  <el-form-item label="Server Name (SNI)">
+                    <el-input v-model="form.tls_settings.server_name" :placeholder="form.tls === 2 ? 'REALITY必填，与后端保持一致' : '证书验证SNI域名，留空使用默认'" @input="syncTlsSettingsToRaw" />
+                  </el-form-item>
+
+                  <!-- TLS 1.0 specific -->
+                  <template v-if="form.tls === 1">
+                    <el-form-item label="证书模式">
+                      <el-select v-model="form.tls_settings.cert_mode" style="width: 100%" @change="syncTlsSettingsToRaw">
+                        <el-option label="自签名 (self)" value="self" />
+                        <el-option label="HTTP 申请 (http)" value="http" />
+                        <el-option label="DNS 申请 (dns)" value="dns" />
+                        <el-option label="无证书/关闭 TLS (none)" value="none" />
+                      </el-select>
+                    </el-form-item>
+
+                    <template v-if="form.tls_settings.cert_mode === 'dns'">
+                      <el-form-item label="DNS提供商">
+                        <el-input v-model="form.tls_settings.provider" placeholder="例如 cloudflare" @input="syncTlsSettingsToRaw" />
+                      </el-form-item>
+                      <el-form-item label="DNS env">
+                        <el-input v-model="form.tls_settings.dns_env" placeholder="例如 CF_DNS_API_TOKEN=xxxx" @input="syncTlsSettingsToRaw" />
+                      </el-form-item>
+                    </template>
+
+                    <template v-if="form.tls_settings.cert_mode !== 'none'">
+                      <el-form-item label="证书公钥路径">
+                        <el-input v-model="form.tls_settings.cert_file" placeholder="留空在 /etc/v2node/ 目录自动生成" @input="syncTlsSettingsToRaw" />
+                      </el-form-item>
+                      <el-form-item label="证书私钥路径">
+                        <el-input v-model="form.tls_settings.key_file" placeholder="留空在 /etc/v2node/ 目录自动生成" @input="syncTlsSettingsToRaw" />
+                      </el-form-item>
+                    </template>
+
+                    <el-form-item label="Reject Unknown SNI">
+                      <el-switch v-model="form.tls_settings.reject_unknown_sni" :active-value="1" :inactive-value="0" @change="syncTlsSettingsToRaw" />
+                    </el-form-item>
+                  </template>
+
+                  <!-- Reality 2.0 specific -->
+                  <template v-if="form.tls === 2">
+                    <el-form-item label="Server Address">
+                      <el-input v-model="form.tls_settings.dest" placeholder="REALITY目标地址，默认使用SNI" @input="syncTlsSettingsToRaw" />
+                    </el-form-item>
+                    <el-form-item label="Server Port">
+                      <el-input v-model="form.tls_settings.server_port" placeholder="REALITY目标端口，默认443" @input="syncTlsSettingsToRaw" />
+                    </el-form-item>
+                    <el-form-item label="Proxy Protocol">
+                      <el-select v-model="form.tls_settings.xver" style="width: 100%" @change="syncTlsSettingsToRaw">
+                        <el-option label="0" :value="0" />
+                        <el-option label="1" :value="1" />
+                        <el-option label="2" :value="2" />
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item label="Private Key">
+                      <el-input v-model="form.tls_settings.private_key" placeholder="留空后端自动生成" @input="syncTlsSettingsToRaw" />
+                    </el-form-item>
+                    <el-form-item label="Public Key">
+                      <el-input v-model="form.tls_settings.public_key" placeholder="留空后端自动生成" @input="syncTlsSettingsToRaw" />
+                    </el-form-item>
+                    <el-form-item label="ShortId">
+                      <el-input v-model="form.tls_settings.short_id" placeholder="留空后端自动生成" @input="syncTlsSettingsToRaw" />
+                    </el-form-item>
+                  </template>
+
+                  <el-form-item label="FingerPrint">
+                    <el-select v-model="form.tls_settings.fingerprint" placeholder="TLS指纹默认Chrome" style="width: 100%" @change="syncTlsSettingsToRaw">
+                      <el-option label="Chrome" value="chrome" />
+                      <el-option label="Firefox" value="firefox" />
+                      <el-option label="Safari" value="safari" />
+                      <el-option label="iOS" value="ios" />
+                      <el-option label="Android" value="android" />
+                      <el-option label="Edge" value="edge" />
+                      <el-option label="360" value="360" />
+                      <el-option label="QQ" value="qq" />
+                    </el-select>
+                  </el-form-item>
+
+                  <el-form-item label="Allow Insecure">
+                    <el-switch v-model="form.tls_settings.allow_insecure" :active-value="1" :inactive-value="0" @change="syncTlsSettingsToRaw" />
+                  </el-form-item>
+                </template>
               </el-tab-pane>
+
+              <!-- Transport Settings Tab -->
               <el-tab-pane label="传输配置 (network_settings)">
-                <el-input type="textarea" :rows="6" v-model="form.network_settings_str" placeholder="{}" class="code-textarea" />
+                <div class="flex-between align-center mb-15">
+                  <span class="sub-section-title">编辑传输协议配置</span>
+                  <el-checkbox v-model="form.edit_network_raw">编辑原始 JSON</el-checkbox>
+                </div>
+
+                <template v-if="form.edit_network_raw">
+                  <el-input type="textarea" :rows="8" v-model="form.network_settings_raw_str" placeholder="{}" class="code-textarea" @input="syncNetworkSettingsFromRaw" />
+                </template>
+                <template v-else>
+                  <!-- Form fields matching network -->
+                  <template v-if="form.network === 'ws'">
+                    <el-form-item label="WebSocket 路径">
+                      <el-input v-model="form.network_settings.path" placeholder="/" @input="syncNetworkSettingsToRaw" />
+                    </el-form-item>
+                    <el-form-item label="WebSocket 主机">
+                      <el-input v-model="network_settings_host" placeholder="例如 static.xx.com (可留空)" />
+                    </el-form-item>
+                  </template>
+
+                  <template v-else-if="form.network === 'grpc'">
+                    <el-form-item label="gRPC 服务名">
+                      <el-input v-model="form.network_settings.serviceName" placeholder="GunService" @input="syncNetworkSettingsToRaw" />
+                    </el-form-item>
+                  </template>
+
+                  <template v-else-if="form.network === 'httpupgrade'">
+                    <el-form-item label="HTTPUpgrade 路径">
+                      <el-input v-model="form.network_settings.path" placeholder="/" @input="syncNetworkSettingsToRaw" />
+                    </el-form-item>
+                    <el-form-item label="HTTPUpgrade 主机">
+                      <el-input v-model="form.network_settings.host" placeholder="例如 static.xx.com (可留空)" @input="syncNetworkSettingsToRaw" />
+                    </el-form-item>
+                  </template>
+
+                  <template v-else-if="form.network === 'xhttp'">
+                    <el-form-item label="xhttp 路径">
+                      <el-input v-model="form.network_settings.path" placeholder="/" @input="syncNetworkSettingsToRaw" />
+                    </el-form-item>
+                    <el-form-item label="xhttp 主机">
+                      <el-input v-model="form.network_settings.host" placeholder="例如 static.xx.com (可留空)" @input="syncNetworkSettingsToRaw" />
+                    </el-form-item>
+                    <el-form-item label="xhttp 模式">
+                      <el-select v-model="form.network_settings.mode" style="width: 100%" @change="syncNetworkSettingsToRaw">
+                        <el-option label="auto" value="auto" />
+                        <el-option label="packet" value="packet" />
+                        <el-option label="stream" value="stream" />
+                      </el-select>
+                    </el-form-item>
+                  </template>
+
+                  <template v-else-if="form.network === 'tcp'">
+                    <el-form-item label="HTTP 混淆路径">
+                      <el-input v-model="tcp_path_shortcut" placeholder="例如 / (选填)" />
+                    </el-form-item>
+                    <el-form-item label="HTTP 混淆主机">
+                      <el-input v-model="tcp_host_shortcut" placeholder="例如 www.baidu.com (选填)" />
+                    </el-form-item>
+                  </template>
+
+                  <template v-else-if="form.network === 'kcp'">
+                    <el-form-item label="混淆类型 (type)">
+                      <el-input v-model="form.network_settings.header.type" placeholder="none" @input="syncNetworkSettingsToRaw" />
+                    </el-form-item>
+                    <el-form-item label="KCP Seed">
+                      <el-input v-model="form.network_settings.seed" placeholder="加密混淆因子" @input="syncNetworkSettingsToRaw" />
+                    </el-form-item>
+                  </template>
+
+                  <template v-else>
+                    <div class="text-muted p-10 font-13">此传输协议无专属表单，请勾选“编辑原始 JSON”以定义高级规则。</div>
+                  </template>
+                </template>
               </el-tab-pane>
-              <el-tab-pane label="加密配置 (encryption_settings)">
-                <el-input type="textarea" :rows="6" v-model="form.encryption_settings_str" placeholder="{}" class="code-textarea" />
+
+              <!-- Encryption Settings Tab (Vless only) -->
+              <el-tab-pane label="加密配置 (encryption_settings)" v-if="activeType === 'vless'">
+                <div class="flex-between align-center mb-15">
+                  <span class="sub-section-title">编辑加密配置</span>
+                  <el-checkbox v-model="form.edit_encryption_raw">编辑原始 JSON</el-checkbox>
+                </div>
+
+                <template v-if="form.edit_encryption_raw">
+                  <el-input type="textarea" :rows="8" v-model="form.encryption_settings_raw_str" placeholder="{}" class="code-textarea" @input="syncEncryptionSettingsFromRaw" />
+                </template>
+                <template v-else>
+                  <el-form-item label="加密模式 (mode)">
+                    <el-select v-model="form.encryption_settings.mode" style="width: 100%" @change="syncEncryptionSettingsToRaw">
+                      <el-option label="native" value="native" />
+                      <el-option label="xorpub" value="xorpub" />
+                      <el-option label="random" value="random" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="RTT 握手模式">
+                    <el-select v-model="form.encryption_settings.rtt" style="width: 100%" @change="syncEncryptionSettingsToRaw">
+                      <el-option label="0-RTT (0rtt)" value="0rtt" />
+                      <el-option label="1-RTT (1rtt)" value="1rtt" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="Ticket 有效时间" v-if="form.encryption_settings.rtt === '0rtt'">
+                    <el-input v-model="form.encryption_settings.ticket" placeholder="600s" @input="syncEncryptionSettingsToRaw" />
+                  </el-form-item>
+                  <el-form-item label="Server Padding">
+                    <el-input v-model="form.encryption_settings.server_padding" placeholder="留空使用默认" @input="syncEncryptionSettingsToRaw" />
+                  </el-form-item>
+                  <el-form-item label="Client Padding">
+                    <el-input v-model="form.encryption_settings.client_padding" placeholder="留空使用默认" @input="syncEncryptionSettingsToRaw" />
+                  </el-form-item>
+                  <el-form-item label="Private Key">
+                    <el-input v-model="form.encryption_settings.private_key" placeholder="留空后端自动生成" @input="syncEncryptionSettingsToRaw" />
+                  </el-form-item>
+                  <el-form-item label="Password">
+                    <el-input v-model="form.encryption_settings.password" placeholder="留空后端自动生成" @input="syncEncryptionSettingsToRaw" />
+                  </el-form-item>
+                </template>
               </el-tab-pane>
+
+              <!-- VMess Extra JSON parameters -->
+              <template v-if="activeType === 'vmess'">
+                <el-tab-pane label="DNS 配置 (dnsSettings)">
+                  <el-input type="textarea" :rows="8" v-model="form.dnsSettings_str" placeholder="{}" class="code-textarea" />
+                </el-tab-pane>
+                <el-tab-pane label="规则配置 (ruleSettings)">
+                  <el-input type="textarea" :rows="8" v-model="form.ruleSettings_str" placeholder="{}" class="code-textarea" />
+                </el-tab-pane>
+              </template>
             </el-tabs>
           </template>
 
@@ -458,6 +633,54 @@ const groupList = ref([]);
 const routeList = ref([]);
 const tagOptions = ref(['香港', '日本', '新加坡', '美国', '台湾', '优化', 'BGP', 'IPLC', 'IEPL']);
 
+// Prepopulated templates for transport protocol configs
+const networkTemplates = {
+  tcp: {
+    header: {
+      type: "http",
+      request: {
+        path: ["/"],
+        headers: {
+          Host: ["www.baidu.com", "www.bing.com"]
+        }
+      },
+      response: {}
+    }
+  },
+  ws: {
+    path: "/",
+    headers: {
+      Host: "xtls.github.io"
+    }
+  },
+  grpc: {
+    serviceName: "GunService"
+  },
+  kcp: {
+    header: {
+      type: "none"
+    },
+    seed: ""
+  },
+  quic: {
+    security: "none",
+    key: "",
+    header: {
+      type: "none"
+    }
+  },
+  httpupgrade: {
+    path: "/",
+    host: "xtls.github.io"
+  },
+  xhttp: {
+    path: "/",
+    host: "xtls.github.io",
+    mode: "auto",
+    extra: {}
+  }
+};
+
 const formRef = ref(null);
 const form = reactive({
   id: null,
@@ -478,21 +701,55 @@ const form = reactive({
   obfs_settings_host: '',
   obfs_settings_path: '',
   
-  // Vmess specific
+  // Transport protocol toggle & camelCase fields
   network: 'tcp',
   tls: 0,
   vmess_security: 'none',
-  tlsSettings_str: '{}',
-  networkSettings_str: '{}',
+
+  // GUI configurations and mappings
+  edit_tls_raw: false,
+  tls_settings: {
+    server_name: '',
+    cert_mode: 'self',
+    provider: '',
+    dns_env: '',
+    cert_file: '',
+    key_file: '',
+    dest: '',
+    server_port: '443',
+    xver: 0,
+    private_key: '',
+    public_key: '',
+    short_id: '',
+    fingerprint: 'chrome',
+    reject_unknown_sni: 0,
+    allow_insecure: 0
+  },
+  tls_settings_raw_str: '{}',
+
+  edit_network_raw: false,
+  network_settings: {},
+  network_settings_raw_str: '{}',
+
+  edit_encryption_raw: false,
+  encryption_settings: {
+    mode: 'native',
+    rtt: '0rtt',
+    ticket: '600s',
+    server_padding: '',
+    client_padding: '',
+    private_key: '',
+    password: ''
+  },
+  encryption_settings_raw_str: '{}',
+
+  // Other advanced text strings
   dnsSettings_str: '{}',
   ruleSettings_str: '{}',
-  
+
   // Vless specific
   flow: null,
   encryption: 'none',
-  tls_settings_str: '{}',
-  network_settings_str: '{}',
-  encryption_settings_str: '{}',
   
   // Trojan specific
   server_name: '',
@@ -502,6 +759,7 @@ const form = reactive({
   version: 2,
   up_mbps: 100,
   down_mbps: 100,
+  obfs: '',
   obfs_password: '',
   insecure: 0,
   
@@ -526,6 +784,54 @@ const rules = {
 
 const sameTypeServers = computed(() => {
   return (nodeLists[activeType.value] || []).filter(s => s.id !== form.id);
+});
+
+// Computed properties for shortcuts & nested structures in network settings
+const network_settings_host = computed({
+  get() {
+    if (!form.network_settings) return '';
+    return form.network_settings.headers?.Host || form.network_settings.host || '';
+  },
+  set(val) {
+    if (!form.network_settings) form.network_settings = {};
+    if (!form.network_settings.headers) form.network_settings.headers = {};
+    form.network_settings.headers.Host = val;
+    form.network_settings.host = val;
+    syncNetworkSettingsToRaw();
+  }
+});
+
+const tcp_path_shortcut = computed({
+  get() {
+    if (!form.network_settings) return '';
+    return form.network_settings.header?.request?.path?.[0] || '';
+  },
+  set(val) {
+    if (!form.network_settings) form.network_settings = {};
+    if (!form.network_settings.header) form.network_settings.header = {};
+    if (!form.network_settings.header.request) form.network_settings.header.request = {};
+    form.network_settings.header.type = 'http';
+    form.network_settings.header.request.path = [val || '/'];
+    if (!form.network_settings.header.response) form.network_settings.header.response = {};
+    syncNetworkSettingsToRaw();
+  }
+});
+
+const tcp_host_shortcut = computed({
+  get() {
+    if (!form.network_settings) return '';
+    return form.network_settings.header?.request?.headers?.Host?.[0] || '';
+  },
+  set(val) {
+    if (!form.network_settings) form.network_settings = {};
+    if (!form.network_settings.header) form.network_settings.header = {};
+    if (!form.network_settings.header.request) form.network_settings.header.request = {};
+    if (!form.network_settings.header.request.headers) form.network_settings.header.request.headers = {};
+    form.network_settings.header.type = 'http';
+    form.network_settings.header.request.headers.Host = [val || 'www.baidu.com'];
+    if (!form.network_settings.header.response) form.network_settings.header.response = {};
+    syncNetworkSettingsToRaw();
+  }
 });
 
 const getGroupName = (id) => {
@@ -584,6 +890,45 @@ const handleTabChange = (name) => {
   activeType.value = name;
 };
 
+// Sync helpers
+const syncTlsSettingsToRaw = () => {
+  form.tls_settings_raw_str = JSON.stringify(form.tls_settings, null, 2);
+};
+
+const syncTlsSettingsFromRaw = () => {
+  try {
+    const parsed = JSON.parse(form.tls_settings_raw_str || '{}');
+    Object.assign(form.tls_settings, parsed);
+  } catch (e) {}
+};
+
+const syncNetworkSettingsToRaw = () => {
+  form.network_settings_raw_str = JSON.stringify(form.network_settings, null, 2);
+};
+
+const syncNetworkSettingsFromRaw = () => {
+  try {
+    form.network_settings = JSON.parse(form.network_settings_raw_str || '{}');
+  } catch (e) {}
+};
+
+const syncEncryptionSettingsToRaw = () => {
+  form.encryption_settings_raw_str = JSON.stringify(form.encryption_settings, null, 2);
+};
+
+const syncEncryptionSettingsFromRaw = () => {
+  try {
+    const parsed = JSON.parse(form.encryption_settings_raw_str || '{}');
+    Object.assign(form.encryption_settings, parsed);
+  } catch (e) {}
+};
+
+const handleNetworkChange = (newVal) => {
+  const template = networkTemplates[newVal] || {};
+  form.network_settings = JSON.parse(JSON.stringify(template));
+  syncNetworkSettingsToRaw();
+};
+
 const handleToggleShow = async (row, type, val) => {
   try {
     const securePath = getSecurePath();
@@ -624,16 +969,48 @@ const handleCreateCommand = (type) => {
   form.network = 'tcp';
   form.tls = 0;
   form.vmess_security = 'none';
-  form.tlsSettings_str = '{}';
-  form.networkSettings_str = '{}';
+
+  form.edit_tls_raw = false;
+  form.tls_settings = {
+    server_name: '',
+    cert_mode: 'self',
+    provider: '',
+    dns_env: '',
+    cert_file: '',
+    key_file: '',
+    dest: '',
+    server_port: '443',
+    xver: 0,
+    private_key: '',
+    public_key: '',
+    short_id: '',
+    fingerprint: 'chrome',
+    reject_unknown_sni: 0,
+    allow_insecure: 0
+  };
+  form.tls_settings_raw_str = '{}';
+
+  form.edit_network_raw = false;
+  form.network_settings = JSON.parse(JSON.stringify(networkTemplates.tcp));
+  form.network_settings_raw_str = JSON.stringify(networkTemplates.tcp, null, 2);
+
+  form.edit_encryption_raw = false;
+  form.encryption_settings = {
+    mode: 'native',
+    rtt: '0rtt',
+    ticket: '600s',
+    server_padding: '',
+    client_padding: '',
+    private_key: '',
+    password: ''
+  };
+  form.encryption_settings_raw_str = '{}';
+
   form.dnsSettings_str = '{}';
   form.ruleSettings_str = '{}';
   
   form.flow = null;
   form.encryption = 'none';
-  form.tls_settings_str = '{}';
-  form.network_settings_str = '{}';
-  form.encryption_settings_str = '{}';
   
   form.server_name = '';
   form.allow_insecure = 0;
@@ -641,6 +1018,7 @@ const handleCreateCommand = (type) => {
   form.version = 2;
   form.up_mbps = 100;
   form.down_mbps = 100;
+  form.obfs = '';
   form.obfs_password = '';
   form.insecure = 0;
   
@@ -671,6 +1049,10 @@ const openEditDialog = (row, type) => {
   form.route_id = row.route_id || [];
   form.tags = row.tags || [];
   form.show = row.show;
+
+  form.edit_tls_raw = false;
+  form.edit_network_raw = false;
+  form.edit_encryption_raw = false;
   
   if (type === 'shadowsocks') {
     form.cipher = row.cipher || 'aes-256-gcm';
@@ -681,8 +1063,31 @@ const openEditDialog = (row, type) => {
     form.network = row.network || 'tcp';
     form.tls = row.tls || 0;
     form.vmess_security = row.networkSettings?.security || 'none';
-    form.tlsSettings_str = JSON.stringify(row.tlsSettings || {}, null, 2);
-    form.networkSettings_str = JSON.stringify(row.networkSettings || {}, null, 2);
+
+    const tlsSettings = row.tlsSettings || {};
+    form.tls_settings = {
+      server_name: tlsSettings.server_name || '',
+      cert_mode: tlsSettings.cert_mode || 'self',
+      provider: tlsSettings.provider || '',
+      dns_env: tlsSettings.dns_env || '',
+      cert_file: tlsSettings.cert_file || '',
+      key_file: tlsSettings.key_file || '',
+      dest: tlsSettings.dest || '',
+      server_port: tlsSettings.server_port || '443',
+      xver: tlsSettings.xver || 0,
+      private_key: tlsSettings.private_key || '',
+      public_key: tlsSettings.public_key || '',
+      short_id: tlsSettings.short_id || '',
+      fingerprint: tlsSettings.fingerprint || 'chrome',
+      reject_unknown_sni: Number(tlsSettings.reject_unknown_sni) || 0,
+      allow_insecure: Number(tlsSettings.allow_insecure) || 0
+    };
+    form.tls_settings_raw_str = JSON.stringify(tlsSettings, null, 2);
+
+    const networkSettings = row.networkSettings || {};
+    form.network_settings = JSON.parse(JSON.stringify(networkSettings));
+    form.network_settings_raw_str = JSON.stringify(networkSettings, null, 2);
+
     form.dnsSettings_str = JSON.stringify(row.dnsSettings || {}, null, 2);
     form.ruleSettings_str = JSON.stringify(row.ruleSettings || {}, null, 2);
   } else if (type === 'vless') {
@@ -690,9 +1095,42 @@ const openEditDialog = (row, type) => {
     form.network = row.network || 'tcp';
     form.flow = row.flow || null;
     form.encryption = row.encryption || 'none';
-    form.tls_settings_str = JSON.stringify(row.tls_settings || {}, null, 2);
-    form.network_settings_str = JSON.stringify(row.network_settings || {}, null, 2);
-    form.encryption_settings_str = JSON.stringify(row.encryption_settings || {}, null, 2);
+
+    const tlsSettings = row.tls_settings || {};
+    form.tls_settings = {
+      server_name: tlsSettings.server_name || '',
+      cert_mode: tlsSettings.cert_mode || 'self',
+      provider: tlsSettings.provider || '',
+      dns_env: tlsSettings.dns_env || '',
+      cert_file: tlsSettings.cert_file || '',
+      key_file: tlsSettings.key_file || '',
+      dest: tlsSettings.dest || '',
+      server_port: tlsSettings.server_port || '443',
+      xver: tlsSettings.xver || 0,
+      private_key: tlsSettings.private_key || '',
+      public_key: tlsSettings.public_key || '',
+      short_id: tlsSettings.short_id || '',
+      fingerprint: tlsSettings.fingerprint || 'chrome',
+      reject_unknown_sni: Number(tlsSettings.reject_unknown_sni) || 0,
+      allow_insecure: Number(tlsSettings.allow_insecure) || 0
+    };
+    form.tls_settings_raw_str = JSON.stringify(tlsSettings, null, 2);
+
+    const networkSettings = row.network_settings || {};
+    form.network_settings = JSON.parse(JSON.stringify(networkSettings));
+    form.network_settings_raw_str = JSON.stringify(networkSettings, null, 2);
+
+    const encryptionSettings = row.encryption_settings || {};
+    form.encryption_settings = {
+      mode: encryptionSettings.mode || 'native',
+      rtt: encryptionSettings.rtt || '0rtt',
+      ticket: encryptionSettings.ticket || '600s',
+      server_padding: encryptionSettings.server_padding || '',
+      client_padding: encryptionSettings.client_padding || '',
+      private_key: encryptionSettings.private_key || '',
+      password: encryptionSettings.password || ''
+    };
+    form.encryption_settings_raw_str = JSON.stringify(encryptionSettings, null, 2);
   } else if (type === 'trojan') {
     form.server_name = row.server_name || '';
     form.allow_insecure = row.allow_insecure || 0;
@@ -712,7 +1150,6 @@ const openEditDialog = (row, type) => {
     form.zero_rtt_handshake = row.zero_rtt_handshake || 0;
     form.congestion_control = row.congestion_control || 'bbr';
   } else if (type === 'anytls') {
-    // Collect all other keys for custom AnyTLS structure
     const custom = { ...row };
     const omit = ['id', 'name', 'rate', 'group_id', 'host', 'port', 'server_port', 'parent_id', 'route_id', 'tags', 'show', 'type', 'created_at', 'updated_at'];
     omit.forEach(k => delete custom[k]);
@@ -760,7 +1197,6 @@ const handleSubmit = async () => {
         payload.id = form.id;
       }
       
-      // Append protocol specific configurations
       if (activeType.value === 'shadowsocks') {
         payload.cipher = form.cipher;
         payload.obfs = form.obfs;
@@ -770,31 +1206,92 @@ const handleSubmit = async () => {
             path: form.obfs_settings_path
           };
         }
-      } else if (activeType.value === 'vmess') {
-        payload.network = form.network;
-        payload.tls = form.tls;
-        
-        const tlsSettings = parseJSON(form.tlsSettings_str, 'TLS 配置');
-        const networkSettings = parseJSON(form.networkSettings_str, '传输配置');
-        const dnsSettings = parseJSON(form.dnsSettings_str, 'DNS 配置');
-        const ruleSettings = parseJSON(form.ruleSettings_str, '规则配置');
-        
-        // Ensure security gets saved under networkSettings
-        networkSettings.security = form.vmess_security;
-        
-        payload.tlsSettings = tlsSettings;
-        payload.networkSettings = networkSettings;
-        payload.dnsSettings = dnsSettings;
-        payload.ruleSettings = ruleSettings;
-      } else if (activeType.value === 'vless') {
-        payload.tls = form.tls;
-        payload.network = form.network;
-        payload.flow = form.network === 'tcp' ? form.flow : null;
-        payload.encryption = form.encryption;
-        
-        payload.tls_settings = parseJSON(form.tls_settings_str, 'TLS 配置');
-        payload.network_settings = parseJSON(form.network_settings_str, '传输配置');
-        payload.encryption_settings = parseJSON(form.encryption_settings_str, '加密配置');
+      } else if (activeType.value === 'vmess' || activeType.value === 'vless') {
+        // Compile TLS Settings
+        let finalTlsSettings = {};
+        if (form.tls > 0) {
+          if (form.edit_tls_raw) {
+            finalTlsSettings = parseJSON(form.tls_settings_raw_str, '安全性配置');
+          } else {
+            if (form.tls === 1) {
+              finalTlsSettings = {
+                server_name: form.tls_settings.server_name,
+                cert_mode: form.tls_settings.cert_mode,
+                fingerprint: form.tls_settings.fingerprint,
+                allow_insecure: String(form.tls_settings.allow_insecure)
+              };
+              if (form.tls_settings.cert_mode === 'dns') {
+                finalTlsSettings.provider = form.tls_settings.provider;
+                finalTlsSettings.dns_env = form.tls_settings.dns_env;
+              }
+              if (form.tls_settings.cert_mode !== 'none') {
+                if (form.tls_settings.cert_file) finalTlsSettings.cert_file = form.tls_settings.cert_file;
+                if (form.tls_settings.key_file) finalTlsSettings.key_file = form.tls_settings.key_file;
+              }
+              finalTlsSettings.reject_unknown_sni = String(form.tls_settings.reject_unknown_sni);
+            } else if (form.tls === 2) {
+              finalTlsSettings = {
+                server_name: form.tls_settings.server_name,
+                dest: form.tls_settings.dest,
+                server_port: form.tls_settings.server_port || "443",
+                xver: String(form.tls_settings.xver),
+                fingerprint: form.tls_settings.fingerprint,
+                allow_insecure: String(form.tls_settings.allow_insecure)
+              };
+              if (form.tls_settings.private_key) finalTlsSettings.private_key = form.tls_settings.private_key;
+              if (form.tls_settings.public_key) finalTlsSettings.public_key = form.tls_settings.public_key;
+              if (form.tls_settings.short_id) finalTlsSettings.short_id = form.tls_settings.short_id;
+            }
+          }
+        }
+
+        // Compile Network Settings
+        let finalNetworkSettings = {};
+        if (form.edit_network_raw) {
+          finalNetworkSettings = parseJSON(form.network_settings_raw_str, '传输配置');
+        } else {
+          finalNetworkSettings = JSON.parse(JSON.stringify(form.network_settings));
+        }
+
+        if (activeType.value === 'vmess') {
+          payload.network = form.network;
+          payload.tls = form.tls;
+          finalNetworkSettings.security = form.vmess_security;
+          
+          payload.tlsSettings = form.tls > 0 ? finalTlsSettings : null;
+          payload.networkSettings = finalNetworkSettings;
+          payload.dnsSettings = parseJSON(form.dnsSettings_str, 'DNS 配置');
+          payload.ruleSettings = parseJSON(form.ruleSettings_str, '规则配置');
+        } else if (activeType.value === 'vless') {
+          payload.tls = form.tls;
+          payload.network = form.network;
+          payload.flow = form.network === 'tcp' ? form.flow : null;
+          payload.encryption = form.encryption;
+          
+          // Compile Encryption Settings (Vless only)
+          let finalEncryptionSettings = {};
+          if (form.encryption !== 'none') {
+            if (form.edit_encryption_raw) {
+              finalEncryptionSettings = parseJSON(form.encryption_settings_raw_str, '加密配置');
+            } else {
+              finalEncryptionSettings = {
+                mode: form.encryption_settings.mode,
+                rtt: form.encryption_settings.rtt,
+                server_padding: form.encryption_settings.server_padding || null,
+                client_padding: form.encryption_settings.client_padding || null,
+                private_key: form.encryption_settings.private_key || null,
+                password: form.encryption_settings.password || null
+              };
+              if (form.encryption_settings.rtt === '0rtt') {
+                finalEncryptionSettings.ticket = form.encryption_settings.ticket;
+              }
+            }
+          }
+
+          payload.tls_settings = form.tls > 0 ? finalTlsSettings : null;
+          payload.network_settings = finalNetworkSettings;
+          payload.encryption_settings = form.encryption !== 'none' ? finalEncryptionSettings : null;
+        }
       } else if (activeType.value === 'trojan') {
         payload.server_name = form.server_name;
         payload.allow_insecure = form.allow_insecure;
@@ -899,6 +1396,12 @@ onMounted(() => {
   border-left: 3px solid var(--el-color-primary);
 }
 
+.sub-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-regular);
+}
+
 .advanced-json-tabs {
   border-radius: 8px;
   overflow: hidden;
@@ -923,7 +1426,27 @@ onMounted(() => {
   margin-top: 15px;
 }
 
+.mb-10 {
+  margin-bottom: 10px;
+}
+
+.mb-15 {
+  margin-bottom: 15px;
+}
+
 .gap-10 {
   gap: 10px;
+}
+
+.font-13 {
+  font-size: 13px;
+}
+
+.text-muted {
+  color: var(--el-text-color-secondary);
+}
+
+.p-10 {
+  padding: 10px;
 }
 </style>
