@@ -143,6 +143,25 @@
       </div>
     </section>
 
+    <section class="global-nodes-section">
+      <div class="section-title">
+        <div class="nodes-header">
+          <div class="title-left">
+            <svg class="globe-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            <h3>全球边缘节点网络</h3>
+          </div>
+          <div class="nodes-badge">当前在线智能中转节点：58+</div>
+        </div>
+      </div>
+      <div class="map-card-wrapper animate-scroll">
+        <div v-if="mapLoading" class="map-loading-placeholder">
+          <div class="spinner"></div>
+          <p>正在载入全球节点分布图...</p>
+        </div>
+        <div id="global-map" ref="mapRef" class="map-container"></div>
+      </div>
+    </section>
+
     <section class="cta">
       <div class="cta-container animate-scroll">
         <h3>准备好开始您的探索了吗？</h3>
@@ -167,7 +186,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { SITE_CONFIG, CLIENT_CONFIG } from '@/utils/baseConfig';
@@ -181,6 +200,10 @@ export default {
     const mobileMenuOpen = ref(false);
     const loadingPlans = ref(true);
     const plans = ref([]);
+    const mapRef = ref(null);
+    const mapLoading = ref(true);
+    const isMobile = ref(false);
+    let myChart = null;
     
     const siteConfig = ref(SITE_CONFIG || {});
     const clientConfig = ref(CLIENT_CONFIG || {});
@@ -292,8 +315,166 @@ export default {
       isScrolled.value = window.scrollY > 50;
     };
 
+    const checkIfMobile = () => {
+      isMobile.value = window.innerWidth <= 768;
+    };
+
+    const updateMapOption = (echarts) => {
+      if (!myChart) return;
+      
+      const isDark = isDarkTheme.value;
+      
+      const areaColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)';
+      const borderColor = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
+      const dotColor = '#22d3ee';
+      const tooltipBg = isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+      const tooltipBorder = isDark ? 'rgba(34, 211, 238, 0.4)' : 'rgba(53, 92, 194, 0.3)';
+      const tooltipText = isDark ? '#ffffff' : '#1e293b';
+
+      const nodeData = [
+          { name: '中国香港 (HK-CMI / 阿里云)', value: [114.17, 22.28] },
+          { name: '中国台湾 (wap-27优质骨干)', value: [121.50, 25.03] },
+          { name: '新加坡 (wap高速中转)', value: [103.85, 1.29] },
+          { name: '韩国 (菠萝高性能节点)', value: [126.97, 37.56] },
+          { name: '日本 (超低延迟专线)', value: [139.69, 35.68] },
+          { name: '马来西亚 (智能全域中转)', value: [101.97, 4.21] },
+          { name: '印度尼西亚 (雅加达中转)', value: [106.84, -6.20] },
+          { name: '泰国 (曼谷原生精品)', value: [100.50, 13.75] },
+          { name: '越南 (河内高带宽)', value: [105.83, 21.02] },
+          { name: '美国 (菠萝)', value: [-121.89, 37.33] },
+          { name: '加拿大 (多伦多超大带宽)', value: [-79.38, 43.65] },
+          { name: '英国 (星空高等级节点)', value: [-0.12, 51.50] },
+          { name: '德国 (法兰克福国际枢纽)', value: [8.68, 50.11] },
+          { name: '巴西 (圣保罗南美中转)', value: [-46.63, -23.55] },
+          { name: '中国澳门 (原生精品BGP)', value: [113.54, 22.19] },
+          { name: '阿联酋 (迪拜老牌机房)', value: [55.30, 25.26] },
+          { name: '柬埔寨 (金边本土原生)', value: [104.91, 11.55] },
+          { name: '哈萨克斯坦 (阿拉木图)', value: [76.92, 43.23] },
+          { name: '蒙古 (乌兰巴托)', value: [106.91, 47.91] },
+          { name: '冰岛 (雷克雅未克抗投诉)', value: [-21.82, 64.12] },
+          { name: '乌克兰 (基辅原生)', value: [30.52, 50.45] },
+          { name: '卢森堡 (欧洲金融中心)', value: [6.13, 49.61] },
+          { name: '瑞士 (苏黎世隐私天堂)', value: [8.54, 47.37] },
+          { name: '阿根廷 (布宜诺斯艾利斯)', value: [-58.38, -34.60] },
+          { name: '智利 (圣地亚哥)', value: [-70.66, -33.44] },
+          { name: '哥伦比亚 (波哥大)', value: [-74.07, 4.71] },
+          { name: '墨西哥 (墨西哥城)', value: [-99.13, 19.43] },
+          { name: '新西兰 (奥克兰极光)', value: [174.76, -36.84] },
+          { name: '斐济 (苏瓦太平洋枢纽)', value: [178.44, -18.14] },
+          { name: '关岛 (太平洋美属骨干)', value: [144.74, 13.44] },
+          { name: '尼日利亚 (拉各斯非洲专线)', value: [3.37, 6.52] }
+      ];
+
+      const option = {
+          backgroundColor: 'transparent',
+          tooltip: {
+              trigger: 'item',
+              backgroundColor: tooltipBg,
+              borderColor: tooltipBorder,
+              borderWidth: 1,
+              borderRadius: 8,
+              textStyle: { color: tooltipText, fontSize: 12 },
+              formatter: function(params) {
+                  return `<div style="padding: 4px 8px;">
+                              <span style="color:${dotColor};font-weight:bold;margin-right:5px;">●</span>\${params.name}<br/>
+                              <span style="color:#10b981;font-size:11px;">状态：智能中转 稳定在线</span>
+                          </div>`;
+              }
+          },
+          geo: {
+              map: 'world',
+              roam: false,
+              zoom: 1.15,
+              emphasis: { disabled: true },
+              label: { show: false },
+              itemStyle: {
+                  areaColor: areaColor,
+                  borderColor: borderColor, 
+                  borderWidth: 0.8
+              }
+          },
+          series: [
+              {
+                  name: 'Nodes',
+                  type: 'effectScatter',
+                  coordinateSystem: 'geo',
+                  data: nodeData,
+                  symbolSize: isMobile.value ? 6 : 8,
+                  showEffectOn: 'render',
+                  rippleEffect: {
+                      brushType: 'stroke',
+                      scale: 4,
+                      period: 3
+                  },
+                  label: { show: false },
+                  itemStyle: {
+                      color: dotColor,
+                      shadowBlur: 10,
+                      shadowColor: dotColor
+                  },
+                  zlevel: 1
+              }
+          ]
+      };
+
+      myChart.setOption(option);
+    };
+
+    const initMap = async () => {
+      if (!mapRef.value) return;
+      
+      try {
+        const echarts = await import('echarts');
+        const res = await fetch('/world.json');
+        const worldJson = await res.json();
+        
+        echarts.registerMap('world', worldJson);
+        myChart = echarts.init(mapRef.value);
+        
+        updateMapOption(echarts);
+        mapLoading.value = false;
+      } catch (e) {
+        console.error('Failed to load map:', e);
+      }
+    };
+
+    const handleMapResize = () => {
+      checkIfMobile();
+      if (myChart) {
+        myChart.resize();
+        import('echarts').then((echarts) => {
+          updateMapOption(echarts);
+        });
+      }
+    };
+
+    const setupMapLazyLoad = () => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            initMap();
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '200px' });
+
+      const el = document.querySelector('.global-nodes-section');
+      if (el) observer.observe(el);
+    };
+
+    watch(isDarkTheme, () => {
+      if (myChart) {
+        import('echarts').then((echarts) => {
+          updateMapOption(echarts);
+        });
+      }
+    });
+
     onMounted(() => {
       window.addEventListener('scroll', onScroll);
+      checkIfMobile();
+      window.addEventListener('resize', handleMapResize);
+      setupMapLazyLoad();
       if (siteConfig.value.showPricing) {
         fetchPlans();
       }
@@ -302,6 +483,10 @@ export default {
 
     onUnmounted(() => {
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', handleMapResize);
+      if (myChart) {
+        myChart.dispose();
+      }
     });
 
     return {
@@ -313,6 +498,8 @@ export default {
       isDarkTheme,
       loadingPlans,
       plans,
+      mapRef,
+      mapLoading,
       toggleTheme,
       toggleMobileMenu,
       navigateTo,
@@ -729,4 +916,143 @@ footer {
 @keyframes scaleIn { to { opacity: 1; transform: scale(1); } }
 .delay-1 { animation-delay: 0.15s; }
 .delay-2 { animation-delay: 0.3s; }
+
+.global-nodes-section {
+  padding: 80px 5%;
+  background-color: var(--background-color);
+  
+  .section-title {
+    max-width: 1100px;
+    margin: 0 auto 40px;
+    text-align: left;
+    
+    @media (max-width: 768px) {
+      margin-bottom: 25px;
+    }
+  }
+}
+
+.nodes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  
+  .title-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    .globe-icon {
+      color: var(--primary-color);
+      animation: pulse-glow 2s infinite ease-in-out;
+    }
+    
+    h3 {
+      font-size: 32px;
+      font-weight: 700;
+      margin: 0;
+      color: var(--text-color);
+      background: none;
+      -webkit-text-fill-color: initial;
+      @media (max-width: 768px) {
+        font-size: 24px;
+      }
+    }
+  }
+
+  .nodes-badge {
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid rgba(var(--primary-rgb), 0.15);
+    
+    @media (max-width: 768px) {
+      font-size: 12px;
+      padding: 4px 12px;
+    }
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+.map-card-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: var(--section-bg);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 24px;
+  padding: 30px;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  .dark-theme & {
+    border-color: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.015);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 10px;
+    min-height: 340px;
+    border-radius: 16px;
+  }
+}
+
+.map-container {
+  width: 100%;
+  height: 500px;
+  @media (max-width: 768px) {
+    height: 320px;
+  }
+}
+
+.map-loading-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  background: var(--section-bg);
+  border-radius: 24px;
+  
+  .dark-theme & {
+    background: #1a1a1a;
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(var(--primary-rgb), 0.1);
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+  }
+  
+  p {
+    font-size: 14px;
+    color: var(--text-light);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 </style>
