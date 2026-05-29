@@ -115,11 +115,6 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="客户端登录时间" width="160">
-          <template #default="scope">
-            <span>{{ scope.row.client_login_at ? formatTime(scope.row.client_login_at) : '-' }}</span>
-          </template>
-        </el-table-column>
 
         <el-table-column label="客户端类型" width="180">
           <template #default="scope">

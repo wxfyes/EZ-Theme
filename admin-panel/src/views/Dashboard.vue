@@ -3,7 +3,7 @@
     <!-- Top Stats Cards -->
     <el-row :gutter="20">
       <el-col :xs="24" :sm="12" :md="6" v-for="(card, index) in statCards" :key="index">
-        <el-card class="stat-card" shadow="hover">
+        <el-card class="stat-card" :class="{ 'clickable-card': card.route }" shadow="hover" @click="handleCardClick(card)">
           <div class="card-content flex-between">
             <div class="card-info">
               <span class="card-title">{{ card.title }}</span>
@@ -89,10 +89,12 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { getSecurePath } from '../api';
 import api from '../api';
 import * as echarts from 'echarts';
 
+const router = useRouter();
 const chartRef = ref(null);
 const chartMetric = ref('income');
 let myChart = null;
@@ -113,6 +115,12 @@ const serverRank = ref([]);
 const userRank = ref([]);
 let orderRawData = [];
 
+const handleCardClick = (card) => {
+  if (card.route) {
+    router.push(card.route);
+  }
+};
+
 // Helper functions
 const formatTraffic = (bytes) => {
   if (!bytes) return '0 B';
@@ -131,7 +139,7 @@ const updateCards = () => {
     {
       title: '今日收入',
       value: formatMoney(overrideData.day_income),
-      sub: `本月收入: ${formatMoney(overrideData.month_income)}`,
+      sub: `本月收入: ${formatMoney(overrideData.month_income)} | 上月收入: ${formatMoney(overrideData.last_month_income)}`,
       icon: 'Money',
       bgColor: 'rgba(64, 158, 255, 0.1)',
       iconColor: 'var(--el-color-primary)',
@@ -159,6 +167,7 @@ const updateCards = () => {
       icon: 'Notification',
       bgColor: 'rgba(245, 108, 108, 0.1)',
       iconColor: 'var(--el-color-danger)',
+      route: '/tickets',
     }
   ];
 };
@@ -410,5 +419,14 @@ onUnmounted(() => {
 .traffic-text {
   font-weight: 600;
   color: var(--el-color-primary);
+}
+
+.clickable-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.clickable-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--el-box-shadow-light);
 }
 </style>
