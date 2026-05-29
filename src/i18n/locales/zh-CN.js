@@ -134,7 +134,8 @@ export default {
         captchaError: '验证出错，请重试',
         captchaLoading: '正在加载验证组件...',
         verifyTokenSuccess: '令牌验证成功',
-        verifyTokenFailed: '令牌验证失败，请重试'
+        verifyTokenFailed: '令牌验证失败，请重试',
+        thirdPartyLogin: '第三方账号登录'
     },
     validation: {
         required: '{field}不能为空',

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <!-- Crisp将会自动注入到页面，不需要特定的DOM元素 -->
   <!-- 添加一个包装容器，只是为了应用样式 -->
   <div class="crisp-embed-container" v-if="CONFIG.enabled">
@@ -8,7 +8,8 @@
 
 <script>
 import { onMounted, onUnmounted, computed, watch, ref } from 'vue';
-import { useStore } from 'vuex';
+import { useStore } from 'vuex';
+import { useI18n } from 'vue-i18n';
 import { getUserInfo, getCommConfig, getUserSubscribe } from '@/api/user';
 import { CUSTOMER_SERVICE_CONFIG } from '@/utils/baseConfig';
 import { formatDate } from '@/utils/formatters';
@@ -22,7 +23,8 @@ export default {
   name: 'CrispEmbed',
   
   setup() {
-    const store = useStore();
+    const store = useStore();
+    const { locale } = useI18n();
     const userInfo = ref(null);
     const userSubscribe = ref(null);
     const currencySymbol = ref('¥'); 
@@ -31,7 +33,8 @@ export default {
     
     const CONFIG = computed(() => {
       return {
-        enabled: CUSTOMER_SERVICE_CONFIG.enabled && CUSTOMER_SERVICE_CONFIG.type === 'crisp' && CUSTOMER_SERVICE_CONFIG.embedMode === 'embed',
+        enabled: CUSTOMER_SERVICE_CONFIG.enabled && CUSTOMER_SERVICE_CONFIG.embedMode === 'embed',
+        type: CUSTOMER_SERVICE_CONFIG.type || 'crisp',
         iconPosition: CUSTOMER_SERVICE_CONFIG.iconPosition || {
           desktop: { left: '20px', bottom: '20px' },
           mobile: { right: '20px', bottom: '100px' }
@@ -39,6 +42,67 @@ export default {
       };
     });
     
+    const loadOtherService = () => {
+      if (!CUSTOMER_SERVICE_CONFIG.customHtml) return;
+      
+      try {
+        // 动态设置 Chatwoot 小部件语言，与当前系统语言保持一致
+        window.chatwootSettings = window.chatwootSettings || {};
+        window.chatwootSettings.locale = locale.value === 'zh-TW' ? 'zh-TW' : (locale.value === 'zh-CN' ? 'zh-CN' : 'en');
+        window.chatwootSettings.useBrowserLanguage = false;
+
+        const scriptContent = CUSTOMER_SERVICE_CONFIG.customHtml;
+        const scriptElement = document.createElement('script');
+        
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = scriptContent;
+        const originalScript = tempDiv.querySelector('script');
+        
+        if (originalScript) {
+          Array.from(originalScript.attributes).forEach(attr => {
+            scriptElement.setAttribute(attr.name, attr.value);
+          });
+          
+          scriptElement.textContent = originalScript.textContent || '';
+          document.body.appendChild(scriptElement);
+        } else {
+          scriptElement.textContent = scriptContent;
+          document.body.appendChild(scriptElement);
+        }
+
+        // 监听 Chatwoot 准备就绪事件并自动传入 V2Board 用户数据
+        window.addEventListener("chatwoot:ready", function () {
+          if (store.getters.isLoggedIn) {
+            fetchUserData().then(() => {
+              const userEmail = extractUserEmail();
+              if (userEmail && window.$chatwoot) {
+                // 标识用户基本信息
+                window.$chatwoot.setUser(userEmail, {
+                  email: userEmail,
+                  name: userEmail.split('@')[0]
+                });
+
+                // 同步套餐、到期时间、可用流量、用户余额等自定义属性
+                const planName = extractPlanName();
+                const expireDate = extractExpireDate();
+                const remainingGB = calculateRemainingTraffic();
+                const balance = extractBalance();
+
+                window.$chatwoot.setCustomAttributes({
+                  Plan: planName,
+                  Expires: expireDate,
+                  Traffic: remainingGB + ' GB',
+                  Balance: balance + ' ' + currencySymbol.value
+                });
+              }
+            });
+          }
+        });
+      } catch (error) {
+        console.error('加载第三方客服脚本失败:', error);
+      }
+    };
+
     const initCrisp = async () => {
       if (!CONFIG.value.enabled) return;
       
@@ -327,16 +391,51 @@ export default {
     };
     
     watch(() => store.getters.isLoggedIn, async (newVal) => {
-      if (newVal && crispInitialized.value) {
+      if (newVal) {
+        if (CONFIG.value.type === 'crisp' && crispInitialized.value) {
         await fetchUserData();
         setUserDataToCrisp();
+        } else if (CONFIG.value.type !== 'crisp' && window.$chatwoot) {
+          await fetchUserData();
+          const userEmail = extractUserEmail();
+          if (userEmail) {
+            window.$chatwoot.setUser(userEmail, {
+              email: userEmail,
+              name: userEmail.split('@')[0]
+            });
+            const planName = extractPlanName();
+            const expireDate = extractExpireDate();
+            const remainingGB = calculateRemainingTraffic();
+            const balance = extractBalance();
+            window.$chatwoot.setCustomAttributes({
+              Plan: planName,
+              Expires: expireDate,
+              Traffic: remainingGB + ' GB',
+              Balance: balance + ' ' + currencySymbol.value
+            });
+          }
+        }
       }
     });
     
+    // 监听语言变化，实时切换 Chatwoot 的语言
+    watch(() => locale.value, (newLang) => {
+      if (window.$chatwoot) {
+        const chatwootLang = newLang === 'zh-TW' ? 'zh-TW' : (newLang === 'zh-CN' ? 'zh-CN' : 'en');
+        window.$chatwoot.setLocale(chatwootLang);
+      }
+    });
+    
     onMounted(async () => {
       checkIfMobile();
       
-      await initCrisp();
+      if (CONFIG.value.enabled) {
+        if (CONFIG.value.type === 'crisp') {
+          await initCrisp();
+        } else {
+          loadOtherService();
+        }
+      }
       
       window.addEventListener('resize', handleResize);
       

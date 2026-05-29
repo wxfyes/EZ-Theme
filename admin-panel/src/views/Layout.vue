@@ -11,6 +11,7 @@
         :default-active="activeMenu"
         class="el-menu-vertical"
         :collapse="isCollapse"
+        unique-opened
         router
       >
         <el-menu-item index="/dashboard">
@@ -18,30 +19,70 @@
           <template #title>仪表盘</template>
         </el-menu-item>
         
-        <el-menu-item index="/users">
-          <el-icon><User /></el-icon>
-          <template #title>用户管理</template>
-        </el-menu-item>
+        <el-sub-menu index="server-group">
+          <template #title>
+            <el-icon><Connection /></el-icon>
+            <span>节点网络</span>
+          </template>
+          <el-menu-item index="/servers">
+            <el-icon><Link /></el-icon>
+            <span>节点管理</span>
+          </el-menu-item>
+          <el-menu-item index="/groups">
+            <el-icon><HelpFilled /></el-icon>
+            <span>权限组管理</span>
+          </el-menu-item>
+          <el-menu-item index="/routes">
+            <el-icon><Share /></el-icon>
+            <span>路由管理</span>
+          </el-menu-item>
+        </el-sub-menu>
         
-        <el-menu-item index="/plans">
-          <el-icon><Tickets /></el-icon>
-          <template #title>订阅管理</template>
-        </el-menu-item>
+        <el-sub-menu index="finance-group">
+          <template #title>
+            <el-icon><Goods /></el-icon>
+            <span>财务销售</span>
+          </template>
+          <el-menu-item index="/plans">
+            <el-icon><Tickets /></el-icon>
+            <span>订阅管理</span>
+          </el-menu-item>
+          <el-menu-item index="/orders">
+            <el-icon><Document /></el-icon>
+            <span>订单管理</span>
+          </el-menu-item>
+          <el-menu-item index="/coupons">
+            <el-icon><PriceTag /></el-icon>
+            <span>优惠券管理</span>
+          </el-menu-item>
+          <el-menu-item index="/giftcards">
+            <el-icon><CreditCard /></el-icon>
+            <span>礼品卡管理</span>
+          </el-menu-item>
+        </el-sub-menu>
         
-        <el-menu-item index="/servers">
-          <el-icon><Connection /></el-icon>
-          <template #title>节点管理</template>
-        </el-menu-item>
-        
-        <el-menu-item index="/orders">
-          <el-icon><Document /></el-icon>
-          <template #title>订单管理</template>
-        </el-menu-item>
-        
-        <el-menu-item index="/notices">
-          <el-icon><Notification /></el-icon>
-          <template #title>公告管理</template>
-        </el-menu-item>
+        <el-sub-menu index="user-group">
+          <template #title>
+            <el-icon><User /></el-icon>
+            <span>用户与支持</span>
+          </template>
+          <el-menu-item index="/users">
+            <el-icon><Avatar /></el-icon>
+            <span>用户管理</span>
+          </el-menu-item>
+          <el-menu-item index="/notices">
+            <el-icon><Notification /></el-icon>
+            <span>公告管理</span>
+          </el-menu-item>
+          <el-menu-item index="/tickets">
+            <el-icon><ChatLineSquare /></el-icon>
+            <span>工单管理</span>
+          </el-menu-item>
+          <el-menu-item index="/knowledges">
+            <el-icon><Notebook /></el-icon>
+            <span>知识库管理</span>
+          </el-menu-item>
+        </el-sub-menu>
         
         <el-menu-item index="/settings">
           <el-icon><Setting /></el-icon>

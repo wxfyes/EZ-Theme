@@ -27,11 +27,26 @@
           </el-select>
 
           <el-button type="primary" @click="handleSearch">筛选</el-button>
+          <el-button type="info" plain @click="advancedFilterVisible = true">高级筛选</el-button>
         </div>
 
         <div class="filter-right flex-center gap-10">
           <el-button type="success" icon="Plus" @click="openCreateDialog">添加用户</el-button>
         </div>
+      </div>
+
+      <div v-if="useAdvancedFilter" class="flex-center mt-10 filter-tags gap-5" style="justify-content: flex-start; flex-wrap: wrap;">
+        <span class="font-12" style="color: var(--el-text-color-secondary)">已启用高级筛选：</span>
+        <el-tag 
+          v-for="(f, idx) in advancedFilters" 
+          :key="idx" 
+          closable 
+          size="small" 
+          @close="handleRemoveFilterCondition(idx)"
+        >
+          {{ filterKeys[f.key] }} {{ f.condition }} {{ f.key === 'plan_id' ? getPlanName(f.value) : f.value }}
+        </el-tag>
+        <el-button type="danger" link size="small" @click="handleClearAdvancedFilter">清除筛选</el-button>
       </div>
     </el-card>
 
@@ -231,6 +246,65 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Advanced Filter Dialog -->
+    <el-dialog v-model="advancedFilterVisible" title="高级筛选" width="700px">
+      <el-table :data="advancedFilters" style="width: 100%">
+        <el-table-column label="字段" width="180">
+          <template #default="scope">
+            <el-select v-model="scope.row.key" placeholder="选择字段" style="width: 100%">
+              <el-option v-for="(label, key) in filterKeys" :key="key" :label="label" :value="key" />
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column label="条件" width="130">
+          <template #default="scope">
+            <el-select v-model="scope.row.condition" placeholder="选择条件" style="width: 100%">
+              <el-option v-for="c in filterConditions" :key="c.value" :label="c.label" :value="c.value" />
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column label="数值">
+          <template #default="scope">
+            <!-- plan_id input -->
+            <el-select v-if="scope.row.key === 'plan_id'" v-model="scope.row.value" placeholder="选择计划" style="width: 100%">
+              <el-option label="无订阅" value="null" />
+              <el-option v-for="p in plans" :key="p.id" :label="p.name" :value="p.id" />
+            </el-select>
+            <!-- banned/is_admin input -->
+            <el-select v-else-if="scope.row.key === 'banned' || scope.row.key === 'is_admin'" v-model="scope.row.value" placeholder="请选择" style="width: 100%">
+              <el-option label="是 / 封禁" :value="1" />
+              <el-option label="否 / 正常" :value="0" />
+            </el-select>
+            <!-- Date/Time input -->
+            <el-date-picker
+              v-else-if="scope.row.key === 'expired_at' || scope.row.key === 'client_login_at'"
+              v-model="scope.row.value"
+              type="datetime"
+              placeholder="选择日期时间"
+              style="width: 100%"
+              value-format="X"
+            />
+            <!-- Standard text input -->
+            <el-input v-else v-model="scope.row.value" placeholder="请输入数值" style="width: 100%" />
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="80" align="center">
+          <template #default="scope">
+            <el-button type="danger" icon="Delete" circle size="small" @click="handleRemoveFilterCondition(scope.$index)" />
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="mt-15" style="margin-top: 15px">
+        <el-button type="primary" plain icon="Plus" @click="handleAddFilterCondition">添加筛选条件</el-button>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="advancedFilterVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleApplyAdvancedFilter">确定筛选</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -251,6 +325,41 @@ const searchQuery = ref('');
 const filterPlan = ref('');
 const filterStatus = ref('');
 const plans = ref([]);
+
+const useAdvancedFilter = ref(false);
+const advancedFilterVisible = ref(false);
+const advancedFilters = ref([
+  { key: 'email', condition: '模糊', value: '' }
+]);
+
+const filterKeys = {
+  email: '邮箱',
+  id: '用户ID',
+  plan_id: '订阅计划',
+  transfer_enable: '总流量限制 (GB)',
+  d: '已用下行流量 (GB)',
+  expired_at: '到期时间',
+  client_login_at: '客户端登录时间',
+  client_type: '客户端类型',
+  device_limit: '设备数限制',
+  uuid: 'UUID',
+  token: '订阅Token',
+  invite_by_email: '邀请人邮箱',
+  invite_user_id: '邀请人ID',
+  banned: '封禁状态',
+  remarks: '备注',
+  is_admin: '是否管理员'
+};
+
+const filterConditions = [
+  { value: '模糊', label: '模糊' },
+  { value: '=', label: '=' },
+  { value: '>', label: '>' },
+  { value: '<', label: '<' },
+  { value: '>=', label: '>=' },
+  { value: '<=', label: '<=' },
+  { value: '!=', label: '!=' }
+];
 
 const createVisible = ref(false);
 const createFormRef = ref(null);
@@ -322,6 +431,12 @@ const isExpired = (timestamp) => {
   return timestamp < Date.now() / 1000;
 };
 
+const getPlanName = (id) => {
+  if (id === 'null') return '无订阅';
+  const plan = plans.value.find(p => p.id == id);
+  return plan ? plan.name : id;
+};
+
 // Fetch plans for dropdowns
 const fetchPlans = async () => {
   try {
@@ -343,14 +458,33 @@ const fetchUsers = async () => {
     
     // Construct filters
     const filter = [];
-    if (searchQuery.value) {
-      filter.push({ key: 'email', condition: '模糊', value: searchQuery.value });
-    }
-    if (filterPlan.value) {
-      filter.push({ key: 'plan_id', condition: '=', value: filterPlan.value });
-    }
-    if (filterStatus.value !== '') {
-      filter.push({ key: 'banned', condition: '=', value: filterStatus.value });
+    if (useAdvancedFilter.value) {
+      advancedFilters.value.forEach(f => {
+        if (f.value !== undefined && f.value !== null && f.value !== '') {
+          let val = f.value;
+          if (f.key === 'expired_at' || f.key === 'client_login_at') {
+            if (typeof val === 'string' || typeof val === 'number') {
+              const num = Number(val);
+              if (num > 1000000000000) { // millisecond
+                val = Math.floor(num / 1000);
+              }
+            } else if (val instanceof Date) {
+              val = Math.floor(val.getTime() / 1000);
+            }
+          }
+          filter.push({ key: f.key, condition: f.condition, value: val });
+        }
+      });
+    } else {
+      if (searchQuery.value) {
+        filter.push({ key: 'email', condition: '模糊', value: searchQuery.value });
+      }
+      if (filterPlan.value) {
+        filter.push({ key: 'plan_id', condition: '=', value: filterPlan.value });
+      }
+      if (filterStatus.value !== '') {
+        filter.push({ key: 'banned', condition: '=', value: filterStatus.value });
+      }
     }
 
     const res = await api.get(`/${securePath}/user/fetch`, {
@@ -370,6 +504,31 @@ const fetchUsers = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const handleAddFilterCondition = () => {
+  advancedFilters.value.push({ key: 'email', condition: '模糊', value: '' });
+};
+
+const handleRemoveFilterCondition = (idx) => {
+  advancedFilters.value.splice(idx, 1);
+  if (advancedFilters.value.length === 0) {
+    handleAddFilterCondition();
+  }
+};
+
+const handleApplyAdvancedFilter = () => {
+  useAdvancedFilter.value = true;
+  advancedFilterVisible.value = false;
+  currentPage.value = 1;
+  fetchUsers();
+};
+
+const handleClearAdvancedFilter = () => {
+  useAdvancedFilter.value = false;
+  advancedFilters.value = [{ key: 'email', condition: '模糊', value: '' }];
+  currentPage.value = 1;
+  fetchUsers();
 };
 
 const handleSearch = () => {

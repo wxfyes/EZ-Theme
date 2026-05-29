@@ -312,10 +312,10 @@ const config = {
     // 客户端下载链接  //可以改成文档链接直接在新标签页打开
     clientLinks: {
       ios: 'https://apps.apple.com/ca/app/shadowrocket/id932747118',
-      android: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.0.6%2B260516/TianQue-Mobile-arm64-v8a.apk',
+      android: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.0.9%2B260528/TianQue-Mobile-arm64-v8a.apk',
       macos: 'https://download.qqccjj.top',
-      windows: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.0.6%2B260516/TianQue-2.0.6+260516-Windows-Setup.exe',
-      linux: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.0.6%2B260516/TianQue-2.0.6+260516-Linux.tar.gz',
+      windows: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.0.9%2B260528/TianQue-2.0.9+260528-Windows-Setup.exe',
+      linux: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.0.9%2B260528/TianQue-2.0.9+260528-Linux.tar.gz',
       下载页面: 'https://download.qqccjj.top',
       // 安全收纳敏感链接，打包后自动混淆
       githubRepo: 'https://github.com/tianquege/TianQueClient',
@@ -772,15 +772,29 @@ const config = {
   // 客服系统配置
   CUSTOMER_SERVICE_CONFIG: {
     // 是否启用客服系统
-    enabled: false,
+    enabled: true,
 
     // 客服系统类型: 'crisp' 或 'other'
     // 注意：当客服类型为crisp时，系统会自动向Crisp传递用户数据
     // 包括：用户邮箱、套餐名称、到期时间、可用流量、用户余额
-    type: 'crisp',
+    type: 'other',
 
     // 客服系统JS代码，请将您的客服系统提供的嵌入代码粘贴在这里
-    customHtml: '',
+    customHtml: `<script>
+  (function(d,t) {
+    var BASE_URL="https://chatwoot.126581.xyz";
+    var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+    g.src=BASE_URL+"/packs/js/sdk.js";
+    g.async = true;
+    s.parentNode.insertBefore(g,s);
+    g.onload=function(){
+      window.chatwootSDK.run({
+        websiteToken: 'hMhp8cjhJWvswFAJ8aJdSutN',
+        baseUrl: BASE_URL
+      })
+    }
+  })(document,"script");
+</script>`,
 
     // 客服系统嵌入模式: 'popup'=弹出式页面, 'embed'=嵌入到每个页面
     // 'popup'模式: 点击客服图标会跳转到单独的客服页面

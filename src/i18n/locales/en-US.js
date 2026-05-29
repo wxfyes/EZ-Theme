@@ -1,4 +1,4 @@
-﻿import {SITE_CONFIG} from '../../utils/baseConfig';
+import {SITE_CONFIG} from '../../utils/baseConfig';
 
 export default {
     common: {
@@ -134,7 +134,8 @@ export default {
         captchaError: 'Verification error, please try again',
         captchaLoading: 'Loading verification component...',
         verifyTokenSuccess: 'Token verification successful',
-        verifyTokenFailed: 'Token verification failed, please try again'
+        verifyTokenFailed: 'Token verification failed, please try again',
+        thirdPartyLogin: 'Third-party Login'
     },
     validation: {
         required: '{field} cannot be empty',

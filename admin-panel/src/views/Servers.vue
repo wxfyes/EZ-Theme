@@ -5,13 +5,16 @@
       <div class="flex-between flex-wrap gap-10">
         <span class="action-text">节点管理</span>
         <div class="flex-center gap-10">
+          <el-button type="warning" icon="Sort" :loading="saveSortLoading" @click="handleSaveSort">
+            保存排序
+          </el-button>
           <el-dropdown trigger="click" @command="handleCreateCommand">
             <el-button type="primary" icon="Plus">
               添加节点<el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-for="(label, type) in nodeTypes" :key="type" :command="type">
+                <el-dropdown-item v-for="(label, type) in nodeTypes" :key="type" :command="type" v-show="type !== 'all'">
                   {{ label }} 节点
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -25,8 +28,17 @@
     <el-tabs v-model="activeTab" class="mt-20 node-tabs" @tab-change="handleTabChange">
       <el-tab-pane v-for="(label, type) in nodeTypes" :key="type" :label="label" :name="type">
         <el-card class="table-card" shadow="hover">
-          <el-table :data="nodeLists[type] || []" v-loading="loading" stripe style="width: 100%">
+          <el-table :data="type === 'all' ? allNodes : (nodeLists[type] || [])" v-loading="loading" stripe style="width: 100%">
             <el-table-column prop="id" label="ID" width="70" align="center" />
+            
+            <el-table-column v-if="type === 'all'" prop="type" label="协议类型" width="120" align="center">
+              <template #default="scope">
+                <el-tag type="info" size="small" effect="plain">
+                  {{ nodeTypes[scope.row.type] || scope.row.type }}
+                </el-tag>
+              </template>
+            </el-table-column>
+
             <el-table-column prop="name" label="节点名称" min-width="150" />
             
             <el-table-column prop="host" label="地址:端口" min-width="180" show-overflow-tooltip>
@@ -43,11 +55,31 @@
               </template>
             </el-table-column>
 
-            <el-table-column prop="group_id" label="分配组" min-width="150">
+            <el-table-column prop="online" label="在线人数" width="100" align="center">
+              <template #default="scope">
+                <span class="online-badge" :style="{ color: scope.row.online > 0 ? 'var(--el-color-success)' : 'inherit', fontWeight: scope.row.online > 0 ? '600' : 'normal' }">
+                  {{ scope.row.online || 0 }} 人
+                </span>
+              </template>
+            </el-table-column>
+
+            <el-table-column prop="group_id" label="权限组" min-width="150">
               <template #default="scope">
                 <el-tag v-for="gId in scope.row.group_id" :key="gId" size="small" class="mr-5">
                   {{ getGroupName(gId) }}
                 </el-tag>
+              </template>
+            </el-table-column>
+
+            <el-table-column prop="sort" label="排序" width="100" align="center">
+              <template #default="scope">
+                <el-input-number 
+                  v-model="scope.row.sort" 
+                  :min="0" 
+                  :controls="false" 
+                  size="small" 
+                  style="width: 70px"
+                />
               </template>
             </el-table-column>
 
@@ -57,16 +89,16 @@
                   v-model="scope.row.show"
                   :active-value="1"
                   :inactive-value="0"
-                  @change="(val) => handleToggleShow(scope.row, type, val)"
+                  @change="(val) => handleToggleShow(scope.row, scope.row.type || type, val)"
                 />
               </template>
             </el-table-column>
 
             <el-table-column label="操作" width="220" align="right">
               <template #default="scope">
-                <el-button type="primary" link @click="openEditDialog(scope.row, type)">编辑</el-button>
-                <el-button type="success" link @click="handleCopy(scope.row, type)">复制</el-button>
-                <el-button type="danger" link @click="handleDelete(scope.row, type)">删除</el-button>
+                <el-button type="primary" link @click="openEditDialog(scope.row, scope.row.type || type)">编辑</el-button>
+                <el-button type="success" link @click="handleCopy(scope.row, scope.row.type || type)">复制</el-button>
+                <el-button type="danger" link @click="handleDelete(scope.row, scope.row.type || type)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -604,10 +636,11 @@ const dialogVisible = ref(false);
 const isEdit = ref(false);
 const dialogTitle = ref('添加节点');
 
-const activeTab = ref('shadowsocks');
+const activeTab = ref('all');
 const activeType = ref('shadowsocks');
 
 const nodeTypes = {
+  all: '所有',
   shadowsocks: 'Shadowsocks',
   vmess: 'Vmess',
   trojan: 'Trojan',
@@ -627,6 +660,16 @@ const nodeLists = reactive({
   tuic: [],
   anytls: [],
   v2node: [],
+});
+
+const allNodes = computed(() => {
+  const list = [];
+  Object.keys(nodeLists).forEach(type => {
+    nodeLists[type].forEach(node => {
+      list.push({ ...node, type });
+    });
+  });
+  return list.sort((a, b) => (a.sort || 0) - (b.sort || 0) || a.id - b.id);
 });
 
 const groupList = ref([]);
@@ -887,7 +930,34 @@ const fetchNodes = async () => {
 };
 
 const handleTabChange = (name) => {
-  activeType.value = name;
+  if (name !== 'all') {
+    activeType.value = name;
+  }
+};
+
+const saveSortLoading = ref(false);
+const handleSaveSort = async () => {
+  saveSortLoading.value = true;
+  try {
+    const payload = {};
+    // Gather all types
+    Object.keys(nodeLists).forEach(type => {
+      payload[type] = {};
+      nodeLists[type].forEach(node => {
+        payload[type][node.id] = node.sort || 0;
+      });
+    });
+
+    const securePath = getSecurePath();
+    await api.post(`/${securePath}/server/manage/sort`, payload);
+    ElMessage.success('排序保存成功');
+    fetchNodes();
+  } catch (err) {
+    console.error(err);
+    ElMessage.error('排序保存失败');
+  } finally {
+    saveSortLoading.value = false;
+  }
 };
 
 // Sync helpers

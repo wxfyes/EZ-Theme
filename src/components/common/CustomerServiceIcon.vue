@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div 
     v-if="isVisible" 
     class="customer-service-icon"
@@ -41,7 +41,7 @@ export default {
     const shouldShow = computed(() => {
       if (!CUSTOMER_SERVICE_CONFIG.enabled) return false;
       
-      if (CUSTOMER_SERVICE_CONFIG.embedMode === 'embed' && CUSTOMER_SERVICE_CONFIG.type === 'crisp') {
+      if (CUSTOMER_SERVICE_CONFIG.embedMode === 'embed') {
         return false;
       }
       

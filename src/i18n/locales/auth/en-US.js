@@ -1,4 +1,4 @@
-﻿
+
 
 import { SITE_CONFIG } from '../../../utils/baseConfig';
 
@@ -65,7 +65,8 @@ export default {
     captcha: 'CAPTCHA Verification',
     captchaRequired: 'Please complete the CAPTCHA verification',
     verifyTokenSuccess: 'Token verification successful',
-    verifyTokenFailed: 'Token verification failed, please try again'
+    verifyTokenFailed: 'Token verification failed, please try again',
+    thirdPartyLogin: 'Or sign in with'
   },
   validation: {
     required: '{field} cannot be empty',

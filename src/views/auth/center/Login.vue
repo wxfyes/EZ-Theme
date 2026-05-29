@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 
   <div class="auth-container">
 
@@ -190,7 +190,22 @@
 
       </form>
 
-
+      <!-- 社交登录 -->
+      <div class="social-login-section">
+        <div class="auth-divider">
+          <span class="auth-divider-text">{{ $t('auth.thirdPartyLogin') || '第三方账号登录' }}</span>
+        </div>
+        <div class="social-buttons">
+          <a href="/api/v1/passport/auth/social/google" class="btn-social google-btn">
+            <svg viewBox="0 0 24 24" class="social-icon"><path fill="currentColor" d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.53-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C17.955 2.192 15.34 1 12.24 1 5.922 1 12.24 1 12.24s4.922 11.24 11.24 11.24c6.593 0 10.973-4.636 10.973-11.163 0-.756-.08-1.332-.18-1.9L12.24 10.286z"/></svg>
+            <span>Google</span>
+          </a>
+          <a href="/api/v1/passport/auth/social/github" class="btn-social github-btn">
+            <svg viewBox="0 0 24 24" class="social-icon"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+            <span>GitHub</span>
+          </a>
+        </div>
+      </div>
 
       <div class="auth-footer">
 
@@ -1323,25 +1338,65 @@ export default {
   text-align: center;
 
   img {
-
     width: 60px;
-
     height: 60px;
-
     min-width: 60px;
-
     min-height: 60px;
-
     border-radius: 12px;
-
     object-fit: cover;
-
     cursor: pointer;
-
     user-select: none;
-
   }
-
 }
 
+.social-login-section {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.social-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 1rem;
+}
+
+.btn-social {
+  flex: 1;
+  height: 42px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-color, #e0e0e0);
+  background-color: var(--card-bg, #ffffff);
+  color: var(--primary-text-color, #333333);
+}
+
+.btn-social:hover {
+  background-color: var(--input-bg-color, #f5f5f5);
+  border-color: var(--theme-color);
+  transform: translateY(-1px);
+}
+
+.social-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.google-btn svg {
+  color: #ea4335;
+}
+
+.github-btn svg {
+  color: #24292e;
+}
+
+.dark-theme .github-btn svg {
+  color: #ffffff;
+}
 </style>
