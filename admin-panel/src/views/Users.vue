@@ -293,6 +293,18 @@
                 <el-radio :label="1">封禁</el-radio>
               </el-radio-group>
             </el-form-item>
+            <el-form-item label="管理员权限">
+              <el-radio-group v-model="editForm.is_admin">
+                <el-radio :label="0">否</el-radio>
+                <el-radio :label="1">是</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="员工权限">
+              <el-radio-group v-model="editForm.is_staff">
+                <el-radio :label="0">否</el-radio>
+                <el-radio :label="1">是</el-radio>
+              </el-radio-group>
+            </el-form-item>
           </el-tab-pane>
         </el-tabs>
       </el-form>
@@ -450,6 +462,8 @@ const editForm = reactive({
   device_limit: 0,
   speed_limit: 0,
   banned: 0,
+  is_admin: 0,
+  is_staff: 0,
 });
 
 // Helper formatting functions
@@ -694,6 +708,8 @@ const openEditDialog = (row) => {
   editForm.device_limit = row.device_limit || 0;
   editForm.speed_limit = row.speed_limit || 0;
   editForm.banned = row.banned;
+  editForm.is_admin = row.is_admin !== undefined ? Number(row.is_admin) : 0;
+  editForm.is_staff = row.is_staff !== undefined ? Number(row.is_staff) : 0;
   
   editVisible.value = true;
 };
@@ -715,6 +731,8 @@ const handleUpdateUser = async () => {
       device_limit: editForm.device_limit || null,
       speed_limit: editForm.speed_limit || null,
       banned: editForm.banned,
+      is_admin: editForm.is_admin,
+      is_staff: editForm.is_staff,
     };
     
     if (editForm.password) {
