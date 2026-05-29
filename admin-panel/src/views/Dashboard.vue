@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard-container">
     <!-- Top Stats Cards -->
-    <el-row :gutter="20">
+    <el-row :gutter="20" style="display: flex; flex-wrap: wrap; align-items: stretch;">
       <el-col :xs="24" :sm="12" :md="6" v-for="(card, index) in statCards" :key="index">
         <el-card class="stat-card" :class="{ 'clickable-card': card.route }" shadow="hover" @click="handleCardClick(card)">
           <div class="card-content flex-between">
@@ -484,11 +484,32 @@ onUnmounted(() => {
 .stat-card {
   border-radius: 16px;
   border: 1px solid var(--el-border-color-light);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-card :deep(.el-card__body) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.card-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex: 1;
 }
 
 .card-info {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  justify-content: space-between;
+  height: 100%;
 }
 
 .card-title {

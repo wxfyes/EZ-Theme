@@ -103,20 +103,35 @@
         </el-row>
 
         <el-form-item label="文章内容" prop="body">
-          <div class="split-editor-container">
-            <div class="editor-pane">
-              <div class="pane-title">编辑 Markdown</div>
-              <el-input
-                type="textarea"
-                :rows="18"
-                v-model="form.body"
-                placeholder="支持 Markdown 语法内容..."
-                class="code-textarea"
-              />
+          <div class="split-editor-container" :class="{ 'is-fullscreen': isFullscreen }">
+            <!-- Toolbar -->
+            <div class="editor-toolbar">
+              <template v-for="(item, i) in toolbarItems" :key="i">
+                <div v-if="item.divider" class="toolbar-divider" />
+                <el-tooltip v-else :content="item.label" placement="top" :enterable="false">
+                  <button type="button" class="toolbar-btn" @click="item.action">
+                    <span v-if="item.iconHtml" v-html="item.iconHtml"></span>
+                    <el-icon v-else><component :is="item.iconName" /></el-icon>
+                  </button>
+                </el-tooltip>
+              </template>
             </div>
-            <div class="preview-pane">
-              <div class="pane-title">实时预览</div>
-              <div class="markdown-preview-body" v-html="renderedMarkdown"></div>
+
+            <div class="editor-main-layout">
+              <div class="editor-pane">
+                <div class="pane-title">编辑 Markdown</div>
+                <el-input
+                  type="textarea"
+                  ref="textareaRef"
+                  v-model="form.body"
+                  placeholder="支持 Markdown 语法内容..."
+                  class="code-textarea"
+                />
+              </div>
+              <div class="preview-pane">
+                <div class="pane-title">实时预览</div>
+                <div class="markdown-preview-body" v-html="renderedMarkdown"></div>
+              </div>
             </div>
           </div>
         </el-form-item>
@@ -132,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -150,6 +165,123 @@ const renderedMarkdown = computed(() => {
     return `<div class="preview-placeholder">解析出错: ${e.message}</div>`;
   }
 });
+
+const textareaRef = ref(null);
+const isFullscreen = ref(false);
+
+const insertText = (before, after = '') => {
+  const textarea = textareaRef.value?.$el.querySelector('textarea') || textareaRef.value;
+  if (!textarea) return;
+
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const text = form.body || '';
+  const selected = text.substring(start, end);
+  const replacement = before + selected + after;
+
+  form.body = text.substring(0, start) + replacement + text.substring(end);
+
+  setTimeout(() => {
+    textarea.focus();
+    textarea.setSelectionRange(start + before.length, start + before.length + selected.length);
+  }, 50);
+};
+
+const confirmClear = () => {
+  ElMessageBox.confirm('确定要清空编辑器内容吗？', '提示', {
+    type: 'warning',
+    confirmButtonText: '确定清空',
+    cancelButtonText: '取消'
+  }).then(() => {
+    form.body = '';
+  }).catch(() => {});
+};
+
+const showHelp = () => {
+  ElMessageBox.alert(
+    `<h3>常用 Markdown 语法与快捷方式说明</h3>
+    <ul style="padding-left: 20px; line-height: 1.8; margin-top: 10px;">
+      <li><b>一级/二级标题</b>: <code># 标题名称</code> 或 <code>## 标题名称</code></li>
+      <li><b>加粗文本</b>: <code>**粗体文字**</code></li>
+      <li><b>斜体文本</b>: <code>*斜体文字*</code></li>
+      <li><b>下划线/删除线</b>: <code>&lt;u&gt;下划线&lt;/u&gt;</code> 或 <code>~~删除线~~</code></li>
+      <li><b>添加链接/图片</b>: <code>[链接名称](地址)</code> 或 <code>![图片名称](图片地址)</code></li>
+      <li><b>付费可见标签</b> (独有语法):<br>在付费可见内容的开头加上 <code>&lt;!--access start--&gt;</code>，结尾加上 <code>&lt;!--access end--&gt;</code></li>
+    </ul>`,
+    '编辑器使用指南',
+    { dangerouslyUseHTMLString: true }
+  );
+};
+
+const history = ref([]);
+const historyIndex = ref(-1);
+let isRestoringHistory = false;
+
+watch(() => form.body, (newVal) => {
+  if (isRestoringHistory) return;
+  if (history.value[historyIndex.value] === newVal) return;
+  
+  history.value = history.value.slice(0, historyIndex.value + 1);
+  history.value.push(newVal || '');
+  historyIndex.value = history.value.length - 1;
+});
+
+const initHistory = (val) => {
+  history.value = [val || ''];
+  historyIndex.value = 0;
+};
+
+const triggerUndo = () => {
+  if (historyIndex.value > 0) {
+    isRestoringHistory = true;
+    historyIndex.value--;
+    form.body = history.value[historyIndex.value];
+    nextTick(() => { isRestoringHistory = false; });
+  }
+};
+
+const triggerRedo = () => {
+  if (historyIndex.value < history.value.length - 1) {
+    isRestoringHistory = true;
+    historyIndex.value++;
+    form.body = history.value[historyIndex.value];
+    nextTick(() => { isRestoringHistory = false; });
+  }
+};
+
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value;
+};
+
+const handleKeyDown = (e) => {
+  if (e.key === 'Escape' && isFullscreen.value) {
+    isFullscreen.value = false;
+  }
+};
+
+const toolbarItems = [
+  { label: '标题', action: () => insertText('## '), iconHtml: '<span class="toolbar-text-icon">H</span>' },
+  { label: '加粗', action: () => insertText('**', '**'), iconHtml: '<span class="toolbar-text-icon" style="font-weight: bold;">B</span>' },
+  { label: '斜体', action: () => insertText('*', '*'), iconHtml: '<span class="toolbar-text-icon" style="font-style: italic;">I</span>' },
+  { label: '下划线', action: () => insertText('<u>', '</u>'), iconHtml: '<span class="toolbar-text-icon" style="text-decoration: underline;">U</span>' },
+  { label: '删除线', action: () => insertText('~~', '~~'), iconHtml: '<span class="toolbar-text-icon" style="text-decoration: line-through;">S</span>' },
+  { divider: true },
+  { label: '无序列表', action: () => insertText('- '), iconName: 'List' },
+  { label: '有序列表', action: () => insertText('1. '), iconHtml: '<span class="toolbar-text-icon">1.</span>' },
+  { label: '引用', action: () => insertText('> '), iconName: 'ChatLineSquare' },
+  { divider: true },
+  { label: '代码块', action: () => insertText('```\n', '\n```'), iconName: 'Cpu' },
+  { label: '表格', action: () => insertText('| Header | Header |\n| ------ | ------ |\n| Content | Content |\n'), iconName: 'Grid' },
+  { label: '图片', action: () => insertText('![alt](', ')'), iconName: 'Picture' },
+  { label: '链接', action: () => insertText('[text](', ')'), iconName: 'Link' },
+  { label: '清空内容', action: () => confirmClear(), iconName: 'Delete' },
+  { divider: true },
+  { label: '撤销 (Ctrl+Z)', action: () => triggerUndo(), iconName: 'Back' },
+  { label: '重做 (Ctrl+Y)', action: () => triggerRedo(), iconName: 'Right' },
+  { divider: true },
+  { label: '使用帮助', action: () => showHelp(), iconName: 'Notebook' },
+  { label: '全屏模式 (Esc退出)', action: () => toggleFullscreen(), iconName: 'FullScreen' }
+];
 
 const loading = ref(false);
 const sortLoading = ref(false);
@@ -239,6 +371,7 @@ const openCreateDialog = () => {
   form.category = categories.value.length > 0 ? categories.value[0] : '';
   form.language = 'zh-CN';
   form.body = '';
+  initHistory('');
   dialogVisible.value = true;
 };
 
@@ -256,6 +389,7 @@ const openEditDialog = async (row) => {
       form.category = res.data.category;
       form.language = res.data.language || 'zh-CN';
       form.body = res.data.body || '';
+      initHistory(res.data.body || '');
       dialogVisible.value = true;
     }
   } catch (err) {
@@ -323,6 +457,11 @@ const handleDelete = (row) => {
 onMounted(() => {
   fetchCategories();
   fetchKnowledges();
+  window.addEventListener('keydown', handleKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
 });
 </script>
 
@@ -348,12 +487,78 @@ onMounted(() => {
 .code-textarea :deep(.el-textarea__inner) {
   font-family: 'Courier New', Courier, monospace;
   font-size: 13px;
+  height: 382px;
+  resize: none;
+  border: none;
+  background-color: transparent;
+  padding: 0;
+}
+
+.code-textarea :deep(.el-textarea__inner:focus) {
+  box-shadow: none;
 }
 
 .split-editor-container {
   display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  background-color: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px 8px 0 0;
+  padding: 6px 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.toolbar-btn {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--el-text-color-regular);
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.toolbar-btn:hover {
+  background-color: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 16px;
+  background-color: var(--el-border-color-light);
+  margin: 0 6px;
+}
+
+.toolbar-text-icon {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.editor-main-layout {
+  display: flex;
   gap: 20px;
   width: 100%;
+  border: 1px solid var(--el-border-color-light);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 15px;
+  box-sizing: border-box;
+  background-color: var(--el-bg-color-overlay);
 }
 
 .editor-pane, .preview-pane {
@@ -363,23 +568,58 @@ onMounted(() => {
   flex-direction: column;
 }
 
+.editor-pane {
+  border-right: 1px solid var(--el-border-color-extra-light);
+  padding-right: 20px;
+}
+
 .pane-title {
   font-size: 12px;
   color: var(--el-text-color-secondary);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .markdown-preview-body {
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
-  padding: 12px 16px;
+  border: none;
+  padding: 0;
   height: 382px;
   overflow-y: auto;
-  background-color: var(--el-fill-color-blank);
+  background-color: transparent;
   box-sizing: border-box;
+}
+
+/* Fullscreen editor styling */
+.split-editor-container.is-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  background-color: var(--el-bg-color);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.split-editor-container.is-fullscreen .editor-toolbar {
+  border-radius: 8px 8px 0 0;
+}
+
+.split-editor-container.is-fullscreen .editor-main-layout {
+  flex: 1;
+  height: calc(100vh - 100px);
+  border-radius: 0 0 8px 8px;
+}
+
+.split-editor-container.is-fullscreen .code-textarea :deep(.el-textarea__inner) {
+  height: calc(100vh - 170px) !important;
+}
+
+.split-editor-container.is-fullscreen .markdown-preview-body {
+  height: calc(100vh - 170px) !important;
 }
 
 /* Style markdown contents */
