@@ -46,7 +46,7 @@
       <div class="hero-buttons animate-up delay-2">
         <div class="main-action-buttons">
           <a href="javascript:void(0)" @click="navigateTo('login')" class="button primary-button">立即登录</a>
-          <a href="javascript:void(0)" @click="navigateTo('register')" class="button secondary-button">立即注册</a>
+          <a href="javascript:void(0)" @click="navigateTo('register')" class="button outline-button">立即注册</a>
         </div>
         <div class="hero-divider"></div>
         <a href="javascript:void(0)" @click="scrollToSection('download')" class="button outline-button download-button-hero">
@@ -324,8 +324,8 @@ export default {
       
       const isDark = isDarkTheme.value;
       
-      const areaColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)';
-      const borderColor = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
+      const areaColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#ffffff';
+      const borderColor = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(53, 92, 194, 0.15)';
       const dotColor = '#22d3ee';
       const tooltipBg = isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)';
       const tooltipBorder = isDark ? 'rgba(34, 211, 238, 0.4)' : 'rgba(53, 92, 194, 0.3)';
@@ -986,12 +986,12 @@ footer {
 .map-card-wrapper {
   max-width: 1100px;
   margin: 0 auto;
-  background: var(--section-bg);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: linear-gradient(135deg, #edf5ff 0%, #dbeafe 100%);
+  border: 1px solid rgba(53, 92, 194, 0.12);
   border-radius: 24px;
   padding: 30px;
   position: relative;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 10px 30px rgba(53, 92, 194, 0.05);
   transition: all 0.3s ease;
   min-height: 520px;
   display: flex;
@@ -1028,7 +1028,7 @@ footer {
   align-items: center;
   justify-content: center;
   z-index: 10;
-  background: var(--section-bg);
+  background: linear-gradient(135deg, #edf5ff 0%, #dbeafe 100%);
   border-radius: 24px;
   
   .dark-theme & {
