@@ -155,22 +155,23 @@
         <el-tab-pane label="订阅" name="subscribe">
           <div class="pane-title">订阅与分流控制</div>
           <el-form :model="configData.subscribe" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '180px'">
+            <el-form-item label="允许用户更改订阅">
+              <el-switch v-model="configData.subscribe.plan_change_enable" :active-value="1" :inactive-value="0" />
+              <div class="form-tip">开启后用户将会可以对订阅计划进行变更。</div>
+            </el-form-item>
             <el-form-item label="月流量重置方式">
               <el-select v-model="configData.subscribe.reset_traffic_method" style="width: 100%">
-                <el-option label="按月重置 (每月1号)" :value="0" />
+                <el-option label="按月重置" :value="0" />
                 <el-option label="按注册日重置" :value="1" />
                 <el-option label="不重置" :value="2" />
-                <el-option label="按年重置 (每年1号)" :value="3" />
+                <el-option label="按年重置" :value="3" />
                 <el-option label="按注册日年重置" :value="4" />
               </el-select>
               <div class="form-tip">全局流量重置方式，默认每月1号。可以在订阅管理中对订单单独设置。</div>
             </el-form-item>
             <el-form-item label="开启折抵方案">
-              <el-switch v-model="configData.subscribe.plan_change_enable" :active-value="1" :inactive-value="0" />
-              <div class="form-tip">开启后用户购买新订阅计划时会由系统对原有订阅进行折抵。</div>
-            </el-form-item>
-            <el-form-item label="结余旧流量">
               <el-switch v-model="configData.subscribe.surplus_enable" :active-value="1" :inactive-value="0" />
+              <div class="form-tip">开启后用户更换订阅将会由系统对原有订阅进行折抵，方案参考文档。</div>
             </el-form-item>
             <el-form-item label="允许提前开启流量周期">
               <el-switch v-model="configData.subscribe.allow_new_period" :active-value="1" :inactive-value="0" />
@@ -199,18 +200,19 @@
             </el-form-item>
             <el-form-item label="在订阅中展示订阅信息">
               <el-switch v-model="configData.subscribe.show_info_to_server_enable" :active-value="1" :inactive-value="0" />
-              <div class="form-tip">开启后将会在用户订阅节点时输出订阅到期时间、流量等元数据信息。</div>
+              <div class="form-tip">开启后将会在用户订阅节点时输出订阅信息。</div>
             </el-form-item>
-            <el-form-item label="客户端展示到期提醒限制">
-              <el-input-number v-model="configData.subscribe.show_subscribe_expire" :min="1" style="width: 150px" />
-              <div class="form-tip">仅当到期天数低于此设定时，客户端才会展示到期提醒。</div>
-            </el-form-item>
-            <el-form-item label="客户端订阅下发策略">
+            <el-form-item label="订阅链接生效模式">
               <el-select v-model="configData.subscribe.show_subscribe_method" style="width: 100%">
-                <el-option label="下发所有节点配置" :value="0" />
-                <el-option label="仅下发订阅中有的节点" :value="1" />
-                <el-option label="下发节点列表但阻止连接超出" :value="2" />
+                <el-option label="永久有效" :value="0" />
+                <el-option label="一次性有效" :value="1" />
+                <el-option label="限时有效" :value="2" />
               </el-select>
+              <div class="form-tip">用户获取订阅链接后的有效期。</div>
+            </el-form-item>
+            <el-form-item v-if="configData.subscribe.show_subscribe_method === 2" label="限时有效时间 (分钟)">
+              <el-input-number v-model="configData.subscribe.show_subscribe_expire" :min="1" style="width: 150px" />
+              <div class="form-tip">订阅链接的限时有效时长，默认5分钟。</div>
             </el-form-item>
           </el-form>
         </el-tab-pane>
