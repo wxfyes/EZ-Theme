@@ -227,9 +227,9 @@ const formatMoney = (amount) => {
 const updateCards = () => {
   statCards.value = [
     {
-      title: '本月收入',
-      value: formatMoney(overrideData.month_income),
-      sub: `今日 ${formatMoney(overrideData.day_income)} | 上月 ${formatMoney(overrideData.last_month_income)}`,
+      title: '今日收入',
+      value: formatMoney(overrideData.day_income),
+      sub: `本月收入 ${formatMoney(overrideData.month_income)} | 上月 ${formatMoney(overrideData.last_month_income)}`,
       icon: 'Wallet',
       bgColor: 'rgba(103, 194, 58, 0.1)',
       iconColor: '#67c23a',
@@ -324,13 +324,23 @@ const renderChart = () => {
   
   const incomeData = orderRawData.filter(d => d.type === '收款金额');
   const registerData = orderRawData.filter(d => d.type === '注册人数');
+  const commissionData = orderRawData.filter(d => d.type === '佣金金额(已发放)');
+  const ordersCountData = orderRawData.filter(d => d.type === '收款笔数');
+  const commissionCountData = orderRawData.filter(d => d.type === '佣金笔数(已发放)');
   
-  incomeData.sort((a, b) => a.date.localeCompare(b.date));
-  registerData.sort((a, b) => a.date.localeCompare(b.date));
+  const sortByDate = (a, b) => a.date.localeCompare(b.date);
+  incomeData.sort(sortByDate);
+  registerData.sort(sortByDate);
+  commissionData.sort(sortByDate);
+  ordersCountData.sort(sortByDate);
+  commissionCountData.sort(sortByDate);
   
   const dates = incomeData.map(d => d.date);
-  const incomeValues = incomeData.map(d => d.value / 100);
+  const incomeValues = incomeData.map(d => d.value);
   const registerValues = registerData.map(d => d.value);
+  const commissionValues = commissionData.map(d => d.value);
+  const ordersCountValues = ordersCountData.map(d => d.value);
+  const commissionCountValues = commissionCountData.map(d => d.value);
   
   const isDarkTheme = document.documentElement.classList.contains('dark');
   
@@ -344,7 +354,14 @@ const renderChart = () => {
       }
     },
     legend: {
-      data: ['收入', '注册'],
+      data: ['收入', '注册', '佣金', '账单笔数', '佣金笔数'],
+      selected: {
+        '收入': true,
+        '注册': true,
+        '佣金': false,
+        '账单笔数': false,
+        '佣金笔数': false
+      },
       textStyle: {
         color: isDarkTheme ? '#eee' : '#333'
       },
@@ -373,7 +390,7 @@ const renderChart = () => {
     yAxis: [
       {
         type: 'value',
-        name: '收入',
+        name: '金额',
         axisLabel: {
           color: isDarkTheme ? '#888' : '#666',
           formatter: '¥{value}'
@@ -386,7 +403,7 @@ const renderChart = () => {
       },
       {
         type: 'value',
-        name: '注册',
+        name: '人数/笔数',
         axisLabel: {
           color: isDarkTheme ? '#888' : '#666'
         },
@@ -425,6 +442,53 @@ const renderChart = () => {
         },
         areaStyle: {
           color: 'rgba(64, 158, 255, 0.1)'
+        }
+      },
+      {
+        name: '佣金',
+        type: 'line',
+        smooth: true,
+        data: commissionValues,
+        itemStyle: {
+          color: '#f56c6c'
+        },
+        lineStyle: {
+          width: 3
+        },
+        areaStyle: {
+          color: 'rgba(245, 108, 108, 0.1)'
+        }
+      },
+      {
+        name: '账单笔数',
+        type: 'line',
+        smooth: true,
+        yAxisIndex: 1,
+        data: ordersCountValues,
+        itemStyle: {
+          color: '#e6a23c'
+        },
+        lineStyle: {
+          width: 3
+        },
+        areaStyle: {
+          color: 'rgba(230, 162, 44, 0.1)'
+        }
+      },
+      {
+        name: '佣金笔数',
+        type: 'line',
+        smooth: true,
+        yAxisIndex: 1,
+        data: commissionCountValues,
+        itemStyle: {
+          color: '#9c27b0'
+        },
+        lineStyle: {
+          width: 3
+        },
+        areaStyle: {
+          color: 'rgba(156, 39, 176, 0.1)'
         }
       }
     ]
@@ -511,14 +575,17 @@ onUnmounted(() => {
 }
 
 .card-value-text {
-  font-size: 24px;
+  font-size: clamp(15px, 4.2vw, 24px);
   font-weight: 700;
   color: var(--el-text-color-primary);
   margin: 4px 0 8px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card-footer-text {
-  font-size: 12px;
+  font-size: clamp(10px, 2.8vw, 12px);
   color: var(--el-text-color-placeholder);
   white-space: nowrap;
   overflow: hidden;
