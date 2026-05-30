@@ -248,13 +248,13 @@
         <el-tab-pane label="工单" name="ticket">
           <div class="pane-title">工单与客户支持配置</div>
           <el-form :model="configData.ticket" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '160px'">
-            <el-form-item label="开启工单系统">
+            <el-form-item label="工单设置">
               <el-select v-model="configData.ticket.ticket_status" style="width: 100%">
-                <el-option label="完全关闭" :value="0" />
-                <el-option label="仅限拥有有效订阅的用户开放" :value="1" />
-                <el-option label="对所有人开放" :value="2" />
+                <el-option label="完全开放工单" :value="0" />
+                <el-option label="只允许购买过服务的用户提交工单" :value="1" />
+                <el-option label="关闭工单提交服务" :value="2" />
               </el-select>
-              <div class="form-tip">设置工单系统的用户访问权限级别。</div>
+              <div class="form-tip">请选择工单的状态。</div>
             </el-form-item>
           </el-form>
         </el-tab-pane>
@@ -422,11 +422,9 @@
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-form-item label="设备限制模式">
-              <el-select v-model="configData.server.device_limit_mode" style="width: 100%">
-                <el-option label="宽松检测" :value="0" />
-                <el-option label="严格封禁限制" :value="1" />
-              </el-select>
+            <el-form-item label="全局设备数限制采用宽松模式">
+              <el-switch v-model="configData.server.device_limit_mode" :active-value="1" :inactive-value="0" />
+              <div class="form-tip">开启后同一IP地址使用多个节点只统计为一个设备。</div>
             </el-form-item>
           </el-form>
         </el-tab-pane>
@@ -732,6 +730,7 @@ const fetchConfig = async () => {
       configData.invite.commission_distribution_enable = Number(configData.invite.commission_distribution_enable);
 
       configData.ticket.ticket_status = Number(configData.ticket.ticket_status);
+      configData.server.device_limit_mode = Number(configData.server.device_limit_mode || 0);
 
       // Parse comma-separated strings/lists for email suffixes & withdraw channels
       if (Array.isArray(configData.safe.email_whitelist_suffix)) {
