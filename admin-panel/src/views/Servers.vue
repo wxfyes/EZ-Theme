@@ -30,6 +30,21 @@
         <el-card class="table-card" shadow="hover">
           <!-- PC Table View -->
           <el-table v-if="!isMobile" :data="getPaginatedNodes(type)" v-loading="loading" stripe style="width: 100%">
+            <el-table-column label="排序" width="55" align="center">
+              <template #default="scope">
+                <el-tooltip content="按住鼠标拖动可直接调整节点顺序" placement="top">
+                  <div 
+                    class="drag-handle" 
+                    draggable="true" 
+                    @dragstart="handleDragStart(scope.$index)"
+                    @dragover.prevent="handleDragOver(scope.$index)"
+                    @dragend="handleDragEnd"
+                  >
+                    <el-icon :size="16"><Rank /></el-icon>
+                  </div>
+                </el-tooltip>
+              </template>
+            </el-table-column>
             <el-table-column prop="id" label="ID" width="70" align="center" />
             
             <el-table-column v-if="type === 'all'" prop="type" label="协议类型" width="120" align="center">
@@ -76,22 +91,6 @@
                 <el-tag v-for="gId in scope.row.group_id" :key="gId" size="small" class="mr-5">
                   {{ getGroupName(gId) }}
                 </el-tag>
-              </template>
-            </el-table-column>
-
-            <el-table-column label="排序" width="80" align="center">
-              <template #default="scope">
-                <el-tooltip content="按住鼠标拖动可直接调整节点顺序" placement="top">
-                  <div 
-                    class="drag-handle" 
-                    draggable="true" 
-                    @dragstart="handleDragStart(scope.$index)"
-                    @dragover.prevent="handleDragOver(scope.$index)"
-                    @dragend="handleDragEnd"
-                  >
-                    <el-icon :size="16"><Rank /></el-icon>
-                  </div>
-                </el-tooltip>
               </template>
             </el-table-column>
 
@@ -160,9 +159,15 @@
                 </div>
               </div>
               <div class="card-actions flex-between">
-                <div class="drag-handle-mobile flex-center">
+                <div 
+                  class="drag-handle-mobile flex-center"
+                  style="cursor: grab; touch-action: none; padding: 6px 10px; border-radius: 6px; background-color: var(--el-fill-color-light);"
+                  @touchstart="handleTouchStart($event, index)"
+                  @touchmove="handleTouchMove($event, index)"
+                  @touchend="handleTouchEnd"
+                >
                   <el-icon :size="16" class="mr-5"><Rank /></el-icon>
-                  <span class="sort-text">排序: {{ node.sort || 0 }}</span>
+                  <span class="sort-text">拖动排序: {{ node.sort || 0 }}</span>
                 </div>
                 <div class="action-buttons flex-center gap-15">
                   <el-button type="primary" link size="small" @click="openEditDialog(node, node.type || type)">编辑</el-button>
@@ -1041,6 +1046,40 @@ const handleDragOver = (index) => {
 
 const handleDragEnd = () => {
   dragIndex.value = -1;
+};
+
+// Touch drag sorting logic for Mobile
+const touchStartIndex = ref(-1);
+const touchStartY = ref(0);
+
+const handleTouchStart = (event, index) => {
+  const absoluteIndex = (nodeCurrentPage.value - 1) * nodePageSize.value + index;
+  touchStartIndex.value = absoluteIndex;
+  touchStartY.value = event.touches[0].clientY;
+};
+
+const handleTouchMove = (event, index) => {
+  if (touchStartIndex.value === -1) return;
+  const currentY = event.touches[0].clientY;
+  const diffY = currentY - touchStartY.value;
+  
+  const step = 80; // card height threshold
+  if (Math.abs(diffY) > step) {
+    const direction = diffY > 0 ? 1 : -1;
+    const targetAbsoluteIndex = touchStartIndex.value + direction;
+    
+    const totalNodes = getNodeListTotal(activeTab.value);
+    if (targetAbsoluteIndex >= 0 && targetAbsoluteIndex < totalNodes) {
+      swapNodes(touchStartIndex.value, targetAbsoluteIndex);
+      
+      touchStartIndex.value = targetAbsoluteIndex;
+      touchStartY.value = currentY;
+    }
+  }
+};
+
+const handleTouchEnd = () => {
+  touchStartIndex.value = -1;
 };
 
 const swapNodes = (fromIndex, toIndex) => {
