@@ -46,6 +46,16 @@
               </template>
             </el-table-column>
             <el-table-column prop="id" label="ID" width="70" align="center" />
+            <el-table-column prop="show" label="状态" width="100" align="center">
+              <template #default="scope">
+                <el-switch
+                  v-model="scope.row.show"
+                  :active-value="1"
+                  :inactive-value="0"
+                  @change="(val) => handleToggleShow(scope.row, scope.row.type || type, val)"
+                />
+              </template>
+            </el-table-column>
             
             <el-table-column v-if="type === 'all'" prop="type" label="协议类型" width="120" align="center">
               <template #default="scope">
@@ -91,17 +101,6 @@
                 <el-tag v-for="gId in scope.row.group_id" :key="gId" size="small" class="mr-5">
                   {{ getGroupName(gId) }}
                 </el-tag>
-              </template>
-            </el-table-column>
-
-            <el-table-column prop="show" label="状态" width="100" align="center">
-              <template #default="scope">
-                <el-switch
-                  v-model="scope.row.show"
-                  :active-value="1"
-                  :inactive-value="0"
-                  @change="(val) => handleToggleShow(scope.row, scope.row.type || type, val)"
-                />
               </template>
             </el-table-column>
 

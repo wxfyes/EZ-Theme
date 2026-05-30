@@ -17,6 +17,8 @@ const Tickets = () => import('../views/Tickets.vue');
 const Knowledges = () => import('../views/Knowledges.vue');
 const Settings = () => import('../views/Settings.vue');
 const Queues = () => import('../views/Queues.vue');
+const Payments = () => import('../views/Payments.vue');
+const Themes = () => import('../views/Themes.vue');
 
 const routes = [
   {
@@ -113,6 +115,18 @@ const routes = [
         name: 'Queues',
         component: Queues,
         meta: { title: '队列监控', requiresAuth: true }
+      },
+      {
+        path: 'payments',
+        name: 'Payments',
+        component: Payments,
+        meta: { title: '支付设置', requiresAuth: true }
+      },
+      {
+        path: 'themes',
+        name: 'Themes',
+        component: Themes,
+        meta: { title: '主题设置', requiresAuth: true }
       }
     ]
   }

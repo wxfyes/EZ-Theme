@@ -59,6 +59,10 @@
             <el-icon><CreditCard /></el-icon>
             <span>礼品卡管理</span>
           </el-menu-item>
+          <el-menu-item index="/payments">
+            <el-icon><Wallet /></el-icon>
+            <span>支付设置</span>
+          </el-menu-item>
         </el-sub-menu>
         
         <el-sub-menu index="user-group">
@@ -87,6 +91,10 @@
         <el-menu-item index="/settings">
           <el-icon><Setting /></el-icon>
           <template #title>系统设置</template>
+        </el-menu-item>
+        <el-menu-item index="/themes">
+          <el-icon><Brush /></el-icon>
+          <template #title>主题设置</template>
         </el-menu-item>
         <el-menu-item index="/queues">
           <el-icon><Cpu /></el-icon>
@@ -207,6 +215,10 @@
             <el-icon><CreditCard /></el-icon>
             <span>礼品卡管理</span>
           </el-menu-item>
+          <el-menu-item index="/payments">
+            <el-icon><Wallet /></el-icon>
+            <span>支付设置</span>
+          </el-menu-item>
         </el-sub-menu>
         
         <el-sub-menu index="user-group">
@@ -235,6 +247,10 @@
         <el-menu-item index="/settings">
           <el-icon><Setting /></el-icon>
           <template #title>系统设置</template>
+        </el-menu-item>
+        <el-menu-item index="/themes">
+          <el-icon><Brush /></el-icon>
+          <template #title>主题设置</template>
         </el-menu-item>
         <el-menu-item index="/queues">
           <el-icon><Cpu /></el-icon>
