@@ -28,7 +28,8 @@
     <el-tabs v-model="activeTab" class="mt-20 node-tabs" @tab-change="handleTabChange">
       <el-tab-pane v-for="(label, type) in nodeTypes" :key="type" :label="label" :name="type">
         <el-card class="table-card" shadow="hover">
-          <el-table :data="getPaginatedNodes(type)" v-loading="loading" stripe style="width: 100%">
+          <!-- PC Table View -->
+          <el-table v-if="!isMobile" :data="getPaginatedNodes(type)" v-loading="loading" stripe style="width: 100%">
             <el-table-column prop="id" label="ID" width="70" align="center" />
             
             <el-table-column v-if="type === 'all'" prop="type" label="协议类型" width="120" align="center">
@@ -107,6 +108,63 @@
             </el-table-column>
           </el-table>
 
+          <!-- Mobile Card List View -->
+          <div v-else class="mobile-node-list" v-loading="loading">
+            <div v-if="getPaginatedNodes(type).length === 0" class="empty-placeholder">
+              <el-empty description="暂无节点" />
+            </div>
+            <div v-else v-for="(node, index) in getPaginatedNodes(type)" :key="node.id" class="mobile-node-card">
+              <div class="card-header flex-between">
+                <span class="node-id-name">
+                  <span class="node-id">#{{ node.id }}</span>
+                  <span class="node-name">{{ node.name }}</span>
+                </span>
+                <el-switch
+                  v-model="node.show"
+                  :active-value="1"
+                  :inactive-value="0"
+                  @change="(val) => handleToggleShow(node, node.type || type, val)"
+                  size="small"
+                />
+              </div>
+              <div class="card-body">
+                <div class="body-row flex-between">
+                  <div class="badges-group flex-center gap-5">
+                    <el-tag type="info" size="small" effect="plain">
+                      {{ nodeTypes[node.type] || node.type }}
+                    </el-tag>
+                    <el-tag :type="node.rate > 1 ? 'warning' : 'success'" size="small" effect="dark">
+                      {{ node.rate }}x
+                    </el-tag>
+                    <span class="online-text">
+                      在线: {{ node.online || 0 }} 人
+                    </span>
+                  </div>
+                  <div class="node-groups">
+                    <el-tag v-for="gId in node.group_id" :key="gId" size="small" class="mr-5">
+                      {{ getGroupName(gId) }}
+                    </el-tag>
+                  </div>
+                </div>
+                <div class="body-row node-address">
+                  <el-icon class="mr-5"><Connection /></el-icon>
+                  <code>{{ node.host }}:{{ node.port }}</code>
+                </div>
+              </div>
+              <div class="card-actions flex-between">
+                <div class="drag-handle-mobile flex-center">
+                  <el-icon :size="16" class="mr-5"><Rank /></el-icon>
+                  <span class="sort-text">排序: {{ node.sort || 0 }}</span>
+                </div>
+                <div class="action-buttons flex-center gap-15">
+                  <el-button type="primary" link size="small" @click="openEditDialog(node, node.type || type)">编辑</el-button>
+                  <el-button type="success" link size="small" @click="handleCopy(node, node.type || type)">复制</el-button>
+                  <el-button type="danger" link size="small" @click="handleDelete(node, node.type || type)">删除</el-button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="pagination flex-between mt-20" v-if="getNodeListTotal(type) > nodePageSize">
             <span class="pagination-info">共 {{ getNodeListTotal(type) }} 个节点</span>
             <el-pagination
@@ -122,7 +180,7 @@
     </el-tabs>
 
     <!-- Node Form Dialog -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="750px" top="6vh">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" :width="isMobile ? '95%' : '750px'" :top="isMobile ? '2vh' : '6vh'">
       <el-scrollbar max-height="72vh">
         <el-form :model="form" :rules="rules" ref="formRef" label-width="130px" style="padding-right: 20px;">
           <!-- 基础设置 -->
@@ -132,12 +190,12 @@
           </el-form-item>
 
           <el-row :gutter="20">
-            <el-col :span="12">
+            <el-col :span="12" :xs="24" :sm="12">
               <el-form-item label="流量倍率" prop="rate">
                 <el-input-number v-model="form.rate" :min="0" :precision="2" :step="0.1" style="width: 100%" />
               </el-form-item>
             </el-col>
-            <el-col :span="12">
+            <el-col :span="12" :xs="24" :sm="12">
               <el-form-item label="分配权限组" prop="group_id">
                 <el-select v-model="form.group_id" multiple collapse-tags placeholder="请选择权限组" style="width: 100%">
                   <el-option v-for="g in groupList" :key="g.id" :label="g.name" :value="g.id" />
@@ -151,12 +209,12 @@
           </el-form-item>
 
           <el-row :gutter="20">
-            <el-col :span="12">
+            <el-col :span="12" :xs="24" :sm="12">
               <el-form-item label="连接端口" prop="port">
                 <el-input-number v-model="form.port" :min="1" :max="65535" :controls="false" style="width: 100%" />
               </el-form-item>
             </el-col>
-            <el-col :span="12">
+            <el-col :span="12" :xs="24" :sm="12">
               <el-form-item label="服务端口" prop="server_port">
                 <el-input-number v-model="form.server_port" :min="1" :max="65535" :controls="false" style="width: 100%" />
               </el-form-item>
@@ -164,7 +222,7 @@
           </el-row>
 
           <el-row :gutter="20">
-            <el-col :span="12">
+            <el-col :span="12" :xs="24" :sm="12">
               <el-form-item label="父节点" prop="parent_id">
                 <el-select v-model="form.parent_id" placeholder="无单播中转（无父节点）" clearable style="width: 100%">
                   <el-option label="无" :value="0" />
@@ -178,7 +236,7 @@
                 </el-select>
               </el-form-item>
             </el-col>
-            <el-col :span="12">
+            <el-col :span="12" :xs="24" :sm="12">
               <!-- V2node: 显示协议类型；其他节点: 显示路由组 -->
               <template v-if="activeType === 'v2node'">
                 <el-form-item label="协议类型">
@@ -242,7 +300,7 @@
           <!-- VMess / Vless Visual Forms -->
           <template v-if="activeType === 'vless' || activeType === 'vmess' || (activeType === 'v2node' && (form.v2node_protocol === 'vmess' || form.v2node_protocol === 'vless'))">
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="传输协议" prop="network">
                   <el-select v-model="form.network" @change="handleNetworkChange" style="width: 100%">
                     <el-option label="TCP" value="tcp" />
@@ -255,7 +313,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="安全性 (TLS)" prop="tls">
                   <el-select v-model="form.tls" style="width: 100%">
                     <el-option label="无安全性" :value="0" />
@@ -267,7 +325,7 @@
             </el-row>
 
             <el-row :gutter="20" v-if="activeType === 'vless' || (activeType === 'v2node' && form.v2node_protocol === 'vless')">
-              <el-col :span="12" v-if="form.network === 'tcp'">
+              <el-col :span="12" :xs="24" :sm="12" v-if="form.network === 'tcp'">
                 <el-form-item label="XTLS流控算法" prop="flow">
                   <el-select v-model="form.flow" clearable placeholder="无流控" style="width: 100%">
                     <el-option label="无" :value="null" />
@@ -275,7 +333,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="加密方式" prop="encryption">
                   <el-select v-model="form.encryption" style="width: 100%">
                     <el-option label="无加密 (none)" value="none" />
@@ -533,7 +591,7 @@
           <!-- Hysteria Options -->
           <template v-if="activeType === 'hysteria' || (activeType === 'v2node' && form.v2node_protocol === 'hysteria2')">
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="Hysteria 版本" prop="version">
                   <el-select v-model="form.version" style="width: 100%">
                     <el-option label="Hysteria 1" :value="1" />
@@ -541,19 +599,19 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="允许不安全" prop="insecure">
                   <el-switch v-model="form.insecure" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="上行带宽 (Mbps)" prop="up_mbps">
                   <el-input-number v-model="form.up_mbps" :min="0" style="width: 100%" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="下行带宽 (Mbps)" prop="down_mbps">
                   <el-input-number v-model="form.down_mbps" :min="0" style="width: 100%" />
                 </el-form-item>
@@ -563,12 +621,12 @@
               <el-input v-model="form.server_name" placeholder="节点证书 SNI" />
             </el-form-item>
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="混淆协议 (obfs)" prop="obfs">
                   <el-input v-model="form.obfs" placeholder="如 salamander (留空关闭)" clearable />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="混淆密码" prop="obfs_password">
                   <el-input v-model="form.obfs_password" placeholder="留空则自动生成" />
                 </el-form-item>
@@ -579,31 +637,31 @@
           <!-- Tuic Options -->
           <template v-if="activeType === 'tuic' || (activeType === 'v2node' && form.v2node_protocol === 'tuic')">
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="SNI / ServerName" prop="server_name">
                   <el-input v-model="form.server_name" placeholder="请输入 SNI" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="允许不安全" prop="insecure">
                   <el-switch v-model="form.insecure" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="关闭 SNI" prop="disable_sni">
                   <el-switch v-model="form.disable_sni" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="0-RTT 握手" prop="zero_rtt_handshake">
                   <el-switch v-model="form.zero_rtt_handshake" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="UDP 转发模式" prop="udp_relay_mode">
                   <el-select v-model="form.udp_relay_mode" placeholder="默认 (native)" style="width: 100%">
                     <el-option label="native" value="native" />
@@ -611,7 +669,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="拥塞控制" prop="congestion_control">
                   <el-select v-model="form.congestion_control" placeholder="默认 (bbr)" style="width: 100%">
                     <el-option label="bbr" value="bbr" />
@@ -633,12 +691,12 @@
           <!-- V2node Options: 监听地址 + 路由组（协议类型已移至基础配置区） -->
           <template v-if="activeType === 'v2node'">
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="监听地址">
                   <el-input v-model="form.listen_ip" placeholder="默认 0.0.0.0" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="路由组">
                   <el-select v-model="form.route_id" multiple collapse-tags placeholder="选择分流路由组" style="width: 100%">
                     <el-option v-for="r in routeList" :key="r.id" :label="r.remarks" :value="r.id" />
@@ -677,10 +735,15 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, onBeforeUnmount, computed } from 'vue';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
+
+const isMobile = ref(false);
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768;
+};
 
 const loading = ref(false);
 const submitLoading = ref(false);
@@ -1688,9 +1751,15 @@ const handleDelete = (row, type) => {
 };
 
 onMounted(() => {
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
   fetchGroups();
   fetchRoutes();
   fetchNodes();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkMobile);
 });
 </script>
 
@@ -1796,5 +1865,130 @@ onMounted(() => {
 .drag-handle:hover {
   color: var(--el-color-primary);
   background-color: var(--el-fill-color-lighter);
+}
+
+/* Mobile Node Card Styles */
+.mobile-node-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-node-card {
+  background-color: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.mobile-node-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: var(--el-color-primary-light-7);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed var(--el-border-color-lighter);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+.node-id-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 80%;
+}
+
+.node-id {
+  font-family: monospace;
+  font-weight: bold;
+  color: var(--el-text-color-secondary);
+  background-color: var(--el-fill-color-light);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.node-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--el-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.body-row {
+  display: flex;
+  align-items: center;
+}
+
+.badges-group {
+  flex-wrap: wrap;
+}
+
+.online-text {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.node-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.node-address {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  background-color: var(--el-fill-color-blank);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-extra-light);
+  display: flex;
+  align-items: center;
+}
+
+.node-address code {
+  word-break: break-all;
+  white-space: pre-wrap;
+  font-family: monospace;
+}
+
+.card-actions {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--el-border-color-extra-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drag-handle-mobile {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  display: flex;
+  align-items: center;
+}
+
+.sort-text {
+  font-size: 12px;
+}
+
+.empty-placeholder {
+  padding: 40px 0;
+  text-align: center;
 }
 </style>
