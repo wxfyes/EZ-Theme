@@ -8,23 +8,26 @@
     </el-card>
 
     <el-card class="table-card mt-20" shadow="hover">
-      <el-table :data="groups" v-loading="loading" stripe style="width: 100%">
-        <el-table-column prop="id" label="ID" width="100" align="center" />
-        <el-table-column prop="name" label="权限组名称" min-width="200" />
-        <el-table-column prop="user_count" label="关联用户数" width="150" align="center">
+      <el-table :data="groups" v-loading="loading" stripe style="width: 100%" :class="{'mobile-table': isMobile}">
+        <el-table-column prop="id" label="ID" :width="isMobile ? '45' : '100'" align="center" />
+        <el-table-column prop="name" label="权限组名称" :min-width="isMobile ? '100' : '200'" />
+        <el-table-column prop="user_count" label="用户数量" :width="isMobile ? '70' : '150'" align="center">
           <template #default="scope">
-            <el-tag type="info" size="small">{{ scope.row.user_count || 0 }} 人</el-tag>
+            <span v-if="isMobile">👤 {{ scope.row.user_count || 0 }}</span>
+            <el-tag v-else type="info" size="small">{{ scope.row.user_count || 0 }} 人</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="server_count" label="关联节点数" width="150" align="center">
+        <el-table-column prop="server_count" label="节点数量" :width="isMobile ? '70' : '150'" align="center">
           <template #default="scope">
-            <el-tag type="success" size="small">{{ scope.row.server_count || 0 }} 个</el-tag>
+            <span v-if="isMobile">📄 {{ scope.row.server_count || 0 }}</span>
+            <el-tag v-else type="success" size="small">{{ scope.row.server_count || 0 }} 个</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" align="right">
+        <el-table-column label="操作" :width="isMobile ? '80' : '180'" :align="isMobile ? 'center' : 'right'">
           <template #default="scope">
-            <el-button type="primary" link @click="openEditDialog(scope.row)">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(scope.row)">删除</el-button>
+            <el-button type="primary" link @click="openEditDialog(scope.row)" :style="isMobile ? 'margin-right: 2px; padding: 0;' : ''">编辑</el-button>
+            <span v-if="isMobile" style="color: var(--el-border-color); font-size: 10px;">|</span>
+            <el-button type="danger" link @click="handleDelete(scope.row)" :style="isMobile ? 'margin-left: 2px; padding: 0;' : ''">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -160,5 +163,15 @@ onMounted(() => {
 }
 .mt-20 {
   margin-top: 20px;
+}
+:deep(.mobile-table) {
+  font-size: 12px;
+}
+:deep(.mobile-table .el-table__cell) {
+  padding: 6px 0 !important;
+}
+:deep(.mobile-table .cell) {
+  padding-left: 4px !important;
+  padding-right: 4px !important;
 }
 </style>

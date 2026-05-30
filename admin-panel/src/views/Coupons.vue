@@ -8,56 +8,65 @@
     </el-card>
 
     <el-card class="table-card mt-20" shadow="hover">
-      <el-table :data="coupons" v-loading="loading" stripe style="width: 100%">
-        <el-table-column prop="id" label="ID" width="70" align="center" />
-        <el-table-column prop="name" label="名称" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="code" label="券码" min-width="120" show-overflow-tooltip>
+      <el-table :data="coupons" v-loading="loading" stripe style="width: 100%" :class="{'mobile-table': isMobile}">
+        <el-table-column prop="id" label="ID" :width="isMobile ? '40' : '70'" align="center" />
+        <el-table-column v-if="!isMobile" prop="name" label="名称" min-width="120" show-overflow-tooltip />
+        <el-table-column v-if="!isMobile" prop="code" label="券码" min-width="120" show-overflow-tooltip>
           <template #default="scope">
             <code>{{ scope.row.code }}</code>
           </template>
         </el-table-column>
-        <el-table-column prop="type" label="类型" width="100" align="center">
+        
+        <!-- Mobile Combined Column -->
+        <el-table-column v-if="isMobile" label="优惠券" min-width="110">
+          <template #default="scope">
+            <div style="font-weight: 600; line-height: 1.2;">{{ scope.row.name }}</div>
+            <code style="font-size: 10px; opacity: 0.8;">{{ scope.row.code }}</code>
+          </template>
+        </el-table-column>
+        <el-table-column v-if="!isMobile" prop="type" label="类型" width="100" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.type === 1 ? 'primary' : 'success'" size="small">
               {{ scope.row.type === 1 ? '金额抵扣' : '比例折价' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="value" label="面值" width="110" align="right">
+        <el-table-column prop="value" label="面值" :width="isMobile ? '70' : '110'" :align="isMobile ? 'center' : 'right'">
           <template #default="scope">
             <span v-if="scope.row.type === 1" style="font-weight: 600">
-              ￥{{ (scope.row.value / 100).toFixed(2) }}
+              ￥{{ (scope.row.value / 100).toFixed(isMobile ? 1 : 2) }}
             </span>
             <span v-else style="font-weight: 600">
-              {{ scope.row.value }}% 折
+              {{ scope.row.value }}%
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="有效期" min-width="280">
+        <el-table-column v-if="!isMobile" label="有效期" min-width="280">
           <template #default="scope">
             <span class="font-12">
               {{ formatTime(scope.row.started_at) }} 至 {{ formatTime(scope.row.ended_at) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="使用限制 (已用/最大)" width="150" align="center">
+        <el-table-column label="限制" :width="isMobile ? '65' : '150'" align="center">
           <template #default="scope">
-            <span>{{ scope.row.use_count || 0 }} / {{ scope.row.limit_use || '不限' }}</span>
+            <span>{{ scope.row.use_count || 0 }}/{{ scope.row.limit_use || '∞' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="show" label="启用状态" width="100" align="center">
+        <el-table-column prop="show" label="启用" :width="isMobile ? '55' : '100'" align="center">
           <template #default="scope">
             <el-switch
               v-model="scope.row.show"
               :active-value="1"
               :inactive-value="0"
               @change="handleToggleShow(scope.row)"
+              :size="isMobile ? 'small' : 'default'"
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" align="right">
+        <el-table-column label="操作" :width="isMobile ? '50' : '120'" :align="isMobile ? 'center' : 'right'">
           <template #default="scope">
-            <el-button type="danger" link @click="handleDelete(scope.row)">删除</el-button>
+            <el-button type="danger" link @click="handleDelete(scope.row)" style="padding: 0;">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -377,5 +386,15 @@ onMounted(() => {
 .pagination-info {
   font-size: 13px;
   color: var(--el-text-color-secondary);
+}
+:deep(.mobile-table) {
+  font-size: 12px;
+}
+:deep(.mobile-table .el-table__cell) {
+  padding: 6px 0 !important;
+}
+:deep(.mobile-table .cell) {
+  padding-left: 4px !important;
+  padding-right: 4px !important;
 }
 </style>

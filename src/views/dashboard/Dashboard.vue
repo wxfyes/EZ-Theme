@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="dashboard-container">
     <div class="dashboard-inner">
       <div class="dashboard-card welcome-card" :class="{'card-animate': !loading.userInfo}">
@@ -1428,22 +1428,19 @@ export default {
     const checkForPopupNotices = () => {
       if (!notices.value || !notices.value.data || notices.value.data.length === 0) return;
 
-      const popupNoticeIndex = notices.value.data.findIndex(notice =>
-          notice.tags && Array.isArray(notice.tags) && notice.tags.includes('\u5f39\u7a97')
-      );
+      // 默认自动弹窗最新的一条公告（索引为0）
+      const latestNotice = notices.value.data[0];
+      const noticeId = latestNotice.id;
+      const popupShownKey = `popup_notice_shown_${noticeId}`;
 
-      if (popupNoticeIndex !== -1) {
-        const noticeId = notices.value.data[popupNoticeIndex].id;
-        const popupShownKey = `popup_notice_shown_${noticeId}`;
-
-        if (!sessionStorage.getItem(popupShownKey)) {
-          currentNoticeIndex.value = popupNoticeIndex;
-          showNoticeDetails.value = true;
-          sessionStorage.setItem(popupShownKey, 'true');
-          nextTick(() => {
-            updateModalHeight();
-          });
-        }
+      // 如果本地没有该公告的已读记录，则自动弹窗显示
+      if (!localStorage.getItem(popupShownKey)) {
+        currentNoticeIndex.value = 0;
+        showNoticeDetails.value = true;
+        localStorage.setItem(popupShownKey, 'true');
+        nextTick(() => {
+          updateModalHeight();
+        });
       }
     };
 

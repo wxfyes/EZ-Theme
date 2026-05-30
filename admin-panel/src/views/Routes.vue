@@ -8,31 +8,44 @@
     </el-card>
 
     <el-card class="table-card mt-20" shadow="hover">
-      <el-table :data="routes" v-loading="loading" stripe style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="remarks" label="备注说明" min-width="150" />
-        <el-table-column prop="action" label="动作" width="150" align="center">
+      <el-table :data="routes" v-loading="loading" stripe style="width: 100%" :class="{'mobile-table': isMobile}">
+        <el-table-column prop="id" label="ID" :width="isMobile ? '40' : '80'" align="center" />
+        <el-table-column v-if="!isMobile" prop="remarks" label="备注说明" min-width="150" />
+        <el-table-column v-if="!isMobile" prop="action" label="动作" width="150" align="center">
           <template #default="scope">
             <el-tag :type="getActionTagType(scope.row.action)" size="small" effect="dark">
               {{ actionMap[scope.row.action] || scope.row.action }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="action_value" label="动作值" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="match" label="匹配规则数" width="120" align="center">
+        
+        <!-- Mobile Combined Column -->
+        <el-table-column v-if="isMobile" label="路由规则" min-width="120">
+          <template #default="scope">
+            <div style="font-weight: 600; line-height: 1.2;">{{ scope.row.remarks }}</div>
+            <div style="font-size: 10px; margin-top: 2px;">
+              <span :style="{color: scope.row.action.startswith('block') ? 'var(--el-color-danger)' : 'var(--el-color-primary)'}">[{{ actionMap[scope.row.action] ? actionMap[scope.row.action].split(' ')[0] : scope.row.action }}]</span>
+              <span style="opacity: 0.8; margin-left: 4px;">{{ scope.row.action_value }}</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column v-if="!isMobile" prop="action_value" label="动作值" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="match" label="规则数" :width="isMobile ? '65' : '120'" align="center">
           <template #default="scope">
             <el-tooltip placement="top" :disabled="!scope.row.match || scope.row.match.length === 0">
               <template #content>
                 <div v-for="(rule, idx) in scope.row.match" :key="idx">{{ rule }}</div>
               </template>
-              <el-tag type="info" size="small">{{ (scope.row.match && scope.row.match.length) || 0 }} 条规则</el-tag>
+              <span v-if="isMobile">{{ (scope.row.match && scope.row.match.length) || 0 }} 条</span>
+              <el-tag v-else type="info" size="small">{{ (scope.row.match && scope.row.match.length) || 0 }} 条规则</el-tag>
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" align="right">
+        <el-table-column label="操作" :width="isMobile ? '80' : '180'" :align="isMobile ? 'center' : 'right'">
           <template #default="scope">
-            <el-button type="primary" link @click="openEditDialog(scope.row)">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(scope.row)">删除</el-button>
+            <el-button type="primary" link @click="openEditDialog(scope.row)" :style="isMobile ? 'margin-right: 2px; padding: 0;' : ''">编辑</el-button>
+            <span v-if="isMobile" style="color: var(--el-border-color); font-size: 10px;">|</span>
+            <el-button type="danger" link @click="handleDelete(scope.row)" :style="isMobile ? 'margin-left: 2px; padding: 0;' : ''">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -228,5 +241,15 @@ onMounted(() => {
 }
 .mt-20 {
   margin-top: 20px;
+}
+:deep(.mobile-table) {
+  font-size: 12px;
+}
+:deep(.mobile-table .el-table__cell) {
+  padding: 6px 0 !important;
+}
+:deep(.mobile-table .cell) {
+  padding-left: 4px !important;
+  padding-right: 4px !important;
 }
 </style>

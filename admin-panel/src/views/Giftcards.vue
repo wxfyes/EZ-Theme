@@ -8,43 +8,51 @@
     </el-card>
 
     <el-card class="table-card mt-20" shadow="hover">
-      <el-table :data="giftcards" v-loading="loading" stripe style="width: 100%">
-        <el-table-column prop="id" label="ID" width="70" align="center" />
-        <el-table-column prop="name" label="名称" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="code" label="卡密" min-width="150" show-overflow-tooltip>
+      <el-table :data="giftcards" v-loading="loading" stripe style="width: 100%" :class="{'mobile-table': isMobile}">
+        <el-table-column prop="id" label="ID" :width="isMobile ? '40' : '70'" align="center" />
+        <el-table-column v-if="!isMobile" prop="name" label="名称" min-width="120" show-overflow-tooltip />
+        <el-table-column v-if="!isMobile" prop="code" label="卡密" min-width="150" show-overflow-tooltip>
           <template #default="scope">
             <code>{{ scope.row.code }}</code>
           </template>
         </el-table-column>
-        <el-table-column prop="type" label="类型" width="110" align="center">
+        
+        <!-- Mobile Combined Column -->
+        <el-table-column v-if="isMobile" label="礼品卡" min-width="110">
+          <template #default="scope">
+            <div style="font-weight: 600; line-height: 1.2;">{{ scope.row.name }}</div>
+            <code style="font-size: 10px; opacity: 0.8;">{{ scope.row.code }}</code>
+          </template>
+        </el-table-column>
+        <el-table-column v-if="!isMobile" prop="type" label="类型" width="110" align="center">
           <template #default="scope">
             <el-tag :type="getTypeTagType(scope.row.type)" size="small">
               {{ typeMap[scope.row.type] || scope.row.type }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="value" label="数值" width="110" align="right">
+        <el-table-column prop="value" label="数值" :width="isMobile ? '70' : '110'" :align="isMobile ? 'center' : 'right'">
           <template #default="scope">
             <span style="font-weight: 600">
               {{ formatValue(scope.row) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="有效期" min-width="280">
+        <el-table-column v-if="!isMobile" label="有效期" min-width="280">
           <template #default="scope">
             <span class="font-12">
               {{ formatTime(scope.row.started_at) }} 至 {{ formatTime(scope.row.ended_at) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="已用/最大" width="120" align="center">
+        <el-table-column label="使用" :width="isMobile ? '65' : '120'" align="center">
           <template #default="scope">
-            <span>{{ scope.row.use_count || 0 }} / {{ scope.row.limit_use || '不限' }}</span>
+            <span>{{ scope.row.use_count || 0 }}/{{ scope.row.limit_use || '∞' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="right">
+        <el-table-column label="操作" :width="isMobile ? '50' : '100'" :align="isMobile ? 'center' : 'right'">
           <template #default="scope">
-            <el-button type="danger" link @click="handleDelete(scope.row)">删除</el-button>
+            <el-button type="danger" link @click="handleDelete(scope.row)" style="padding: 0;">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -368,5 +376,15 @@ onMounted(() => {
 .pagination-info {
   font-size: 13px;
   color: var(--el-text-color-secondary);
+}
+:deep(.mobile-table) {
+  font-size: 12px;
+}
+:deep(.mobile-table .el-table__cell) {
+  padding: 6px 0 !important;
+}
+:deep(.mobile-table .cell) {
+  padding-left: 4px !important;
+  padding-right: 4px !important;
 }
 </style>
