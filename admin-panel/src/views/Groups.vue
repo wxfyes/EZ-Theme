@@ -31,8 +31,8 @@
     </el-card>
 
     <!-- Dialog -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="450px">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" :width="isMobile ? '95%' : '450px'" :top="isMobile ? '2vh' : '8vh'">
+      <el-form :model="form" :rules="rules" ref="formRef" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '100px'">
         <el-form-item label="权限组名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入权限组名称" />
         </el-form-item>
@@ -52,6 +52,9 @@ import { ref, reactive, onMounted } from 'vue';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { useMobile } from '../utils/useMobile';
+
+const { isMobile } = useMobile();
 
 const loading = ref(false);
 const submitLoading = ref(false);

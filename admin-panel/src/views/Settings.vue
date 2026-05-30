@@ -8,11 +8,11 @@
         </div>
       </template>
       
-      <el-tabs tab-position="left" v-model="activeTab" style="min-height: 500px">
+      <el-tabs :tab-position="isMobile ? 'top' : 'left'" v-model="activeTab" style="min-height: 500px">
         <!-- 站点设置 -->
         <el-tab-pane label="站点设置" name="site">
           <div class="pane-title">站点基础信息设置</div>
-          <el-form :model="configData.site" label-width="150px">
+          <el-form :model="configData.site" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '150px'">
             <el-form-item label="站点名称">
               <el-input v-model="configData.site.app_name" />
             </el-form-item>
@@ -35,12 +35,12 @@
               <el-switch v-model="configData.site.stop_register" :active-value="1" :inactive-value="0" />
             </el-form-item>
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="试用订阅 ID">
                   <el-input-number v-model="configData.site.try_out_plan_id" :min="0" style="width: 100%" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="试用时长 (小时)">
                   <el-input-number v-model="configData.site.try_out_hour" :min="1" style="width: 100%" />
                 </el-form-item>
@@ -52,7 +52,7 @@
         <!-- 订阅设置 -->
         <el-tab-pane label="订阅设置" name="subscribe">
           <div class="pane-title">订阅与分流控制</div>
-          <el-form :model="configData.subscribe" label-width="150px">
+          <el-form :model="configData.subscribe" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '150px'">
             <el-form-item label="允许折价变更计划">
               <el-switch v-model="configData.subscribe.plan_change_enable" :active-value="1" :inactive-value="0" />
               <div class="form-tip">开启后，用户补差价可以升级更高等级订阅</div>
@@ -80,26 +80,26 @@
           <!-- 邀请推广设置 -->
         <el-tab-pane label="邀请设置" name="invite">
           <div class="pane-title">邀请返利与提现配置</div>
-          <el-form :model="configData.invite" label-width="150px">
+          <el-form :model="configData.invite" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '150px'">
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="强制使用邀请码">
                   <el-switch v-model="configData.invite.invite_force" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="邀请码不过期">
                   <el-switch v-model="configData.invite.invite_never_expire" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="返利比例 (%)">
                   <el-input-number v-model="configData.invite.invite_commission" :min="0" :max="100" style="width: 100%" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="提现门槛 (元)">
                   <el-input-number v-model="configData.invite.commission_withdraw_limit" :min="1" style="width: 100%" />
                 </el-form-item>
@@ -117,7 +117,7 @@
         <!-- 节点通信配置 -->
         <el-tab-pane label="节点通信" name="server">
           <div class="pane-title">节点控制器与 API 配置</div>
-          <el-form :model="configData.server" label-width="150px">
+          <el-form :model="configData.server" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '150px'">
             <el-form-item label="核心 API URL">
               <el-input v-model="configData.server.server_api_url" placeholder="主要给节点后端调用，多域名用逗号分隔" />
             </el-form-item>
@@ -125,12 +125,12 @@
               <el-input v-model="configData.server.server_token" placeholder="通信验证密钥，用于节点同步" />
             </el-form-item>
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="下发拉取间隔">
                   <el-input-number v-model="configData.server.server_pull_interval" :min="10" style="width: 100%" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="上传数据间隔">
                   <el-input-number v-model="configData.server.server_push_interval" :min="10" style="width: 100%" />
                 </el-form-item>
@@ -142,7 +142,7 @@
         <!-- 邮件发送设置 -->
         <el-tab-pane label="邮件设置" name="email">
           <div class="pane-title">SMTP 发信配置</div>
-          <el-form :model="configData.email" label-width="150px">
+          <el-form :model="configData.email" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '150px'">
             <el-form-item label="发信地址 (From)">
               <el-input v-model="configData.email.email_from_address" placeholder="例如 service@tianque.com" />
             </el-form-item>
@@ -174,7 +174,7 @@
         <!-- Telegram 机器人 -->
         <el-tab-pane label="Telegram机器人" name="telegram">
           <div class="pane-title">Telegram 消息推送机器人</div>
-          <el-form :model="configData.telegram" label-width="150px">
+          <el-form :model="configData.telegram" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '150px'">
             <el-form-item label="机器人 Token">
               <el-input v-model="configData.telegram.telegram_bot_token" placeholder="请输入由Botfather提供的token" />
             </el-form-item>
@@ -202,38 +202,38 @@
         <!-- 客户端下载 -->
         <el-tab-pane label="客户端版本" name="app">
           <div class="pane-title">客户端下载与版本管理</div>
-          <el-form :model="configData.app" label-width="150px">
+          <el-form :model="configData.app" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '150px'">
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="Windows 版本">
                   <el-input v-model="configData.app.windows_version" placeholder="1.0.0" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="Windows 链接">
                   <el-input v-model="configData.app.windows_download_url" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="Android 版本">
                   <el-input v-model="configData.app.android_version" placeholder="1.0.0" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="Android 链接">
                   <el-input v-model="configData.app.android_download_url" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="macOS 版本">
                   <el-input v-model="configData.app.macos_version" placeholder="1.0.0" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="macOS 链接">
                   <el-input v-model="configData.app.macos_download_url" />
                 </el-form-item>
@@ -251,6 +251,9 @@ import { ref, reactive, onMounted } from 'vue';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage } from 'element-plus';
+import { useMobile } from '../utils/useMobile';
+
+const { isMobile } = useMobile();
 
 const loading = ref(false);
 const submitLoading = ref(false);

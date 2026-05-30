@@ -113,8 +113,8 @@
     </el-card>
 
     <!-- Assign Order Dialog -->
-    <el-dialog v-model="assignVisible" title="手动分配订阅订单" width="550px">
-      <el-form :model="assignForm" :rules="assignRules" ref="assignFormRef" label-width="100px">
+    <el-dialog v-model="assignVisible" title="手动分配订阅订单" :width="isMobile ? '95%' : '550px'" :top="isMobile ? '2vh' : '8vh'">
+      <el-form :model="assignForm" :rules="assignRules" ref="assignFormRef" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '100px'">
         <el-form-item label="用户邮箱" prop="email">
           <el-input v-model="assignForm.email" placeholder="请输入绑定的用户邮箱" />
         </el-form-item>
@@ -158,6 +158,9 @@ import { ref, reactive, onMounted } from 'vue';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { useMobile } from '../utils/useMobile';
+
+const { isMobile } = useMobile();
 
 const loading = ref(false);
 const submitLoading = ref(false);

@@ -191,8 +191,8 @@
     </el-card>
 
     <!-- Create User Dialog -->
-    <el-dialog v-model="createVisible" title="创建用户" width="500px">
-      <el-form :model="createForm" :rules="createRules" ref="createFormRef" label-width="90px">
+    <el-dialog v-model="createVisible" title="创建用户" :width="isMobile ? '95%' : '500px'" :top="isMobile ? '2vh' : '8vh'">
+      <el-form :model="createForm" :rules="createRules" ref="createFormRef" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '90px'">
         <el-form-item label="邮箱前缀" prop="email_prefix">
           <el-input v-model="createForm.email_prefix" placeholder="例如 user" />
         </el-form-item>
@@ -227,8 +227,8 @@
     </el-dialog>
 
     <!-- Edit User Dialog -->
-    <el-dialog v-model="editVisible" title="编辑用户" width="550px">
-      <el-form :model="editForm" ref="editFormRef" label-width="100px" v-if="editForm.id">
+    <el-dialog v-model="editVisible" title="编辑用户" :width="isMobile ? '95%' : '550px'" :top="isMobile ? '2vh' : '8vh'">
+      <el-form :model="editForm" ref="editFormRef" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '100px'" v-if="editForm.id">
         <el-tabs v-model="activeTab">
           <!-- Basic Profile Info -->
           <el-tab-pane label="基本资料" name="profile">
@@ -312,7 +312,7 @@
     </el-dialog>
 
     <!-- Advanced Filter Dialog -->
-    <el-dialog v-model="advancedFilterVisible" title="高级筛选" width="700px">
+    <el-dialog v-model="advancedFilterVisible" title="高级筛选" :width="isMobile ? '95%' : '700px'" :top="isMobile ? '2vh' : '8vh'">
       <el-table :data="advancedFilters" style="width: 100%">
         <el-table-column label="字段" width="180">
           <template #default="scope">
@@ -377,6 +377,9 @@ import { ref, reactive, onMounted } from 'vue';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { useMobile } from '../utils/useMobile';
+
+const { isMobile } = useMobile();
 
 const loading = ref(false);
 const submitLoading = ref(false);

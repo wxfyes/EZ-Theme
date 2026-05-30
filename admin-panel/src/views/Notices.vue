@@ -41,8 +41,8 @@
     </el-card>
 
     <!-- Notice Dialog (Create/Edit) -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑公告' : '发布新公告'" width="650px">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
+    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑公告' : '发布新公告'" :width="isMobile ? '95%' : '650px'" :top="isMobile ? '2vh' : '8vh'">
+      <el-form :model="form" :rules="rules" ref="formRef" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '80px'">
         <el-form-item label="公告标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入公告标题" />
         </el-form-item>
@@ -75,6 +75,9 @@ import { ref, reactive, onMounted } from 'vue';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { useMobile } from '../utils/useMobile';
+
+const { isMobile } = useMobile();
 
 const loading = ref(false);
 const submitLoading = ref(false);

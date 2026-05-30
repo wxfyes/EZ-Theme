@@ -76,8 +76,8 @@
     </el-card>
 
     <!-- Plan Dialog (Create/Edit) -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑订阅计划' : '创建订阅计划'" width="700px">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
+    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑订阅计划' : '创建订阅计划'" :width="isMobile ? '95%' : '700px'" :top="isMobile ? '2vh' : '6vh'">
+      <el-form :model="form" :rules="rules" ref="formRef" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '120px'">
         <el-tabs v-model="activeTab">
           <el-tab-pane label="基本设置" name="basic">
             <el-form-item label="计划名称" prop="name">
@@ -102,8 +102,8 @@
               />
             </el-form-item>
 
-            <el-row>
-              <el-col :span="12">
+            <el-row :gutter="20">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="销售状态">
                   <el-radio-group v-model="form.show">
                     <el-radio :label="1">上架销售</el-radio>
@@ -111,7 +111,7 @@
                   </el-radio-group>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="允许续费">
                   <el-radio-group v-model="form.renew">
                     <el-radio :label="1">允许</el-radio>
@@ -125,12 +125,12 @@
           <el-tab-pane label="定价体系 (元)" name="pricing">
             <div class="pricing-tip">留空或0表示不提供该周期的购买方式</div>
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="月付">
                   <el-input-number v-model="form.month_price" :precision="2" :min="0" style="width: 100%" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="季付">
                   <el-input-number v-model="form.quarter_price" :precision="2" :min="0" style="width: 100%" />
                 </el-form-item>
@@ -138,12 +138,12 @@
             </el-row>
 
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="半年付">
                   <el-input-number v-model="form.half_year_price" :precision="2" :min="0" style="width: 100%" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="年付">
                   <el-input-number v-model="form.year_price" :precision="2" :min="0" style="width: 100%" />
                 </el-form-item>
@@ -151,12 +151,12 @@
             </el-row>
 
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="两年付">
                   <el-input-number v-model="form.two_year_price" :precision="2" :min="0" style="width: 100%" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="三年付">
                   <el-input-number v-model="form.three_year_price" :precision="2" :min="0" style="width: 100%" />
                 </el-form-item>
@@ -164,12 +164,12 @@
             </el-row>
 
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="一次性">
                   <el-input-number v-model="form.onetime_price" :precision="2" :min="0" style="width: 100%" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="重置流量费">
                   <el-input-number v-model="form.reset_price" :precision="2" :min="0" style="width: 100%" />
                 </el-form-item>
@@ -211,6 +211,9 @@ import { ref, reactive, onMounted } from 'vue';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { useMobile } from '../utils/useMobile';
+
+const { isMobile } = useMobile();
 
 const loading = ref(false);
 const submitLoading = ref(false);

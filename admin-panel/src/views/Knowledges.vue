@@ -69,8 +69,8 @@
     </el-card>
 
     <!-- Dialog -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="1050px" top="6vh">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" :width="isMobile ? '95%' : '1050px'" :top="isMobile ? '2vh' : '6vh'">
+      <el-form :model="form" :rules="rules" ref="formRef" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '80px'">
         <el-form-item label="文章标题" prop="title">
           <el-input v-model="form.title" placeholder="如：如何在 Windows 上配置客户端" />
         </el-form-item>

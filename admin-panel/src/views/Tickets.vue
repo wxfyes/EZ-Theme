@@ -96,7 +96,7 @@
     <el-drawer
       v-model="chatVisible"
       title="工单沟通详情"
-      size="600px"
+      :size="isMobile ? '100%' : '600px'"
       destroy-on-close
     >
       <template #header>
@@ -188,8 +188,8 @@
     </el-drawer>
 
     <!-- Edit User Dialog -->
-    <el-dialog v-model="editVisible" title="编辑用户" width="550px">
-      <el-form :model="editForm" ref="editFormRef" label-width="100px" v-if="editForm.id">
+    <el-dialog v-model="editVisible" title="编辑用户" :width="isMobile ? '95%' : '550px'" :top="isMobile ? '2vh' : '8vh'">
+      <el-form :model="editForm" ref="editFormRef" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '100px'" v-if="editForm.id">
         <el-tabs v-model="activeTab">
           <!-- Basic Profile Info -->
           <el-tab-pane label="基本资料" name="profile">
@@ -280,6 +280,9 @@ import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { uploadImage } from '../utils/imageUploadHelper';
+import { useMobile } from '../utils/useMobile';
+
+const { isMobile } = useMobile();
 
 const loading = ref(false);
 const tickets = ref([]);

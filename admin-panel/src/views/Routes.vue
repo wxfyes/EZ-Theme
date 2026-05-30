@@ -39,8 +39,8 @@
     </el-card>
 
     <!-- Dialog -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="550px">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="110px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" :width="isMobile ? '95%' : '550px'" :top="isMobile ? '2vh' : '8vh'">
+      <el-form :model="form" :rules="rules" ref="formRef" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '110px'">
         <el-form-item label="备注说明" prop="remarks">
           <el-input v-model="form.remarks" placeholder="请输入备注，用于标识该路由" />
         </el-form-item>
@@ -79,6 +79,9 @@ import { ref, reactive, onMounted } from 'vue';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { useMobile } from '../utils/useMobile';
+
+const { isMobile } = useMobile();
 
 const loading = ref(false);
 const submitLoading = ref(false);
