@@ -14,6 +14,14 @@
         <el-table-column prop="id" label="ID" :width="isMobile ? '45' : '70'" align="center" />
         <el-table-column prop="title" label="公告标题" :min-width="isMobile ? '100' : '200'" show-overflow-tooltip />
         
+        <el-table-column prop="tags" label="标签" width="150" v-if="!isMobile">
+          <template #default="scope">
+            <el-tag v-for="tag in scope.row.tags" :key="tag" size="small" style="margin-right: 4px;" type="info">
+              {{ tag }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        
         <el-table-column prop="created_at" label="发布时间" :width="isMobile ? '95' : '180'">
           <template #default="scope">
             {{ formatTime(scope.row.created_at) }}
@@ -61,6 +69,20 @@
             placeholder="支持 Markdown 格式内容" 
           />
         </el-form-item>
+
+        <el-form-item label="公告标签" prop="tags">
+          <el-select
+            v-model="form.tags"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            placeholder="请输入或选择标签，回车新建。如：弹窗"
+            style="width: 100%"
+          >
+            <el-option label="弹窗" value="弹窗" />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -94,6 +116,7 @@ const form = reactive({
   title: '',
   img_url: '',
   content: '',
+  tags: [],
 });
 
 const rules = {
@@ -148,6 +171,7 @@ const openCreateDialog = () => {
   form.title = '';
   form.img_url = '';
   form.content = '';
+  form.tags = [];
   dialogVisible.value = true;
 };
 
@@ -157,6 +181,7 @@ const openEditDialog = (row) => {
   form.title = row.title;
   form.img_url = row.img_url || '';
   form.content = row.content || '';
+  form.tags = Array.isArray(row.tags) ? [...row.tags] : [];
   dialogVisible.value = true;
 };
 
@@ -171,6 +196,7 @@ const handleSubmit = async () => {
         title: form.title,
         content: form.content,
         img_url: form.img_url || null,
+        tags: form.tags || [],
       };
       
       if (isEdit.value) {
