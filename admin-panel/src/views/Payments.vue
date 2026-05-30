@@ -3,7 +3,7 @@
     <!-- Action Bar -->
     <el-card class="action-card" shadow="hover">
       <div class="flex-between flex-wrap gap-10">
-        <span class="action-text">支付设置</span>
+        <span class="action-text">支付配置</span>
         <el-button type="primary" icon="Plus" @click="handleCreate">
           添加支付方式
         </el-button>

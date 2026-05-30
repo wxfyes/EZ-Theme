@@ -108,7 +108,7 @@ const routes = [
         path: 'settings',
         name: 'Settings',
         component: Settings,
-        meta: { title: '系统设置', requiresAuth: true }
+        meta: { title: '系统配置', requiresAuth: true }
       },
       {
         path: 'queues',
@@ -120,13 +120,13 @@ const routes = [
         path: 'payments',
         name: 'Payments',
         component: Payments,
-        meta: { title: '支付设置', requiresAuth: true }
+        meta: { title: '支付配置', requiresAuth: true }
       },
       {
         path: 'themes',
         name: 'Themes',
         component: Themes,
-        meta: { title: '主题设置', requiresAuth: true }
+        meta: { title: '主题配置', requiresAuth: true }
       }
     ]
   }

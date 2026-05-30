@@ -2,7 +2,7 @@
   <div class="themes-container">
     <el-card class="action-card" shadow="hover">
       <div class="flex-between">
-        <span class="action-text">主题管理</span>
+        <span class="action-text">主题配置</span>
       </div>
     </el-card>
 
