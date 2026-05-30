@@ -64,9 +64,12 @@
           </template>
         </el-table-column>
         
-        <el-table-column prop="banned" label="状态" width="80" align="center">
+        <el-table-column prop="banned" label="状态" width="100" align="center">
           <template #default="scope">
-            <el-tag :type="scope.row.banned ? 'danger' : 'success'" size="small">
+            <el-tag v-if="scope.row.in_honeypot === 1" type="warning" size="small">
+              蜜罐接管
+            </el-tag>
+            <el-tag v-else :type="scope.row.banned ? 'danger' : 'success'" size="small">
               {{ scope.row.banned ? '已封禁' : '正常' }}
             </el-tag>
           </template>
@@ -166,8 +169,11 @@
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="reset">重置重置订阅密钥</el-dropdown-item>
+                  <el-dropdown-item command="reset">重置订阅密钥</el-dropdown-item>
                   <el-dropdown-item command="copy">复制订阅链接</el-dropdown-item>
+                  <el-dropdown-item command="toggleHoneypot" :style="{ color: scope.row.in_honeypot === 1 ? 'var(--el-color-success)' : 'var(--el-color-warning)' }">
+                    {{ scope.row.in_honeypot === 1 ? '移出天阙蜜罐' : '加入天阙蜜罐' }}
+                  </el-dropdown-item>
                   <el-dropdown-item command="delete" divided style="color: var(--el-color-danger)">删除用户</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -776,6 +782,18 @@ const handleMoreCommand = async (command, row) => {
       ElMessage.success('订阅链接已复制到剪贴板');
     }
     
+  } else if (command === 'toggleHoneypot') {
+    const actionText = row.in_honeypot === 1 ? '移出蜜罐' : '加入蜜罐';
+    ElMessageBox.confirm(`确定要将该用户 ${row.email} ${actionText}吗？`, '提示', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    }).then(async () => {
+      await api.post(`/${securePath}/user/toggleHoneypot`, { id: row.id });
+      ElMessage.success(`${actionText}成功`);
+      fetchUsers();
+    }).catch(() => {});
+
   } else if (command === 'delete') {
     ElMessageBox.confirm('确定要永久删除该用户吗？删除后该用户的所有订单、工单、推广关联等数据都将被清理！此操作无法撤销！', '高危操作', {
       type: 'error',

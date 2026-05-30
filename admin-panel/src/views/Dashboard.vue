@@ -125,6 +125,98 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- Subscription Anomalies Section -->
+    <el-row :gutter="16" class="mt-20">
+      <el-col :span="24">
+        <el-card class="rank-card anomalies-card" shadow="hover">
+          <template #header>
+            <div class="flex-between">
+              <div>
+                <span class="rank-title-text" style="color: var(--el-color-danger)">异常订阅拉取审计名单</span>
+                <div class="rank-subtitle-text">多IP共享、高频定时、敏感工具审计监测 (点击左侧箭头可查看最近 5 次拉取明细)</div>
+              </div>
+              <el-button type="danger" plain size="small" icon="Refresh" :loading="anomaliesLoading" @click="fetchAnomalies">刷新</el-button>
+            </div>
+          </template>
+
+          <el-table :data="anomaliesList" v-loading="anomaliesLoading" stripe style="width: 100%">
+            <el-table-column type="expand">
+              <template #default="props">
+                <div class="anomaly-history-detail" style="padding: 10px 20px;">
+                  <h4 style="margin: 0 0 12px 0; color: var(--el-text-color-primary); font-size: 14px;">最近订阅拉取详情：</h4>
+                  <el-timeline v-if="props.row.history && props.row.history.length > 0">
+                    <el-timeline-item
+                      v-for="(h, hIdx) in props.row.history"
+                      :key="hIdx"
+                      :timestamp="formatTime(h.time)"
+                      placement="top"
+                      type="warning"
+                    >
+                      <el-card shadow="none" style="background: var(--el-fill-color-light); border: none; margin-bottom: 5px; border-radius: 8px;">
+                        <div style="font-size: 13px; line-height: 1.6;">
+                          <div style="margin-bottom: 4px;"><strong>IP地址:</strong> <code class="font-mono">{{ h.ip }}</code></div>
+                          <div style="margin-bottom: 4px;"><strong>客户端:</strong> <el-tag size="small" type="info">{{ h.type }}</el-tag></div>
+                          <div><strong>User-Agent:</strong> <code class="font-mono" style="color: var(--el-text-color-secondary); font-size: 11px;">{{ h.ua }}</code></div>
+                        </div>
+                      </el-card>
+                    </el-timeline-item>
+                  </el-timeline>
+                  <div v-else style="color: var(--el-text-color-placeholder); font-size: 13px;">暂无历史拉取记录</div>
+                </div>
+              </template>
+            </el-table-column>
+            
+            <el-table-column prop="user_id" label="ID" width="80" align="center" />
+            <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
+            
+            <el-table-column label="审计拦截时间" width="160">
+              <template #default="scope">
+                <span>{{ formatTime(scope.row.flagged_at) }}</span>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="判定原委" min-width="260">
+              <template #default="scope">
+                <div v-for="(reason, rIdx) in scope.row.reasons" :key="rIdx" style="margin-bottom: 4px;">
+                  <el-tag type="danger" size="small" style="white-space: normal; height: auto; padding: 4px 8px; line-height: 1.4;">{{ reason }}</el-tag>
+                </div>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="蜜罐状态" width="120" align="center">
+              <template #default="scope">
+                <el-tag :type="scope.row.in_honeypot === 1 ? 'warning' : 'info'" size="small">
+                  {{ scope.row.in_honeypot === 1 ? '蜜罐接管中' : '未接管' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="操作" width="200" align="right" fixed="right">
+              <template #default="scope">
+                <el-button
+                  :type="scope.row.in_honeypot === 1 ? 'success' : 'warning'"
+                  size="small"
+                  plain
+                  @click="handleToggleHoneypot(scope.row)"
+                >
+                  {{ scope.row.in_honeypot === 1 ? '解除蜜罐' : '一键蜜罐' }}
+                </el-button>
+                <el-button
+                  type="danger"
+                  size="small"
+                  plain
+                  :disabled="scope.row.banned === 1"
+                  @click="handleBanUser(scope.row)"
+                >
+                  {{ scope.row.banned === 1 ? '已封禁' : '封禁' }}
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -134,6 +226,7 @@ import { useRouter } from 'vue-router';
 import { getSecurePath } from '../api';
 import api from '../api';
 import * as echarts from 'echarts';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 const router = useRouter();
 const chartRef = ref(null);
@@ -222,6 +315,71 @@ const formatTraffic = (bytes) => {
 
 const formatMoney = (amount) => {
   return '¥ ' + parseFloat((amount / 100).toFixed(2));
+};
+
+const anomaliesList = ref([]);
+const anomaliesLoading = ref(false);
+
+const formatTime = (timestamp) => {
+  if (!timestamp) return '无记录';
+  const date = new Date(timestamp * 1000);
+  return date.toLocaleString();
+};
+
+const fetchAnomalies = async () => {
+  anomaliesLoading.value = true;
+  try {
+    const securePath = getSecurePath();
+    const res = await api.get(`/${securePath}/stat/getSubscriptionAnomalies`);
+    if (res.data) {
+      anomaliesList.value = res.data;
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    anomaliesLoading.value = false;
+  }
+};
+
+const handleToggleHoneypot = async (row) => {
+  const actionText = row.in_honeypot === 1 ? '移出蜜罐' : '加入蜜罐';
+  try {
+    await ElMessageBox.confirm(`确定要将该用户 ${row.email} ${actionText}吗？`, '提示', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    });
+    const securePath = getSecurePath();
+    await api.post(`/${securePath}/user/toggleHoneypot`, { id: row.user_id });
+    ElMessage.success(`${actionText}成功`);
+    fetchAnomalies();
+  } catch (err) {
+    if (err !== 'cancel') {
+      console.error(err);
+    }
+  }
+};
+
+const handleBanUser = async (row) => {
+  try {
+    await ElMessageBox.confirm(`确定要封禁用户 ${row.email} 吗？`, '警告', {
+      type: 'error',
+      confirmButtonText: '确定封禁',
+      cancelButtonText: '取消'
+    });
+    const securePath = getSecurePath();
+    await api.post(`/${securePath}/user/ban`, {
+      filter: [
+        { key: 'id', condition: '=', value: row.user_id }
+      ]
+    });
+    ElMessage.success(`封禁用户 ${row.email} 成功`);
+    fetchAnomalies();
+  } catch (err) {
+    if (err !== 'cancel') {
+      console.error(err);
+    }
+  }
 };
 
 const updateCards = () => {
@@ -522,7 +680,8 @@ onMounted(async () => {
   await Promise.all([
     fetchOverride(),
     fetchRanks(),
-    fetchChartData()
+    fetchChartData(),
+    fetchAnomalies()
   ]);
   
   window.addEventListener('resize', handleResize);
