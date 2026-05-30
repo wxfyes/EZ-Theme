@@ -236,7 +236,19 @@
               </div>
               
               <div class="plan-features">
-                <div class="html-content" v-html="item.description || '暂无使用说明'"></div>
+                <div 
+                  class="html-content" 
+                  :class="{ 'collapsed': !expandedCards[item.id] && isLongDescription(item.description) }"
+                  v-html="item.description || '暂无使用说明'"
+                ></div>
+                <div 
+                  v-if="isLongDescription(item.description)" 
+                  class="toggle-expand" 
+                  @click="toggleExpand(item.id)"
+                >
+                  <span>{{ expandedCards[item.id] ? '收起说明' : '展开完整说明' }}</span>
+                  <IconChevronDown class="toggle-icon" :class="{ 'rotated': expandedCards[item.id] }" :size="16" />
+                </div>
               </div>
               
               <button 
@@ -284,7 +296,8 @@ import {
   IconBox,
   IconInfoCircle,
   IconCircle,
-  IconCircleCheck
+  IconCircleCheck,
+  IconChevronDown
 } from '@tabler/icons-vue';
 import { useRouter } from 'vue-router';
 
@@ -302,6 +315,7 @@ export default {
     IconInfoCircle,
     IconCircle,
     IconCircleCheck,
+    IconChevronDown,
     ShopPopup
   },
   setup() {
@@ -336,6 +350,16 @@ export default {
     ];
     
     const showPopup = ref(false);
+    
+    const expandedCards = ref({});
+    const isLongDescription = (desc) => {
+      if (!desc) return false;
+      const rawText = desc.replace(/<[^>]*>/g, '');
+      return rawText.length > 80;
+    };
+    const toggleExpand = (id) => {
+      expandedCards.value[id] = !expandedCards.value[id];
+    };
     const popupConfig = reactive({
       title: '',
       content: '',
@@ -735,7 +759,10 @@ export default {
       handlePopupClose,
       initPopup,
       SHOP_CONFIG,
-      calculateDiscount
+      calculateDiscount,
+      expandedCards,
+      isLongDescription,
+      toggleExpand
     };
   }
 };
@@ -1209,6 +1236,9 @@ export default {
     .plan-features {
       margin: 24px 0 10px 0;
       padding: 0 4px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       
       .feature-item {
         display: flex;
@@ -1243,6 +1273,53 @@ export default {
         font-size: 14px;
         line-height: 1.6;
         color: var(--text-color);
+        flex: 1;
+        transition: max-height 0.3s ease;
+        
+        &.collapsed {
+          max-height: 100px;
+          overflow: hidden;
+          position: relative;
+          
+          &::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--card-bg-color, #ffffff));
+            pointer-events: none;
+            transition: background 0.3s ease;
+          }
+        }
+      }
+
+      .toggle-expand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        font-size: 13px;
+        color: var(--theme-color);
+        cursor: pointer;
+        margin-top: 10px;
+        font-weight: 500;
+        user-select: none;
+        transition: color 0.2s ease;
+        align-self: center;
+        
+        &:hover {
+          color: rgba(var(--theme-color-rgb), 0.8);
+        }
+        
+        .toggle-icon {
+          transition: transform 0.3s ease;
+          
+          &.rotated {
+            transform: rotate(180deg);
+          }
+        }
       }
     }
   }
