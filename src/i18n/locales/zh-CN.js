@@ -509,7 +509,7 @@ export default {
             all: '全部',
             recurring: '周期性',
             onetime: '一次性',
-            card: '账号发卡/工具'
+            card: '独立ios账号/付费'
         },
         no_plans_found: '未找到符合条件的套餐',
         try_different_filter: '请尝试其他筛选条件',
@@ -630,6 +630,7 @@ export default {
         cancel_failed: '取消订单失败',
         payment_successful: '支付成功',
         payment_successful_desc: '您的订单已支付成功，服务已开通',
+        payment_card_successful_desc: '您的订单已支付成功，卡密已自动提取！请在当前页左侧查看并复制，或日后在「订单列表」中查看该卡密。',
         payment_processing: '订单正在处理中，请稍候...',
         order_cancelled: '订单已取消',
         check_failed: '检测支付状态失败',

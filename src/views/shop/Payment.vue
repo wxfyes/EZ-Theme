@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="payment-container">
     <div class="payment-inner">
       <!-- 标题栏 -->
@@ -341,7 +341,7 @@
             </div>
           </div>
           <h2>{{ $t('payment.payment_successful') }}</h2>
-          <p>{{ $t('payment.payment_successful_desc') }}</p>
+          <p>{{ orderDetail.period === 'card' ? $t('payment.payment_card_successful_desc') : $t('payment.payment_successful_desc') }}</p>
         </div>
         <div v-if="showConfettiAnimation" class="confetti-container">
           <ConfettiExplosion
@@ -1055,7 +1055,11 @@ export default {
           orderDetail.value.status = response.data;
           
         } else {
-          showToast(t('payment.payment_successful'), 'success');
+          if (orderDetail.value.period === 'card') {
+            showToast(t('payment.payment_card_successful_desc'), 'success');
+          } else {
+            showToast(t('payment.payment_successful'), 'success');
+          }
           
           orderDetail.value.status = response.data;
           

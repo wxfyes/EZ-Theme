@@ -486,7 +486,7 @@ export default {
             all: 'All',
             recurring: 'Recurring',
             onetime: 'One-time',
-            card: 'Tools & Accounts'
+            card: 'iOS Accounts & Paid Tools'
         },
         no_plans_found: 'No plans found matching the criteria',
         try_different_filter: 'Please try different filter conditions',
@@ -606,6 +606,7 @@ export default {
         cancel_failed: 'Failed to cancel order',
         payment_successful: 'Payment Successful',
         payment_successful_desc: 'Your order has been paid successfully, and the service is activated',
+        payment_card_successful_desc: 'Your order has been paid successfully, and the card details have been automatically retrieved! Please view and copy them on the left of this page, or find them later in your "Order List".',
         payment_processing: 'Order is being processed, please wait...',
         order_cancelled: 'Order cancelled',
         check_failed: 'Failed to check payment status',
