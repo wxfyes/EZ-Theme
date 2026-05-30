@@ -36,8 +36,16 @@
             </el-form-item>
             <el-row :gutter="20">
               <el-col :xs="24" :sm="12">
-                <el-form-item label="试用订阅 ID">
-                  <el-input-number v-model="configData.site.try_out_plan_id" :min="0" style="width: 100%" />
+                <el-form-item label="试用订阅">
+                  <el-select v-model="configData.site.try_out_plan_id" style="width: 100%" placeholder="请选择试用订阅计划">
+                    <el-option label="关闭试用 / 不赠送" :value="0" />
+                    <el-option 
+                      v-for="plan in plans" 
+                      :key="plan.id" 
+                      :label="plan.name" 
+                      :value="plan.id" 
+                    />
+                  </el-select>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
@@ -153,10 +161,10 @@
               <el-input-number v-model="configData.email.email_port" :controls="false" style="width: 150px" />
             </el-form-item>
             <el-form-item label="SMTP 用户名">
-              <el-input v-model="configData.email.email_username" />
+              <el-input v-model="configData.email.email_username" autocomplete="new-username" />
             </el-form-item>
             <el-form-item label="SMTP 密码">
-              <el-input v-model="configData.email.email_password" type="password" show-password />
+              <el-input v-model="configData.email.email_password" type="password" show-password autocomplete="new-password" />
             </el-form-item>
             <el-form-item label="加密协议">
               <el-select v-model="configData.email.email_encryption" style="width: 150px">
@@ -260,6 +268,7 @@ const submitLoading = ref(false);
 const testMailLoading = ref(false);
 const webhookLoading = ref(false);
 const activeTab = ref('site');
+const plans = ref([]);
 
 const configData = reactive({
   site: {
@@ -341,6 +350,7 @@ const fetchConfig = async () => {
       configData.invite.invite_force = Number(configData.invite.invite_force);
       configData.invite.invite_never_expire = Number(configData.invite.invite_never_expire);
       configData.invite.withdraw_close_enable = Number(configData.invite.withdraw_close_enable);
+      configData.site.try_out_plan_id = Number(configData.site.try_out_plan_id || 0);
     }
   } catch (err) {
     console.error(err);
@@ -399,8 +409,21 @@ const handleSetWebhook = async () => {
   }
 };
 
+const fetchPlans = async () => {
+  try {
+    const securePath = getSecurePath();
+    const res = await api.get(`/${securePath}/plan/fetch`);
+    if (res.data) {
+      plans.value = res.data;
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 onMounted(() => {
   fetchConfig();
+  fetchPlans();
 });
 </script>
 
