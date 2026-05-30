@@ -50,7 +50,7 @@
       <template #header>
         <div class="flex-between flex-wrap gap-10">
           <div>
-            <span class="rank-title-text">天阙订阅安全审计中心</span>
+            <span class="rank-title-text">{{ systemName ? systemName + '订阅安全审计中心' : '订阅安全审计中心' }}</span>
             <div class="rank-subtitle-text">对多 IP 扩散分享、高频测活、命令行客户端等进行精细化审查与蜜罐重定向管理</div>
           </div>
           <div class="flex-end gap-10">
@@ -197,7 +197,7 @@
     </el-card>
 
     <!-- Audit Settings & Whitelist Dialog -->
-    <el-dialog v-model="settingsDialogVisible" title="天阙订阅审计与白名单设置" width="600px" destroy-on-close>
+    <el-dialog v-model="settingsDialogVisible" :title="systemName ? systemName + '订阅审计与白名单设置' : '订阅审计与白名单设置'" width="600px" destroy-on-close>
       <el-tabs v-model="settingsActiveTab">
         <el-tab-pane label="审计参数规则" name="rules">
           <el-form :model="settingsForm" label-width="180px" style="padding-top: 15px;">
@@ -265,6 +265,9 @@ import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
 const router = useRouter();
+const systemName = computed(() => {
+  return window.settings?.title || '';
+});
 const anomaliesRawList = ref([]);
 const anomaliesSearch = ref('');
 const anomaliesFilterType = ref('all');

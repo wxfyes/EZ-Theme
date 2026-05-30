@@ -8,10 +8,10 @@
     <div class="login-card">
       <div class="logo flex-center">
         <el-icon class="brand-icon"><Platform /></el-icon>
-        <h2>天阙后台管理系统</h2>
+        <h2>{{ systemName }}后台管理系统</h2>
       </div>
       
-      <p class="subtitle">Tianque Management System</p>
+      <p class="subtitle">Management System</p>
       
       <el-form :model="loginForm" :rules="rules" ref="formRef" @keyup.enter="handleLogin">
         <el-form-item prop="email">
@@ -49,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import api from '../api';
@@ -58,6 +58,10 @@ const router = useRouter();
 const formRef = ref(null);
 const loading = ref(false);
 const isDark = ref(false);
+
+const systemName = computed(() => {
+  return window.settings?.title || '管理';
+});
 
 const loginForm = reactive({
   email: '',

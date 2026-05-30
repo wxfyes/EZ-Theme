@@ -20,7 +20,7 @@
               <el-input v-model="configData.site.app_description" type="textarea" :rows="2" />
             </el-form-item>
             <el-form-item label="站点 URL">
-              <el-input v-model="configData.site.app_url" placeholder="例如 https://tianque.com" />
+              <el-input v-model="configData.site.app_url" placeholder="例如 https://example.com" />
             </el-form-item>
             <el-form-item label="订阅路径">
               <el-input v-model="configData.site.subscribe_path" placeholder="必须以斜杠开头，如 /subscribe" />
@@ -434,7 +434,7 @@
           <div class="pane-title">SMTP 发信与模板配置</div>
           <el-form :model="configData.email" :label-position="isMobile ? 'top' : 'right'" :label-width="isMobile ? undefined : '160px'">
             <el-form-item label="发信地址 (From)">
-              <el-input v-model="configData.email.email_from_address" placeholder="例如 service@tianque.com" />
+              <el-input v-model="configData.email.email_from_address" placeholder="例如 service@example.com" />
             </el-form-item>
             <el-form-item label="邮件发信模板">
               <el-select v-model="configData.email.email_template" style="width: 100%">

@@ -130,7 +130,7 @@
     <el-row :gutter="16" class="mt-20" v-if="flaggedCount > 0 || suspectedCount > 0">
       <el-col :span="24">
         <el-alert
-          :title="flaggedCount > 0 ? '天阙安全审计中心发现严重安全威胁！' : '天阙安全审计中心提示：发现疑似工具拉取'"
+          :title="alertTitle"
           :type="flaggedCount > 0 ? 'error' : 'warning'"
           :closable="false"
           show-icon
@@ -162,6 +162,13 @@ import * as echarts from 'echarts';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
 const router = useRouter();
+const systemName = computed(() => {
+  return window.settings?.title || '';
+});
+const alertTitle = computed(() => {
+  const prefix = systemName.value ? systemName.value + '安全审计中心' : '安全审计中心';
+  return flaggedCount.value > 0 ? `${prefix}发现严重安全威胁！` : `${prefix}提示：发现疑似工具拉取`;
+});
 const chartRef = ref(null);
 let myChart = null;
 

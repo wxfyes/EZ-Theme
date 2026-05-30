@@ -4,7 +4,7 @@
     <el-aside v-if="!isMobile" :width="isCollapse ? '64px' : '220px'" class="aside">
       <div class="brand-logo flex-center" :class="{ 'logo-collapsed': isCollapse }">
         <el-icon class="brand-icon"><Platform /></el-icon>
-        <span v-show="!isCollapse" class="brand-name">天阙管理</span>
+        <span v-show="!isCollapse" class="brand-name">{{ systemName }}</span>
       </div>
       
       <el-menu
@@ -174,7 +174,7 @@
     >
       <div class="brand-logo flex-center" style="height: 60px; border-bottom: 1px solid var(--el-border-color-extra-light);">
         <el-icon class="brand-icon"><Platform /></el-icon>
-        <span class="brand-name">天阙管理</span>
+        <span class="brand-name">{{ systemName }}</span>
       </div>
       
       <el-menu
@@ -302,6 +302,9 @@ const isMobile = ref(false);
 const drawerVisible = ref(false);
 
 const activeMenu = computed(() => route.path);
+const systemName = computed(() => {
+  return window.settings?.title || '管理系统';
+});
 
 const checkMobile = () => {
   isMobile.value = window.innerWidth <= 768;

@@ -172,7 +172,7 @@
                   <el-dropdown-item command="reset">重置订阅密钥</el-dropdown-item>
                   <el-dropdown-item command="copy">复制订阅链接</el-dropdown-item>
                   <el-dropdown-item command="toggleHoneypot" :style="{ color: scope.row.in_honeypot === 1 ? 'var(--el-color-success)' : 'var(--el-color-warning)' }">
-                    {{ scope.row.in_honeypot === 1 ? '移出天阙蜜罐' : '加入天阙蜜罐' }}
+                    {{ scope.row.in_honeypot === 1 ? '移出安全蜜罐' : '加入安全蜜罐' }}
                   </el-dropdown-item>
                   <el-dropdown-item command="delete" divided style="color: var(--el-color-danger)">删除用户</el-dropdown-item>
                 </el-dropdown-menu>
