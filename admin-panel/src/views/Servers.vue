@@ -45,7 +45,16 @@
                 </el-tooltip>
               </template>
             </el-table-column>
-            <el-table-column prop="id" label="ID" width="70" align="center" />
+            <el-table-column label="ID" width="110" align="center">
+              <template #default="scope">
+                <span v-if="scope.row.parent_id" class="node-id-badge child">
+                  {{ scope.row.id }} =&gt; {{ scope.row.parent_id }}
+                </span>
+                <span v-else class="node-id-badge">
+                  {{ scope.row.id }}
+                </span>
+              </template>
+            </el-table-column>
             <el-table-column prop="show" label="状态" width="100" align="center">
               <template #default="scope">
                 <el-switch
@@ -121,7 +130,7 @@
             <div v-else v-for="(node, index) in getPaginatedNodes(type)" :key="node.id" class="mobile-node-card">
               <div class="card-header flex-between">
                 <span class="node-id-name" style="display: flex; align-items: center;">
-                  <span class="node-id">#{{ node.id }}</span>
+                  <span class="node-id">#{{ node.id }}<template v-if="node.parent_id"> =&gt; {{ node.parent_id }}</template></span>
                   <span class="status-dot" :class="getNodeStatusClass(node)" :title="getNodeStatusTitle(node)" style="margin: 0 6px 0 4px;"></span>
                   <span class="node-name">{{ node.name }}</span>
                 </span>
@@ -2101,5 +2110,26 @@ onBeforeUnmount(() => {
 .status-dot.offline {
   background-color: var(--el-color-danger);
   box-shadow: 0 0 6px var(--el-color-danger);
+}
+
+.node-id-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  background-color: var(--el-color-success-light-8);
+  color: var(--el-color-success);
+  border: 1px solid var(--el-color-success-light-5);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--el-font-family-mono, monospace);
+  line-height: 1;
+}
+
+.node-id-badge.child {
+  background-color: var(--el-color-success);
+  color: #fff;
+  border-color: var(--el-color-success);
 }
 </style>
