@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="shop-container">
     <div class="shop-inner">
       <!-- 欢迎卡片 -->
@@ -75,119 +75,182 @@
       
       <!-- 套餐列表 -->
       <div class="plans-wrapper">
-        <!-- 无结果提示 -->
-        <div class="no-plans-message" v-if="!loading.plans && filteredPlans.length === 0">
-          <IconInfoCircle :size="48" class="info-icon" />
-          <h3>{{ $t('shop.no_plans_found') }}</h3>
-          <p>{{ $t('shop.try_different_filter') }}</p>
-          <button class="btn-reset-filter" @click="selectedFilter = 'all'">
-            {{ $t('shop.reset_filter') }}
-          </button>
-        </div>
-        
-        <!-- 骨架屏加载动画 -->
-        <div class="dashboard-card" v-else-if="loading.plans" v-for="i in 3" :key="'skeleton-'+i">
-          <div class="skeleton-card">
-            <div class="skeleton-header"></div>
-            <div class="skeleton-body">
-              <div class="skeleton-price"></div>
-              <div class="skeleton-features">
-                <div class="skeleton-feature" v-for="j in 5" :key="'feature-'+j"></div>
-              </div>
-              <div class="skeleton-button"></div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 套餐卡片 修改内容 -->
-        <div class="plan-card" v-else v-for="plan in filteredPlans" :key="plan.id">
-          <div class="card-header">
-            <h2 class="card-title">{{ plan.name }}</h2>
-            <div class="card-badge glassmorphism stock-plenty" v-if="plan.capacity_limit >= SHOP_CONFIG.lowStockThreshold || plan.capacity_limit === null">
-              <IconBox :size="16" class="badge-icon" />
-              <span>{{ $t('shop.plan.stock.plenty') }}</span>
-            </div>
-            <div class="card-badge glassmorphism stock-warning" v-else-if="plan.capacity_limit > 0 && plan.capacity_limit < SHOP_CONFIG.lowStockThreshold">
-              <IconBox :size="16" class="badge-icon" />
-              <span>{{ $t('shop.plan.stock.warning') }}</span>
-            </div>
-            <div class="card-badge glassmorphism stock-danger" v-if="plan.capacity_limit === 0">
-              <IconBox :size="16" class="badge-icon" />
-              <span>{{ $t('shop.plan.stock.sold_out') }}</span>
-            </div>
-          </div>
-          <div class="card-body">
-            <!-- 价格区域 - 修改为显示支持的所有周期 -->
-            <div class="plan-price">
-              <div class="price-display">
-                <span class="currency">{{ currencySymbol }}</span>
-                <span class="amount">{{ getPlanMainPrice(plan) }}</span>
-                <span class="period">{{ $t(`shop.plan.periods.${getPriceTypeKey(getDisplayPriceType(plan))}`) }}</span>
-              </div>
-              
-              <!-- 支持的周期标签 - 改进显示效果 -->
-              <div class="supported-periods" v-if="!SHOP_CONFIG.hidePeriodTabs">
-                <div class="period-labels">
-                  <span 
-                    v-for="(price, type) in getPlanPrices(plan)" 
-                    :key="type"
-                    class="period-tag"
-                    :class="{ 
-                      'active': getDisplayPriceType(plan) === type,
-                      'disabled': price === null
-                    }"
-                    @click="price !== null && selectPlanPriceType(plan.id, type)"
-                  >
-                    <IconCheck v-if="price !== null" class="tag-icon check" />
-                    <IconX v-else class="tag-icon error" />
-                    {{ $t(`shop.plan.price_options.${getPriceTypeKey(type)}`) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- 周期折扣计算 -->
-            <div class="discount-calculation" v-if="SHOP_CONFIG.enableDiscountCalculation && calculateDiscount(plan).showDiscount">
-              <div class="discount-info">
-                <span class="period-name">{{ calculateDiscount(plan).periodName }}</span>
-                <span class="discount-label">&nbsp;{{ $t('shop.plan.discount.relative') }} </span>
-                <span class="discount-value">&nbsp;{{ calculateDiscount(plan).discountPercentage }}%</span>
-                <span class="saving-text">，{{ $t('shop.plan.discount.savings') }} </span>
-                <span class="saving-amount">&nbsp;{{ currencySymbol }}{{ calculateDiscount(plan).savingsAmount }}</span>
-              </div>
-            </div>
-            
-            <!-- 套餐特性 -->
-            <div class="plan-features">
-              <!-- JSON格式内容 -->
-              <template v-if="isJsonContent(plan.content)">
-                <div 
-                  class="feature-item" 
-                  v-for="(feature, index) in parseJsonContent(plan.content)" 
-                  :key="index"
-                >
-                  <IconCheck v-if="feature.support" class="feature-icon enabled" />
-                  <IconX v-else class="feature-icon disabled" />
-                  <span :class="{ 'disabled-text': !feature.support }">{{ feature.feature }}</span>
-                </div>
-              </template>
-              
-              <!-- HTML格式内容 -->
-              <div v-else class="html-content" v-html="plan.content"></div>
-            </div>
-            
-            <!-- 购买按钮 -->
-            <button 
-              class="btn-purchase glassmorphism" 
-              :class="{ 'btn-disabled': plan.capacity_limit === 0 }"
-              @click="purchasePlan(plan)"
-              :disabled="plan.capacity_limit === 0"
-            >
-              <IconShoppingCart class="btn-icon" />
-              <span class="btn-text">{{ plan.capacity_limit === 0 ? $t('shop.plan.sold_out_btn') : $t('shop.plan.purchase') }}</span>
+        <template v-if="selectedFilter !== 'card'">
+          <!-- 无结果提示 -->
+          <div class="no-plans-message" v-if="!loading.plans && filteredPlans.length === 0">
+            <IconInfoCircle :size="48" class="info-icon" />
+            <h3>{{ $t('shop.no_plans_found') }}</h3>
+            <p>{{ $t('shop.try_different_filter') }}</p>
+            <button class="btn-reset-filter" @click="selectedFilter = 'all'">
+              {{ $t('shop.reset_filter') }}
             </button>
           </div>
-        </div>
+          
+          <!-- 骨架屏加载动画 -->
+          <div class="dashboard-card" v-else-if="loading.plans" v-for="i in 3" :key="'skeleton-'+i">
+            <div class="skeleton-card">
+              <div class="skeleton-header"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-price"></div>
+                <div class="skeleton-features">
+                  <div class="skeleton-feature" v-for="j in 5" :key="'feature-'+j"></div>
+                </div>
+                <div class="skeleton-button"></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 套餐卡片 修改内容 -->
+          <div class="plan-card" v-else v-for="plan in filteredPlans" :key="plan.id">
+            <div class="card-header">
+              <h2 class="card-title">{{ plan.name }}</h2>
+              <div class="card-badge glassmorphism stock-plenty" v-if="plan.capacity_limit >= SHOP_CONFIG.lowStockThreshold || plan.capacity_limit === null">
+                <IconBox :size="16" class="badge-icon" />
+                <span>{{ $t('shop.plan.stock.plenty') }}</span>
+              </div>
+              <div class="card-badge glassmorphism stock-warning" v-else-if="plan.capacity_limit > 0 && plan.capacity_limit < SHOP_CONFIG.lowStockThreshold">
+                <IconBox :size="16" class="badge-icon" />
+                <span>{{ $t('shop.plan.stock.warning') }}</span>
+              </div>
+              <div class="card-badge glassmorphism stock-danger" v-if="plan.capacity_limit === 0">
+                <IconBox :size="16" class="badge-icon" />
+                <span>{{ $t('shop.plan.stock.sold_out') }}</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <!-- 价格区域 - 修改为显示支持的所有周期 -->
+              <div class="plan-price">
+                <div class="price-display">
+                  <span class="currency">{{ currencySymbol }}</span>
+                  <span class="amount">{{ getPlanMainPrice(plan) }}</span>
+                  <span class="period">{{ $t(`shop.plan.periods.${getPriceTypeKey(getDisplayPriceType(plan))}`) }}</span>
+                </div>
+                
+                <!-- 支持的周期标签 - 改进显示效果 -->
+                <div class="supported-periods" v-if="!SHOP_CONFIG.hidePeriodTabs">
+                  <div class="period-labels">
+                    <span 
+                      v-for="(price, type) in getPlanPrices(plan)" 
+                      :key="type"
+                      class="period-tag"
+                      :class="{ 
+                        'active': getDisplayPriceType(plan) === type,
+                        'disabled': price === null
+                      }"
+                      @click="price !== null && selectPlanPriceType(plan.id, type)"
+                    >
+                      <IconCheck v-if="price !== null" class="tag-icon check" />
+                      <IconX v-else class="tag-icon error" />
+                      {{ $t(`shop.plan.price_options.${getPriceTypeKey(type)}`) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 周期折扣计算 -->
+              <div class="discount-calculation" v-if="SHOP_CONFIG.enableDiscountCalculation && calculateDiscount(plan).showDiscount">
+                <div class="discount-info">
+                  <span class="period-name">{{ calculateDiscount(plan).periodName }}</span>
+                  <span class="discount-label">&nbsp;{{ $t('shop.plan.discount.relative') }} </span>
+                  <span class="discount-value">&nbsp;{{ calculateDiscount(plan).discountPercentage }}%</span>
+                  <span class="saving-text">，{{ $t('shop.plan.discount.savings') }} </span>
+                  <span class="saving-amount">&nbsp;{{ currencySymbol }}{{ calculateDiscount(plan).savingsAmount }}</span>
+                </div>
+              </div>
+              
+              <!-- 套餐特性 -->
+              <div class="plan-features">
+                <!-- JSON格式内容 -->
+                <template v-if="isJsonContent(plan.content)">
+                  <div 
+                    class="feature-item" 
+                    v-for="(feature, index) in parseJsonContent(plan.content)" 
+                    :key="index"
+                  >
+                    <IconCheck v-if="feature.support" class="feature-icon enabled" />
+                    <IconX v-else class="feature-icon disabled" />
+                    <span :class="{ 'disabled-text': !feature.support }">{{ feature.feature }}</span>
+                  </div>
+                </template>
+                
+                <!-- HTML格式内容 -->
+                <div v-else class="html-content" v-html="plan.content"></div>
+              </div>
+              
+              <!-- 购买按钮 -->
+              <button 
+                class="btn-purchase glassmorphism" 
+                :class="{ 'btn-disabled': plan.capacity_limit === 0 }"
+                @click="purchasePlan(plan)"
+                :disabled="plan.capacity_limit === 0"
+              >
+                <IconShoppingCart class="btn-icon" />
+                <span class="btn-text">{{ plan.capacity_limit === 0 ? $t('shop.plan.sold_out_btn') : $t('shop.plan.purchase') }}</span>
+              </button>
+            </div>
+          </div>
+        </template>
+        
+        <template v-else>
+          <!-- 无结果提示 -->
+          <div class="no-plans-message" v-if="!loading.cards && cards.length === 0">
+            <IconInfoCircle :size="48" class="info-icon" />
+            <h3>暂无虚拟商品</h3>
+            <p>商家暂未上架任何账号或工具卡密，敬请期待！</p>
+          </div>
+          
+          <!-- 骨架屏加载动画 -->
+          <div class="dashboard-card" v-else-if="loading.cards" v-for="i in 3" :key="'card-skeleton-'+i">
+            <div class="skeleton-card">
+              <div class="skeleton-header"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-price"></div>
+                <div class="skeleton-features">
+                  <div class="skeleton-feature" v-for="j in 3" :key="'card-feature-'+j"></div>
+                </div>
+                <div class="skeleton-button"></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 虚拟商品卡片 -->
+          <div class="plan-card card-product-card" v-else v-for="item in cards" :key="item.id">
+            <div class="card-header">
+              <h2 class="card-title">{{ item.name }}</h2>
+              <div class="card-badge glassmorphism stock-plenty" v-if="item.stock > 0">
+                <IconBox :size="16" class="badge-icon" />
+                <span>库存充足 ({{ item.stock }})</span>
+              </div>
+              <div class="card-badge glassmorphism stock-danger" v-else>
+                <IconBox :size="16" class="badge-icon" />
+                <span>已售罄</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="plan-price">
+                <div class="price-display">
+                  <span class="currency">{{ currencySymbol }}</span>
+                  <span class="amount">{{ (item.price / 100).toFixed(2) }}</span>
+                  <span class="period"> / 份</span>
+                </div>
+              </div>
+              
+              <div class="plan-features">
+                <div class="html-content" v-html="item.description || '暂无使用说明'"></div>
+              </div>
+              
+              <button 
+                class="btn-purchase glassmorphism" 
+                :class="{ 'btn-disabled': item.stock === 0 }"
+                @click="purchaseCard(item)"
+                :disabled="item.stock === 0"
+              >
+                <IconShoppingCart class="btn-icon" />
+                <span class="btn-text">{{ item.stock === 0 ? '已售罄' : '立即购买' }}</span>
+              </button>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -207,7 +270,7 @@
 import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToast } from '@/composables/useToast';
-import { fetchPlans, getCommConfig } from '@/api/shop';
+import { fetchPlans, getCommConfig, fetchCardProducts } from '@/api/shop';
 import { SHOP_CONFIG } from '@/utils/baseConfig';
 import ShopPopup from '@/components/shop/ShopPopup.vue';
 import {
@@ -248,10 +311,12 @@ export default {
     
     const loading = reactive({
       plans: true,
-      config: true
+      config: true,
+      cards: true
     });
     
     const plans = ref([]);
+    const cards = ref([]);
     const currency = ref('CNY');
     const currencySymbol = ref('¥');
     
@@ -266,7 +331,8 @@ export default {
     const filters = [
       { label: '全部', value: 'all' },
       { label: '周期性', value: 'recurring' },
-      { label: '一次性', value: 'onetime' }
+      { label: '一次性', value: 'onetime' },
+      { label: '账号发卡/工具', value: 'card' }
     ];
     
     const showPopup = ref(false);
@@ -404,6 +470,21 @@ export default {
         loading.config = false;
       }
     };
+
+    const fetchCardData = async () => {
+      loading.cards = true;
+      try {
+        const response = await fetchCardProducts();
+        if (response.data) {
+          cards.value = response.data;
+        }
+      } catch (error) {
+        console.error('获取卡密商品数据失败:', error);
+        showToast('获取卡密商品数据失败', 'error');
+      } finally {
+        loading.cards = false;
+      }
+    };
     
     const getPlanPrices = (plan) => {
       return {
@@ -492,12 +573,25 @@ export default {
       
       const priceType = getDisplayPriceType(plan);
       
-      
       router.push({
         path: 'order-confirm',
         query: { 
           id: plan.id,
           period: priceType
+        }
+      });
+    };
+
+    const purchaseCard = (item) => {
+      if (item.stock === 0) {
+        showToast('商品已售罄', 'error');
+        return;
+      }
+      router.push({
+        path: 'order-confirm',
+        query: {
+          id: item.id,
+          period: 'card'
         }
       });
     };
@@ -554,8 +648,10 @@ export default {
     onMounted(async () => {
       try {
         loading.plans = true;
-        await Promise.all([fetchPlanData(), fetchConfig()]);
+        loading.cards = true;
+        await Promise.all([fetchPlanData(), fetchConfig(), fetchCardData()]);
         loading.plans = false;
+        loading.cards = false;
         
         nextTick(() => {
           if (SHOP_CONFIG.popup && SHOP_CONFIG.popup.enabled && SHOP_CONFIG.popup.cooldownHours === 0) {
@@ -566,6 +662,7 @@ export default {
       } catch (error) {
         console.error('加载数据失败:', error);
         loading.plans = false;
+        loading.cards = false;
       }
     });
     
@@ -606,6 +703,7 @@ export default {
     
     return {
       plans,
+      cards,
       loading,
       currency,
       currencySymbol,
@@ -622,6 +720,8 @@ export default {
       isJsonContent,
       parseJsonContent,
       purchasePlan,
+      purchaseCard,
+      fetchCardData,
       filterToggle,
       filters,
       setFilter,

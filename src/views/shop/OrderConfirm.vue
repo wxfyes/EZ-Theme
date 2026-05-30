@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 
   <div class="order-confirm-container">
 
@@ -471,7 +471,7 @@ import { useToast } from '@/composables/useToast';
 
 import { useRoute, useRouter } from 'vue-router';
 
-import { getCommConfig, fetchPlanById, verifyCoupon as checkCoupon, submitOrder as createOrder } from '@/api/shop';
+import { getCommConfig, fetchPlanById, verifyCoupon as checkCoupon, submitOrder as createOrder, fetchCardProducts } from '@/api/shop';
 
 import { getUserInfo } from '@/api/dashboard';
 
@@ -637,6 +637,18 @@ export default {
 
       
 
+      if (route.query.period === 'card') {
+
+        return {
+
+          card_price: plan.value.card_price
+
+        };
+
+      }
+
+      
+
       const prices = {};
 
       const priceTypes = ['month_price', 'quarter_price', 'half_year_price', 'year_price', 'two_year_price', 'three_year_price', 'onetime_price'];
@@ -776,7 +788,9 @@ export default {
 
         three_year_price: 'three_year',
 
-        onetime_price: 'onetime'
+        onetime_price: 'onetime',
+
+        card_price: 'card'
 
       };
 
@@ -993,7 +1007,7 @@ export default {
 
           plan_id: Number(plan.value.id),
 
-          period: selectedPriceType.value
+          period: route.query.period === 'card' ? 'card' : selectedPriceType.value
 
         };
 
@@ -1099,7 +1113,61 @@ export default {
 
         
 
-        const response = await fetchPlanById(route.query.id);
+        let response;
+
+        if (route.query.period === 'card') {
+
+          response = await fetchCardProducts();
+
+          if (response.data) {
+
+            const cardProduct = response.data.find(item => Number(item.id) === Number(route.query.id));
+
+            if (cardProduct) {
+
+              plan.value = {
+
+                id: cardProduct.id,
+
+                name: cardProduct.name,
+
+                content: cardProduct.description || '无使用说明',
+
+                capacity_limit: cardProduct.stock,
+
+                card_price: cardProduct.price,
+
+                period: 'card'
+
+              };
+
+              selectedPriceType.value = 'card_price';
+
+              return;
+
+            } else {
+
+              showToast('未找到该商品信息', 'error');
+
+              router.push('/shop');
+
+              return;
+
+            }
+
+          } else {
+
+            showToast('获取商品信息失败', 'error');
+
+            router.push('/shop');
+
+            return;
+
+          }
+
+        }
+
+        response = await fetchPlanById(route.query.id);
 
         if (response.data) {
 
@@ -1233,7 +1301,7 @@ export default {
 
       
 
-      return userHasActivePlan.value && plan.value.id !== userInfo.value.plan_id;
+      return userHasActivePlan.value && plan.value.id !== userInfo.value.plan_id && route.query.period !== 'card';
 
     });
 

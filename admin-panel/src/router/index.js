@@ -20,6 +20,7 @@ const Queues = () => import('../views/Queues.vue');
 const Payments = () => import('../views/Payments.vue');
 const Themes = () => import('../views/Themes.vue');
 const SecurityAudit = () => import('../views/SecurityAudit.vue');
+const Cards = () => import('../views/Cards.vue');
 
 const routes = [
   {
@@ -50,6 +51,12 @@ const routes = [
         name: 'Plans',
         component: Plans,
         meta: { title: '订阅管理', requiresAuth: true }
+      },
+      {
+        path: 'cards',
+        name: 'Cards',
+        component: Cards,
+        meta: { title: '发卡管理', requiresAuth: true }
       },
       {
         path: 'servers',

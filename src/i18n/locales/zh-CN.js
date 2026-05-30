@@ -508,7 +508,8 @@ export default {
         filter: {
             all: '全部',
             recurring: '周期性',
-            onetime: '一次性'
+            onetime: '一次性',
+            card: '账号发卡/工具'
         },
         no_plans_found: '未找到符合条件的套餐',
         try_different_filter: '请尝试其他筛选条件',
@@ -528,7 +529,8 @@ export default {
                 year: ' / 一年',
                 two_year: ' / 两年',
                 three_year: ' / 三年',
-                onetime: ' / 一次性'
+                onetime: ' / 一次性',
+                card: ' / 份'
             },
             price_options: {
                 month: '月付',
@@ -539,7 +541,8 @@ export default {
                 three_year: '三年',
                 onetime: '一次性',
                 reset_price: '重置流量包',
-                deposit: '充值'
+                deposit: '充值',
+                card: '单份购买'
             },
             discount: {
                 relative: '相对折扣大约',
@@ -600,7 +603,8 @@ export default {
         period: '周期',
         period_types: {
             reset_price: '重置流量包',
-            deposit: '充值'
+            deposit: '充值',
+            card: '虚拟卡密商品'
         },
         traffic: '流量',
         order_info: '订单信息',

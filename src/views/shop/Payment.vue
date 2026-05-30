@@ -100,11 +100,53 @@
               </div>
             </div>
             
-            <!-- 订单信息骨架屏 -->
-            <div class="skeleton-card" v-else>
-              <div class="skeleton-text" v-for="i in 5" :key="'order-'+i"></div>
-            </div>
-          </div>
+            <!-- 订单信息骨架屏 -->
+            <div class="skeleton-card" v-else>
+              <div class="skeleton-text" v-for="i in 5" :key="'order-'+i"></div>
+            </div>
+          </div>
+          
+          <!-- 卡密提取结果 -->
+          <div class="section-wrapper card-delivery-section" v-if="orderDetail.period === 'card' && (orderDetail.status === 3 || orderDetail.status === 4)">
+            <div class="section-title">
+              <span>卡密提取结果</span>
+            </div>
+            
+            <div class="card-delivery-box glassmorphism" v-if="cardInfo">
+              <div class="card-delivery-header">
+                <IconCheck class="delivery-success-icon" />
+                <h4>卡密提取成功</h4>
+              </div>
+              <div class="card-delivery-body">
+                <div class="card-field-row">
+                  <div class="field-label">商品名称</div>
+                  <div class="field-value">{{ cardInfo.product_name }}</div>
+                </div>
+                <div class="card-field-row credentials-field">
+                  <div class="field-label">卡密内容 (请妥善保存)</div>
+                  <div class="field-value-box">
+                    <pre class="credentials-text">{{ cardInfo.code }}</pre>
+                    <button class="btn-copy-code" @click="copyCredentials(cardInfo.code)">
+                      复制卡密
+                    </button>
+                  </div>
+                </div>
+                <div class="card-field-row" v-if="cardInfo.description">
+                  <div class="field-label">使用说明</div>
+                  <div class="field-value description-text" v-html="cardInfo.description"></div>
+                </div>
+              </div>
+            </div>
+            <div class="card-delivery-loading" v-else-if="loadingCard">
+              <span class="loader"></span>
+              <p>正在为您提取卡密信息...</p>
+            </div>
+            <div class="card-delivery-error" v-else>
+              <IconAlertTriangle class="delivery-error-icon" />
+              <p>未能自动提取到您的卡密信息。</p>
+              <button class="btn-retry-delivery" @click="fetchCardInfo">手动尝试提取</button>
+            </div>
+          </div>
         </div>
         
         <!-- 右侧内容：支付方式 -->
@@ -407,7 +449,7 @@ import { ref, reactive, onMounted, computed, onBeforeUnmount, nextTick, watch } 
 import { useI18n } from 'vue-i18n';
 import { useToast } from '@/composables/useToast';
 import { useRoute, useRouter } from 'vue-router';
-import { getOrderDetail, getPaymentMethods, checkOrderStatus, cancelOrder, checkoutOrder } from '@/api/shop';
+import { getOrderDetail, getPaymentMethods, checkOrderStatus, cancelOrder, checkoutOrder, fetchCardByOrder } from '@/api/shop';
 import { PAYMENT_CONFIG } from '@/utils/baseConfig';
 import QrcodeVue from 'qrcode.vue';
 import ConfettiExplosion from 'vue-confetti-explosion';
@@ -509,6 +551,33 @@ export default {
       return orderDetail.value.total_amount + handleFeeAmount.value;
     });
     
+    const cardInfo = ref(null);
+    const loadingCard = ref(false);
+
+    const fetchCardInfo = async () => {
+      if (orderDetail.value.period !== 'card' || (orderDetail.value.status !== 3 && orderDetail.value.status !== 4)) return;
+      loadingCard.value = true;
+      try {
+        const response = await fetchCardByOrder(orderDetail.value.trade_no);
+        if (response.data) {
+          cardInfo.value = response.data;
+        }
+      } catch (error) {
+        console.error('获取卡密失败:', error);
+      } finally {
+        loadingCard.value = false;
+      }
+    };
+
+    const copyCredentials = (text) => {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('卡密内容已复制到剪贴板', 'success');
+      }).catch(err => {
+        console.error('复制失败:', err);
+        showToast('复制失败，请手动选择复制', 'error');
+      });
+    };
+
     const fetchOrderDetail = async () => {
       loading.order = true;
       try {
@@ -536,10 +605,13 @@ export default {
         
         const response = await getOrderDetail(tradeNo);
         if (response.data) {
-          orderDetail.value = response.data;
-          
-          if (orderDetail.value.status === 0 && orderDetail.value.total_amount === 0) {
-            startPaymentCheck();
+          orderDetail.value = response.data;
+
+          if ((orderDetail.value.status === 3 || orderDetail.value.status === 4) && orderDetail.value.period === 'card') {
+            fetchCardInfo();
+          }
+          if (orderDetail.value.status === 0 && orderDetail.value.total_amount === 0) {
+            startPaymentCheck();
           }
         } else {
           showToast(t('payment.order_not_found'), 'error');
@@ -591,7 +663,7 @@ export default {
     };
     
     const formatPeriod = (period) => {
-      if (period === 'reset_price' || period === 'deposit') {
+      if (period === 'reset_price' || period === 'deposit' || period === 'card') {
         return t(`payment.period_types.${period}`);
       }
 
@@ -791,8 +863,12 @@ export default {
       loading.checking = false;
       loading.paying = false;
       
-      closePaymentModal();
-      
+      closePaymentModal();
+
+      if (orderDetail.value.period === 'card') {
+        fetchCardInfo();
+      }
+
       if (!fromOrderList.value) {
         showSuccessAnimation.value = true;
         
@@ -1118,10 +1194,14 @@ export default {
       totalWithFee,
       window: window,
       checkPaymentStatus,
-      detectBrowser,
-      getStatusText,
-      getStatusClass,
-      goBack
+      detectBrowser,
+      getStatusText,
+      getStatusClass,
+      goBack,
+      cardInfo,
+      loadingCard,
+      fetchCardInfo,
+      copyCredentials
     };
   }
 };
@@ -2340,4 +2420,140 @@ export default {
     opacity: 1;
   }
 }
+
+.card-delivery-box {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 10px;
+
+  .card-delivery-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    color: #26A65B;
+    
+    .delivery-success-icon {
+      color: #26A65B;
+    }
+    h4 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+  }
+
+  .card-field-row {
+    margin-bottom: 15px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .field-label {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 5px;
+    }
+
+    .field-value {
+      font-size: 1rem;
+      color: #fff;
+    }
+
+    .field-value-box {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+
+      .credentials-text {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-all;
+        font-family: monospace;
+        color: #00ff66;
+        font-size: 0.95rem;
+      }
+
+      .btn-copy-code {
+        align-self: flex-end;
+        background: #00e676;
+        color: #000;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #00c853;
+          transform: translateY(-1px);
+        }
+      }
+    }
+    
+    .description-text {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+  }
+}
+
+.card-delivery-loading {
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.7);
+
+  .loader {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: rotate 1s linear infinite;
+    margin-bottom: 10px;
+  }
+}
+
+.card-delivery-error {
+  text-align: center;
+  padding: 2rem;
+  
+  .delivery-error-icon {
+    color: #ff3333;
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+  
+  p {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 15px;
+  }
+
+  .btn-retry-delivery {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+}
 </style> 

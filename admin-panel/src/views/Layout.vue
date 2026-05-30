@@ -47,6 +47,10 @@
             <el-icon><Tickets /></el-icon>
             <span>订阅管理</span>
           </el-menu-item>
+          <el-menu-item index="/cards">
+            <el-icon><Goods /></el-icon>
+            <span>发卡管理</span>
+          </el-menu-item>
           <el-menu-item index="/orders">
             <el-icon><Document /></el-icon>
             <span>订单管理</span>
@@ -212,6 +216,10 @@
           <el-menu-item index="/plans">
             <el-icon><Tickets /></el-icon>
             <span>订阅管理</span>
+          </el-menu-item>
+          <el-menu-item index="/cards">
+            <el-icon><Goods /></el-icon>
+            <span>发卡管理</span>
           </el-menu-item>
           <el-menu-item index="/orders">
             <el-icon><Document /></el-icon>

@@ -485,7 +485,8 @@ export default {
         filter: {
             all: 'All',
             recurring: 'Recurring',
-            onetime: 'One-time'
+            onetime: 'One-time',
+            card: 'Tools & Accounts'
         },
         no_plans_found: 'No plans found matching the criteria',
         try_different_filter: 'Please try different filter conditions',
@@ -505,7 +506,8 @@ export default {
                 year: ' / Yearly',
                 two_year: ' / Two Years',
                 three_year: ' / Three Years',
-                onetime: ' / One-time'
+                onetime: ' / One-time',
+                card: ' / unit'
             },
             price_options: {
                 month: 'Monthly',
@@ -516,7 +518,8 @@ export default {
                 three_year: 'Three Years',
                 onetime: 'One-time',
                 reset_price: 'Reset Traffic Package',
-                deposit: 'Deposit'
+                deposit: 'Deposit',
+                card: 'Single unit'
             },
             discount: {
                 relative: 'Relative discount approx',
@@ -576,7 +579,8 @@ export default {
         period: 'Cycle',
         period_types: {
             reset_price: 'Reset Traffic Package',
-            deposit: 'Deposit'
+            deposit: 'Deposit',
+            card: 'Virtual Card Product'
         },
         traffic: 'Traffic',
         order_info: 'Order Information',
