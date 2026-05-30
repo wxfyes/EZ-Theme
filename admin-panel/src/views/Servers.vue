@@ -1767,31 +1767,36 @@ const handleDelete = (row, type) => {
   }).catch(() => {});
 };
 
-const getNodeStatusClass = (row) => {
-  if (!row.last_check_at) return 'offline';
+const formatTimeAgo = (timestamp) => {
+  if (!timestamp) return '从未连接';
   const now = Math.floor(Date.now() / 1000);
-  const diff = now - Number(row.last_check_at);
-  if (diff <= 300) return 'online'; // 5分钟内为在线
-  if (diff <= 600) return 'warning'; // 10分钟内为无数据/延迟
-  return 'offline'; // 超过10分钟为离线
+  let diff = now - Number(timestamp);
+  if (diff < 0) diff = 0;
+  
+  if (diff < 60) {
+    return `${diff} 秒前`;
+  } else if (diff < 3600) {
+    return `${Math.floor(diff / 60)} 分钟前`;
+  } else if (diff < 86400) {
+    return `${Math.floor(diff / 3600)} 小时前`;
+  } else {
+    return `${Math.floor(diff / 86400)} 天前`;
+  }
+};
+
+const getNodeStatusClass = (row) => {
+  const status = row.available_status !== undefined ? Number(row.available_status) : 0;
+  if (status === 2) return 'online'; // 正常在线 (绿色/蓝色)
+  if (status === 1) return 'warning'; // 警告（无人/无流量上报）
+  return 'offline'; // 离线
 };
 
 const getNodeStatusTitle = (row) => {
-  if (!row.last_check_at) return '从未连接 (离线)';
-  const diff = Math.floor(Date.now() / 1000) - Number(row.last_check_at);
-  let timeStr = '';
-  if (diff < 60) {
-    timeStr = `${diff} 秒前`;
-  } else if (diff < 3600) {
-    timeStr = `${Math.floor(diff / 60)} 分钟前`;
-  } else if (diff < 86400) {
-    timeStr = `${Math.floor(diff / 3600)} 小时前`;
-  } else {
-    timeStr = `${Math.floor(diff / 86400)} 天前`;
-  }
+  const status = row.available_status !== undefined ? Number(row.available_status) : 0;
+  const timeStr = row.last_check_at ? formatTimeAgo(row.last_check_at) : '从未连接';
   
-  if (diff <= 300) return `在线 (最后上报: ${timeStr})`;
-  if (diff <= 600) return `延迟/无数据 (最后上报: ${timeStr})`;
+  if (status === 2) return `在线 (最后上报: ${timeStr})`;
+  if (status === 1) return `在线但无流量 (最后上报: ${timeStr})`;
   return `离线 (最后上报: ${timeStr})`;
 };
 
