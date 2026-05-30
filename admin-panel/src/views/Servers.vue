@@ -40,7 +40,14 @@
               </template>
             </el-table-column>
 
-            <el-table-column prop="name" label="节点名称" min-width="150" />
+            <el-table-column prop="name" label="节点名称" min-width="150">
+              <template #default="scope">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="status-dot" :class="getNodeStatusClass(scope.row)" :title="getNodeStatusTitle(scope.row)"></span>
+                  <span>{{ scope.row.name }}</span>
+                </div>
+              </template>
+            </el-table-column>
             
             <el-table-column prop="host" label="地址:端口" min-width="180" show-overflow-tooltip>
               <template #default="scope">
@@ -115,8 +122,9 @@
             </div>
             <div v-else v-for="(node, index) in getPaginatedNodes(type)" :key="node.id" class="mobile-node-card">
               <div class="card-header flex-between">
-                <span class="node-id-name">
+                <span class="node-id-name" style="display: flex; align-items: center;">
                   <span class="node-id">#{{ node.id }}</span>
+                  <span class="status-dot" :class="getNodeStatusClass(node)" :title="getNodeStatusTitle(node)" style="margin: 0 6px 0 4px;"></span>
                   <span class="node-name">{{ node.name }}</span>
                 </span>
                 <el-switch
@@ -369,8 +377,8 @@
                     <el-input v-model="form.tls_settings.server_name" :placeholder="form.tls === 2 ? 'REALITY必填，与后端保持一致' : '证书验证SNI域名，留空使用默认'" @input="syncTlsSettingsToRaw" />
                   </el-form-item>
 
-                  <!-- TLS 1.0 specific -->
-                  <template v-if="form.tls === 1">
+                  <!-- TLS 1.0 specific (Only V2node supports certificate mode auto-generation) -->
+                  <template v-if="form.tls === 1 && activeType === 'v2node'">
                     <el-form-item label="证书模式">
                       <el-select v-model="form.tls_settings.cert_mode" style="width: 100%" @change="syncTlsSettingsToRaw">
                         <el-option label="自签名 (self)" value="self" />
@@ -1185,6 +1193,15 @@ const handleNetworkChange = (newVal) => {
 // Build tls_settings object from form fields (shared between vless/vmess/v2node submit)
 const buildTlsSettings = () => {
   if (form.tls === 1) {
+    // Standard vmess/vless only needs server_name, fingerprint, allow_insecure
+    if (activeType.value !== 'v2node') {
+      return {
+        server_name: form.tls_settings.server_name,
+        fingerprint: form.tls_settings.fingerprint,
+        allow_insecure: String(form.tls_settings.allow_insecure)
+      };
+    }
+    // V2node supports visual certificate auto-generation
     const s = {
       server_name: form.tls_settings.server_name,
       cert_mode: form.tls_settings.cert_mode,
@@ -1750,6 +1767,34 @@ const handleDelete = (row, type) => {
   }).catch(() => {});
 };
 
+const getNodeStatusClass = (row) => {
+  if (!row.last_check_at) return 'offline';
+  const now = Math.floor(Date.now() / 1000);
+  const diff = now - Number(row.last_check_at);
+  if (diff <= 300) return 'online'; // 5分钟内为在线
+  if (diff <= 600) return 'warning'; // 10分钟内为无数据/延迟
+  return 'offline'; // 超过10分钟为离线
+};
+
+const getNodeStatusTitle = (row) => {
+  if (!row.last_check_at) return '从未连接 (离线)';
+  const diff = Math.floor(Date.now() / 1000) - Number(row.last_check_at);
+  let timeStr = '';
+  if (diff < 60) {
+    timeStr = `${diff} 秒前`;
+  } else if (diff < 3600) {
+    timeStr = `${Math.floor(diff / 60)} 分钟前`;
+  } else if (diff < 86400) {
+    timeStr = `${Math.floor(diff / 3600)} 小时前`;
+  } else {
+    timeStr = `${Math.floor(diff / 86400)} 天前`;
+  }
+  
+  if (diff <= 300) return `在线 (最后上报: ${timeStr})`;
+  if (diff <= 600) return `延迟/无数据 (最后上报: ${timeStr})`;
+  return `离线 (最后上报: ${timeStr})`;
+};
+
 onMounted(() => {
   checkMobile();
   window.addEventListener('resize', checkMobile);
@@ -1990,5 +2035,28 @@ onBeforeUnmount(() => {
 .empty-placeholder {
   padding: 40px 0;
   text-align: center;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.status-dot.online {
+  background-color: var(--el-color-success);
+  box-shadow: 0 0 6px var(--el-color-success);
+}
+
+.status-dot.warning {
+  background-color: var(--el-color-warning);
+  box-shadow: 0 0 6px var(--el-color-warning);
+}
+
+.status-dot.offline {
+  background-color: var(--el-color-danger);
+  box-shadow: 0 0 6px var(--el-color-danger);
 }
 </style>
