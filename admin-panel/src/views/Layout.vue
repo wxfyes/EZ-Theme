@@ -82,6 +82,10 @@
             <el-icon><Notebook /></el-icon>
             <span>知识库管理</span>
           </el-menu-item>
+          <el-menu-item index="/security-audit">
+            <el-icon><Lock /></el-icon>
+            <span>安全审计</span>
+          </el-menu-item>
         </el-sub-menu>
         
         <el-sub-menu index="settings-group">
@@ -243,6 +247,10 @@
           <el-menu-item index="/knowledges">
             <el-icon><Notebook /></el-icon>
             <span>知识库管理</span>
+          </el-menu-item>
+          <el-menu-item index="/security-audit">
+            <el-icon><Lock /></el-icon>
+            <span>安全审计</span>
           </el-menu-item>
         </el-sub-menu>
         

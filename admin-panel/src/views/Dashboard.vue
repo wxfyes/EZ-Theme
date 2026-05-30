@@ -126,219 +126,30 @@
       </el-col>
     </el-row>
 
-    <!-- Subscription Anomalies Section -->
-    <el-row :gutter="16" class="mt-20">
+    <!-- Security Audit Quick Warning Banner -->
+    <el-row :gutter="16" class="mt-20" v-if="flaggedCount > 0 || suspectedCount > 0">
       <el-col :span="24">
-        <el-card class="rank-card anomalies-card" shadow="hover">
-          <template #header>
-            <div class="flex-between flex-wrap gap-10">
-              <div>
-                <span class="rank-title-text" style="color: var(--el-color-danger)">订阅拉取异常审计名单</span>
-                <div class="rank-subtitle-text">用于审计和预警多 IP 共享、高频定时测活、命令行/脚本拉取等行为</div>
-              </div>
-              <div class="flex-end gap-10">
-                <el-button type="primary" plain size="small" icon="Setting" @click="openSettingsDialog">审计规则 & 白名单</el-button>
-                <el-button type="danger" plain size="small" icon="Refresh" :loading="anomaliesLoading" @click="fetchAnomalies">刷新</el-button>
-              </div>
+        <el-alert
+          :title="flaggedCount > 0 ? '天阙安全审计中心发现严重安全威胁！' : '天阙安全审计中心提示：发现疑似工具拉取'"
+          :type="flaggedCount > 0 ? 'error' : 'warning'"
+          :closable="false"
+          show-icon
+          style="border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); padding: 16px;"
+        >
+          <template #default>
+            <div class="flex-between flex-wrap gap-10" style="margin-top: 8px;">
+              <span style="font-size: 13px; line-height: 1.5;">
+                当前有 <strong :style="{ color: flaggedCount > 0 ? 'var(--el-color-danger)' : 'var(--el-color-warning)', fontSize: '15px' }">{{ flaggedCount }}</strong> 个高风险订阅拉取拦截账号，
+                以及 <strong style="color: var(--el-color-warning); font-size: 15px;">{{ suspectedCount }}</strong> 个疑似命令行/爬虫工具拉取的异常记录待审计。
+              </span>
+              <el-button :type="flaggedCount > 0 ? 'danger' : 'warning'" size="small" icon="Platform" @click="goToSecurityAudit">
+                立即前往安全审计页面处理
+              </el-button>
             </div>
           </template>
-
-          <!-- Filter Toolbar -->
-          <div class="flex-between flex-wrap gap-10" style="padding: 12px 16px; background: var(--el-fill-color-blank); border-bottom: 1px solid var(--el-border-color-light); border-radius: 8px 8px 0 0;">
-            <div class="flex-start gap-10 flex-wrap">
-              <el-input
-                v-model="anomaliesSearch"
-                placeholder="搜索邮箱或用户 ID..."
-                size="small"
-                clearable
-                style="width: 220px;"
-                prefix-icon="Search"
-              />
-              <el-select v-model="anomaliesFilterType" placeholder="威胁等级与状态" size="small" style="width: 180px;">
-                <el-option label="全部记录" value="all" />
-                <el-option label="仅看审计拦截 (高风险)" value="flagged" />
-                <el-option label="仅看疑似工具 (低风险)" value="suspected" />
-                <el-option label="仅看已接管蜜罐" value="honeypot" />
-              </el-select>
-            </div>
-            <div style="font-size: 12px; color: var(--el-text-color-secondary);">
-              当前显示: {{ filteredAnomaliesList.length }} 条记录
-            </div>
-          </div>
-
-          <el-table :data="filteredAnomaliesList" v-loading="anomaliesLoading" stripe style="width: 100%">
-            <el-table-column type="expand">
-              <template #default="props">
-                <div class="anomaly-history-detail" style="padding: 15px 25px;">
-                  <h4 style="margin: 0 0 12px 0; color: var(--el-text-color-primary); font-size: 14px; display: flex; align-items: center; gap: 6px;">
-                    <el-icon><Odometer /></el-icon> 最近 5 次订阅拉取详细审计轨迹：
-                  </h4>
-                  <el-timeline v-if="props.row.history && props.row.history.length > 0">
-                    <el-timeline-item
-                      v-for="(h, hIdx) in props.row.history"
-                      :key="hIdx"
-                      :timestamp="formatTime(h.time)"
-                      placement="top"
-                      :type="h.ua && (h.ua.toLowerCase().includes('curl') || h.ua.toLowerCase().includes('wget')) ? 'warning' : 'primary'"
-                    >
-                      <el-card shadow="none" style="background: var(--el-fill-color-light); border: none; margin-bottom: 5px; border-radius: 8px;">
-                        <div style="font-size: 13px; line-height: 1.6;">
-                          <div style="margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                            <span><strong>拉取 IP:</strong> <code class="font-mono">{{ h.ip }}</code></span>
-                            <span v-if="h.ua && h.ua.toLowerCase().includes('curl')" style="color: var(--el-color-warning); font-size: 12px; display: inline-flex; align-items: center; gap: 2px;">
-                              <el-icon><InfoFilled /></el-icon> (该 IP 使用 curl 拉取，多为 OpenWrt 等路由器设备)
-                            </span>
-                          </div>
-                          <div style="margin-bottom: 4px;"><strong>拉取类型:</strong> <el-tag size="small" type="info">{{ h.type }}</el-tag></div>
-                          <div><strong>客户端 User-Agent:</strong> <code class="font-mono" style="color: var(--el-text-color-secondary); font-size: 11.5px;">{{ h.ua }}</code></div>
-                        </div>
-                      </el-card>
-                    </el-timeline-item>
-                  </el-timeline>
-                  <div v-else style="color: var(--el-text-color-placeholder); font-size: 13px; padding: 10px 0;">暂无历史拉取记录</div>
-                </div>
-              </template>
-            </el-table-column>
-            
-            <el-table-column prop="user_id" label="ID" width="80" align="center" />
-            <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
-            
-            <el-table-column label="审计时间" width="160">
-              <template #default="scope">
-                <span>{{ formatTime(scope.row.flagged_at) }}</span>
-              </template>
-            </el-table-column>
-
-            <el-table-column label="风险评估" width="130">
-              <template #default="scope">
-                <el-tag :type="scope.row.risk_level === 'high' ? 'danger' : 'warning'" size="small">
-                  {{ scope.row.risk_level === 'high' ? '审计拦截 (高)' : '疑似工具 (低)' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-
-            <el-table-column label="判定原委" min-width="260">
-              <template #default="scope">
-                <div v-for="(reason, rIdx) in scope.row.reasons" :key="rIdx" style="margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                  <el-tag :type="scope.row.risk_level === 'high' ? 'danger' : 'warning'" size="small" style="white-space: normal; height: auto; padding: 4px 8px; line-height: 1.4;">
-                    {{ reason }}
-                  </el-tag>
-                  <el-tooltip
-                    v-if="reason.toLowerCase().includes('curl')"
-                    content="提示: curl 请求极有可能是 OpenWrt 软路由插件正常拉取，请结合下方的拉取 IP 记录（是否有多 IP 扩散分享）进行确认，不要误封正常用户。"
-                    placement="top"
-                    effect="dark"
-                  >
-                    <el-icon style="color: var(--el-color-warning); cursor: help; font-size: 14px;"><QuestionFilled /></el-icon>
-                  </el-tooltip>
-                </div>
-              </template>
-            </el-table-column>
-
-            <el-table-column label="蜜罐状态" width="120" align="center">
-              <template #default="scope">
-                <el-tag :type="scope.row.in_honeypot === 1 ? 'warning' : 'info'" size="small">
-                  {{ scope.row.in_honeypot === 1 ? '蜜罐接管中' : '未接管' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-
-            <el-table-column label="操作" width="280" align="right" fixed="right">
-              <template #default="scope">
-                <el-button
-                  :type="scope.row.in_honeypot === 1 ? 'success' : 'warning'"
-                  size="small"
-                  plain
-                  @click="handleToggleHoneypot(scope.row)"
-                >
-                  {{ scope.row.in_honeypot === 1 ? '解除蜜罐' : '一键蜜罐' }}
-                </el-button>
-                <el-button
-                  type="danger"
-                  size="small"
-                  plain
-                  :disabled="scope.row.banned === 1"
-                  @click="handleBanUser(scope.row)"
-                >
-                  {{ scope.row.banned === 1 ? '已封禁' : '封禁' }}
-                </el-button>
-                
-                <el-dropdown trigger="click" @command="(cmd) => handleAnomalyAction(cmd, scope.row)" style="margin-left: 10px;">
-                  <el-button size="small" plain>
-                    更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item v-if="scope.row.type === 'flagged'" command="ignore" icon="CircleClose">忽略预警</el-dropdown-item>
-                      <el-dropdown-item command="whitelist" icon="Checked">加入白名单</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
+        </el-alert>
       </el-col>
     </el-row>
-
-    <!-- Audit Settings & Whitelist Dialog -->
-    <el-dialog v-model="settingsDialogVisible" title="天阙订阅审计与白名单设置" width="600px" destroy-on-close>
-      <el-tabs v-model="settingsActiveTab">
-        <el-tab-pane label="审计参数规则" name="rules">
-          <el-form :model="settingsForm" label-width="180px" style="padding-top: 15px;">
-            <el-form-item label="24h独立IP阈值">
-              <el-input-number v-model="settingsForm.ip_limit" :min="1" :max="100" />
-              <div style="font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px; line-height: 1.4;">
-                同一个订阅 24 小时内独立拉取 IP 达到该数值后，会被自动判定并拦截预警（默认：10 个 IP）。
-              </div>
-            </el-form-item>
-            <el-form-item label="命令行/开发工具 UA 审计">
-              <el-switch v-model="settingsForm.audit_ua_enabled" />
-              <div style="font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px; line-height: 1.4;">
-                是否对使用 curl, wget, python requests, go-http, urllib 等工具拉取订阅的行为进行检测和审计。如果关闭，前述命令行工具拉取将不触发拦截。
-              </div>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-        <el-tab-pane label="白名单管理" name="whitelist">
-          <div style="padding-top: 10px;">
-            <div style="font-size: 13px; color: var(--el-text-color-secondary); margin-bottom: 12px; line-height: 1.4;">
-              以下用户邮箱或用户 ID 不会被系统定时审计扫描或预警。可以直接添加，也可以点击右侧移除。
-            </div>
-            
-            <div class="flex-between gap-10 mb-15">
-              <el-input
-                v-model="newWhitelistIdentity"
-                placeholder="请输入要加白的用户邮箱或用户 ID"
-                size="small"
-                style="width: 380px;"
-                clearable
-              />
-              <el-button type="primary" size="small" @click="addWhitelistDirectly">添加白名单</el-button>
-            </div>
-
-            <el-table :data="whitelistList" stripe size="small" max-height="250px" style="width: 100%;">
-              <el-table-column label="白名单标识 (ID/邮箱)" min-width="250">
-                <template #default="scope">
-                  <code class="font-mono">{{ scope.row }}</code>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="80" align="right">
-                <template #default="scope">
-                  <el-button type="danger" link size="small" @click="removeWhitelistDirectly(scope.row)">移除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button size="small" @click="settingsDialogVisible = false">取消</el-button>
-          <el-button size="small" type="primary" :loading="saveSettingsLoading" @click="saveAuditSettings">保存修改</el-button>
-        </span>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -440,48 +251,15 @@ const formatMoney = (amount) => {
 };
 
 const anomaliesRawList = ref([]);
-const anomaliesSearch = ref('');
-const anomaliesFilterType = ref('all');
 const anomaliesLoading = ref(false);
 
-const filteredAnomaliesList = computed(() => {
-  let list = anomaliesRawList.value;
-  
-  if (anomaliesSearch.value.trim()) {
-    const q = anomaliesSearch.value.trim().toLowerCase();
-    list = list.filter(item => 
-      item.email.toLowerCase().includes(q) || 
-      String(item.user_id).includes(q)
-    );
-  }
-  
-  if (anomaliesFilterType.value === 'flagged') {
-    list = list.filter(item => item.type === 'flagged');
-  } else if (anomaliesFilterType.value === 'suspected') {
-    list = list.filter(item => item.type === 'suspected');
-  } else if (anomaliesFilterType.value === 'honeypot') {
-    list = list.filter(item => item.in_honeypot === 1);
-  }
-  
-  return list;
+const flaggedCount = computed(() => {
+  return anomaliesRawList.value.filter(item => item.type === 'flagged').length;
 });
 
-const whitelistList = ref([]);
-const settingsDialogVisible = ref(false);
-const settingsActiveTab = ref('rules');
-const newWhitelistIdentity = ref('');
-const saveSettingsLoading = ref(false);
-
-const settingsForm = reactive({
-  ip_limit: 10,
-  audit_ua_enabled: true
+const suspectedCount = computed(() => {
+  return anomaliesRawList.value.filter(item => item.type === 'suspected').length;
 });
-
-const formatTime = (timestamp) => {
-  if (!timestamp) return '无记录';
-  const date = new Date(timestamp * 1000);
-  return date.toLocaleString();
-};
 
 const fetchAnomalies = async () => {
   anomaliesLoading.value = true;
@@ -490,11 +268,6 @@ const fetchAnomalies = async () => {
     const res = await api.get(`/${securePath}/stat/getSubscriptionAnomalies`);
     if (res.data) {
       anomaliesRawList.value = res.data.list || [];
-      whitelistList.value = res.data.whitelist || [];
-      if (res.data.config) {
-        settingsForm.ip_limit = res.data.config.ip_limit || 10;
-        settingsForm.audit_ua_enabled = res.data.config.audit_ua_enabled !== false;
-      }
     }
   } catch (err) {
     console.error(err);
@@ -503,140 +276,8 @@ const fetchAnomalies = async () => {
   }
 };
 
-const openSettingsDialog = () => {
-  settingsActiveTab.value = 'rules';
-  newWhitelistIdentity.value = '';
-  settingsDialogVisible.value = true;
-};
-
-const saveAuditSettings = async () => {
-  saveSettingsLoading.value = true;
-  try {
-    const securePath = getSecurePath();
-    await api.post(`/${securePath}/stat/saveSubscriptionAuditSettings`, {
-      ip_limit: settingsForm.ip_limit,
-      audit_ua_enabled: settingsForm.audit_ua_enabled
-    });
-    ElMessage.success('审计规则已成功更新');
-    settingsDialogVisible.value = false;
-    fetchAnomalies();
-  } catch (err) {
-    console.error(err);
-  } finally {
-    saveSettingsLoading.value = false;
-  }
-};
-
-const addWhitelistDirectly = async () => {
-  const identity = newWhitelistIdentity.value.trim();
-  if (!identity) {
-    ElMessage.warning('请输入用户邮箱或用户 ID');
-    return;
-  }
-  try {
-    const securePath = getSecurePath();
-    const isId = /^\d+$/.test(identity);
-    if (isId) {
-      await api.post(`/${securePath}/stat/whitelistUser`, { id: parseInt(identity) });
-    } else {
-      await api.post(`/${securePath}/stat/whitelistUser`, { identity });
-    }
-    ElMessage.success(`已将 ${identity} 成功加入白名单`);
-    newWhitelistIdentity.value = '';
-    fetchAnomalies();
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-const removeWhitelistDirectly = async (identity) => {
-  try {
-    await ElMessageBox.confirm(`确定要将白名单标识 ${identity} 移除吗？`, '提示', {
-      type: 'warning',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消'
-    });
-    const securePath = getSecurePath();
-    await api.post(`/${securePath}/stat/removeWhitelistUser`, { identity });
-    ElMessage.success('白名单移除成功');
-    fetchAnomalies();
-  } catch (err) {
-    if (err !== 'cancel') {
-      console.error(err);
-    }
-  }
-};
-
-const handleAnomalyAction = async (cmd, row) => {
-  const securePath = getSecurePath();
-  if (cmd === 'ignore') {
-    try {
-      await ElMessageBox.confirm(`确定要忽略此条对用户 ${row.email} 的审计拦截吗？(忽略后该条记录将从仪表盘消失，但若其再次触发审计检测仍会重新生成报警)`, '提示', {
-        type: 'warning',
-        confirmButtonText: '忽略',
-        cancelButtonText: '取消'
-      });
-      await api.post(`/${securePath}/stat/ignoreAnomaly`, { id: row.user_id });
-      ElMessage.success('已成功忽略此条审计记录');
-      fetchAnomalies();
-    } catch (err) {
-      if (err !== 'cancel') console.error(err);
-    }
-  } else if (cmd === 'whitelist') {
-    try {
-      await ElMessageBox.confirm(`确定要将用户 ${row.email} 加入白名单吗？(加入后系统将不再对其执行任何订阅拉取的安全审计)`, '提示', {
-        type: 'warning',
-        confirmButtonText: '确定加白',
-        cancelButtonText: '取消'
-      });
-      await api.post(`/${securePath}/stat/whitelistUser`, { id: row.user_id });
-      ElMessage.success('用户已被成功加入白名单，审计记录已清除');
-      fetchAnomalies();
-    } catch (err) {
-      if (err !== 'cancel') console.error(err);
-    }
-  }
-};
-
-const handleToggleHoneypot = async (row) => {
-  const actionText = row.in_honeypot === 1 ? '移出蜜罐' : '加入蜜罐';
-  try {
-    await ElMessageBox.confirm(`确定要将该用户 ${row.email} ${actionText}吗？`, '提示', {
-      type: 'warning',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消'
-    });
-    const securePath = getSecurePath();
-    await api.post(`/${securePath}/user/toggleHoneypot`, { id: row.user_id });
-    ElMessage.success(`${actionText}成功`);
-    fetchAnomalies();
-  } catch (err) {
-    if (err !== 'cancel') {
-      console.error(err);
-    }
-  }
-};
-
-const handleBanUser = async (row) => {
-  try {
-    await ElMessageBox.confirm(`确定要封禁用户 ${row.email} 吗？`, '警告', {
-      type: 'error',
-      confirmButtonText: '确定封禁',
-      cancelButtonText: '取消'
-    });
-    const securePath = getSecurePath();
-    await api.post(`/${securePath}/user/ban`, {
-      filter: [
-        { key: 'id', condition: '=', value: row.user_id }
-      ]
-    });
-    ElMessage.success(`封禁用户 ${row.email} 成功`);
-    fetchAnomalies();
-  } catch (err) {
-    if (err !== 'cancel') {
-      console.error(err);
-    }
-  }
+const goToSecurityAudit = () => {
+  router.push('/security-audit');
 };
 
 const updateCards = () => {

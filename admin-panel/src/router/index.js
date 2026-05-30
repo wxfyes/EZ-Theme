@@ -19,6 +19,7 @@ const Settings = () => import('../views/Settings.vue');
 const Queues = () => import('../views/Queues.vue');
 const Payments = () => import('../views/Payments.vue');
 const Themes = () => import('../views/Themes.vue');
+const SecurityAudit = () => import('../views/SecurityAudit.vue');
 
 const routes = [
   {
@@ -127,6 +128,12 @@ const routes = [
         name: 'Themes',
         component: Themes,
         meta: { title: '主题配置', requiresAuth: true }
+      },
+      {
+        path: 'security-audit',
+        name: 'SecurityAudit',
+        component: SecurityAudit,
+        meta: { title: '安全审计', requiresAuth: true }
       }
     ]
   }
