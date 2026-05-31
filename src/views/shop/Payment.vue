@@ -737,23 +737,23 @@
 
     
 
-    <!-- 降级换套餐余额作废警告弹窗 -->
+    <!-- 降级换套餐余额作废警告弹窗（页面加载后立即弹出） -->
     <transition name="modal-fade">
       <div class="cancel-modal" v-if="showDowngradeWarning" style="z-index:9999">
-        <div class="cancel-modal-overlay" @click="cancelDowngrade"></div>
+        <div class="cancel-modal-overlay"></div>
         <div class="cancel-modal-container">
           <div class="cancel-modal-content">
             <div class="cancel-modal-icon" style="color:#e53e3e">
               <IconAlertCircle :size="28" />
             </div>
             <div class="cancel-modal-header">
-              <h3 style="color:#e53e3e">⚠️ 防刷余额提醒</h3>
-              <p style="color:#e53e3e;font-weight:600">因防止恶意用户刷余额操作，更换套餐超出的剩余价值系统不予退还！</p>
-              <p style="color:#666;font-size:13px;margin-top:8px">确认后超出的折抵余额将直接作废，不退回账户。如不同意请取消并联系客服。</p>
+              <h3 style="color:#e53e3e">⚠️ 重要提醒</h3>
+              <p style="color:#e53e3e;font-weight:600">因防止恶意用户刷余额操作，更换套餐超出的剩余折抵价值系统不予退还！</p>
+              <p style="color:#666;font-size:13px;margin-top:8px">点击"我已了解"后，可继续点击激活按钮完成换套餐操作。超出的折抵金额将直接作废，不退回账户余额。如不同意，请点击"返回商店"。</p>
             </div>
             <div class="cancel-modal-actions">
-              <button class="cancel-btn" @click="cancelDowngrade">取消操作</button>
-              <button class="confirm-btn" style="background:#e53e3e" @click="confirmDowngradeAndProceed">我已知晓，确认激活</button>
+              <button class="cancel-btn" @click="cancelDowngrade">返回商店</button>
+              <button class="confirm-btn" style="background:#e53e3e" @click="confirmDowngradeAndProceed">我已了解，继续操作</button>
             </div>
           </div>
         </div>
@@ -1187,8 +1187,13 @@ export default {
           if ((orderDetail.value.status === 3 || orderDetail.value.status === 4) && orderDetail.value.period === 'card') {
             fetchCardInfo();
           }
-          // 若是更换套餐（type=3）且有折抵余额被作废，必须让用户手动点击确认，不能自动激活
+          // 若是更换套餐（type=3）且有折抵余额被作废，进入页面立即弹出警告弹窗
           const isDowngradeOrder = Number(orderDetail.value.type) === 3 && Number(orderDetail.value.surplus_amount) > 0;
+          if (orderDetail.value.status === 0 && isDowngradeOrder) {
+            showDowngradeWarning.value = true;
+          }
+
+          // 普通免费订单（非降级）才自动激活
           if (orderDetail.value.status === 0 && orderDetail.value.total_amount === 0 && !isDowngradeOrder) {
             startPaymentCheck();
           }
@@ -1393,12 +1398,6 @@ export default {
 
         return;
 
-      }
-
-      if (Number(orderDetail.value.type) === 3 && Number(orderDetail.value.surplus_amount) > 0) {
-        pendingActivation.value = 'checkPayment';
-        showDowngradeWarning.value = true;
-        return;
       }
 
       
@@ -1797,7 +1796,7 @@ export default {
 
     
 
-    const processPayment = async (skipWarning = false) => {
+    const processPayment = async () => {
 
       if (!selectedMethod.value) {
 
@@ -1805,12 +1804,6 @@ export default {
 
         return;
 
-      }
-
-      if (!skipWarning && Number(orderDetail.value.type) === 3 && Number(orderDetail.value.surplus_amount) > 0) {
-        pendingActivation.value = 'processPayment';
-        showDowngradeWarning.value = true;
-        return;
       }
 
       
@@ -2031,65 +2024,12 @@ export default {
 
     
 
-    // 降级警告弹窗：用户点确认后继续执行挂起的操作
+    // 降级警告弹窗：用户点"我已了解"仅关闭弹窗，之后点激活按钮自行操作
     const confirmDowngradeAndProceed = () => {
 
       showDowngradeWarning.value = false;
 
-      const action = pendingActivation.value;
-
       pendingActivation.value = null;
-
-      if (action === 'checkPayment') {
-
-        // 临时标记跳过弹窗，直接执行激活逻辑
-        loading.checking = true;
-
-        
-
-        try {
-
-          if (orderDetail.value.total_amount === 0) {
-
-            if (paymentMethods.value && paymentMethods.value.length > 0) {
-
-              selectedMethod.value = paymentMethods.value[0].id;
-
-            }
-
-          }
-
-          checkoutOrder(orderDetail.value.trade_no, selectedMethod.value).then(() => {
-
-            showToast(t('payment.payment_processing'), 'info');
-
-            startPaymentCheck();
-
-          }).catch((error) => {
-
-            console.error('结算订单失败:', error);
-
-            showToast(t('payment.check_failed'), 'error');
-
-            loading.checking = false;
-
-          });
-
-        } catch (error) {
-
-          console.error('结算订单失败:', error);
-
-          showToast(t('payment.check_failed'), 'error');
-
-          loading.checking = false;
-
-        }
-
-      } else if (action === 'processPayment') {
-
-        processPayment(true);
-
-      }
 
     };
 
@@ -2098,6 +2038,8 @@ export default {
       showDowngradeWarning.value = false;
 
       pendingActivation.value = null;
+
+      router.push('/shop');
 
     };
 
