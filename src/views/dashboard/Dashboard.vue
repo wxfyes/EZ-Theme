@@ -1,6 +1,18 @@
 <template>
   <div class="dashboard-container">
     <div class="dashboard-inner">
+      <!-- 初始密码未设置警告 -->
+      <div v-if="needSetPassword" class="dashboard-card password-warning-card card-animate">
+        <div class="warning-banner-content">
+          <IconAlertTriangle :size="24" class="warning-icon" />
+          <div class="warning-text-container">
+            <h4 class="warning-title">安全提醒：请设置您的初始登录密码</h4>
+            <p class="warning-desc">您当前是通过谷歌或GitHub第三方授权方式快捷登录。为了您的账号安全，以及方便后续直接使用邮箱和密码登录，建议您立即设置初始密码。</p>
+          </div>
+          <button class="warning-action-btn" @click="goToSettings">立即设置</button>
+        </div>
+      </div>
+
       <div class="dashboard-card welcome-card" :class="{'card-animate': !loading.userInfo}">
         <div class="card-header">
           <h2 class="card-title">{{ $t('dashboard.welcome') }}</h2>
@@ -890,6 +902,7 @@ export default {
     const clientConfig = reactive(CLIENT_CONFIG);
     const notices = ref([]);
     const autoRotateNotices = ref(true);
+    const needSetPassword = ref(false);
     const userPlan = ref({
       deviceLimit: null,
       aliveIp: 0,
@@ -1024,6 +1037,10 @@ export default {
       router.push('/shop');
     };
 
+    const goToSettings = () => {
+      router.push('/profile');
+    };
+
     const userPlanId = ref(null);
 
     const showResetTrafficModal = ref(false);
@@ -1150,6 +1167,9 @@ export default {
           }
           if (info.auto_renewal !== undefined) {
             autoRenewal.value = info.auto_renewal === 1;
+          }
+          if (info.need_set_password !== undefined) {
+            needSetPassword.value = info.need_set_password;
           }
           if (info.expired_at) {
             userPlan.value.expireDate = formatDate(info.expired_at);
@@ -2038,6 +2058,8 @@ export default {
       TRAFFICLOG_CONFIG,
       autoRenewal,
       isUpdatingAutoRenewal,
+      needSetPassword,
+      goToSettings,
       handleRenewalChange,
     };
   }
@@ -2053,6 +2075,103 @@ export default {
   .dashboard-inner {
     width: 100%;
     max-width: 1200px;
+  }
+
+  .password-warning-card {
+    background: linear-gradient(135deg, rgba(244, 67, 54, 0.08) 0%, rgba(244, 67, 54, 0.03) 100%);
+    border: 1px solid rgba(244, 67, 54, 0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(244, 67, 54, 0.05);
+
+    &:hover {
+      border-color: rgba(244, 67, 54, 0.3);
+      box-shadow: 0 6px 20px rgba(244, 67, 54, 0.08);
+    }
+
+    .warning-banner-content {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 16px;
+
+      @media (max-width: 768px) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+    }
+
+    .warning-icon {
+      color: #f44336;
+      flex-shrink: 0;
+      animation: pulse-alert 2s infinite;
+    }
+
+    .warning-text-container {
+      flex: 1;
+
+      .warning-title {
+        margin: 0 0 4px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #f44336;
+      }
+
+      .warning-desc {
+        margin: 0;
+        font-size: 13.5px;
+        color: var(--secondary-text-color);
+        line-height: 1.5;
+      }
+    }
+
+    .warning-action-btn {
+      background-color: #f44336;
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+
+      &:hover {
+        background-color: #d32f2f;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(244, 67, 54, 0.3);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+
+      @media (max-width: 768px) {
+        width: 100%;
+        text-align: center;
+        padding: 10px;
+      }
+    }
+  }
+
+  @keyframes pulse-alert {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 
   .welcome-card {
