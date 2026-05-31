@@ -1158,7 +1158,9 @@ export default {
           if ((orderDetail.value.status === 3 || orderDetail.value.status === 4) && orderDetail.value.period === 'card') {
             fetchCardInfo();
           }
-          if (orderDetail.value.status === 0 && orderDetail.value.total_amount === 0) {
+          // 若是更换套餐（type=3）且有折抵余额被作废，必须让用户手动点击确认，不能自动激活
+          const isDowngradeOrder = Number(orderDetail.value.type) === 3 && Number(orderDetail.value.surplus_amount) > 0;
+          if (orderDetail.value.status === 0 && orderDetail.value.total_amount === 0 && !isDowngradeOrder) {
             startPaymentCheck();
           }
 
