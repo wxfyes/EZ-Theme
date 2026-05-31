@@ -455,6 +455,19 @@
       @close="handleConfirmDialogClose"
       @confirm="handleConfirmDialogConfirm"
     />
+
+    <!-- 错误提示弹窗 -->
+    <CommonDialog
+      :show-dialog="showErrorDialog"
+      :title="'提示'"
+      :content="errorMessage"
+      :show-close-icon="true"
+      :show-cancel-button="false"
+      :show-confirm-button="true"
+      :confirm-button-text="'确定'"
+      @close="showErrorDialog = false"
+      @confirm="showErrorDialog = false"
+    />
   </div>
 
 </template>
@@ -576,6 +589,10 @@ export default {
     // 新增：控制二次确认弹窗的变量
 
     const showConfirmDialog = ref(false);
+
+    const showErrorDialog = ref(false);
+
+    const errorMessage = ref('');
 
     
 
@@ -1045,7 +1062,9 @@ export default {
 
         } else {
 
-          showToast(response.message || t('order.order_failed'), 'error');
+          errorMessage.value = response.message || t('order.order_failed');
+
+          showErrorDialog.value = true;
 
         }
 
@@ -1053,7 +1072,9 @@ export default {
 
         console.error('提交订单失败:', error);
 
-        showToast(error.response?.message || error.message || t('order.order_failed'), 'error');
+        errorMessage.value = error.response?.message || error.message || t('order.order_failed');
+
+        showErrorDialog.value = true;
 
       } finally {
 
@@ -1375,7 +1396,9 @@ export default {
       ORDER_CONFIG,
       showConfirmDialog,
       handleConfirmDialogClose,
-      handleConfirmDialogConfirm
+      handleConfirmDialogConfirm,
+      showErrorDialog,
+      errorMessage
 
     };
 
