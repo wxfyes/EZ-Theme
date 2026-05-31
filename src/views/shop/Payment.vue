@@ -327,21 +327,7 @@
 
           
 
-          <!-- 折抵特别警告提示 -->
-          <div class="section-wrapper surplus-warning" v-if="!loading.order && orderDetail.surplus_amount > 0 && orderDetail.status === 0">
-            <div class="section-title">
-              <span>折抵特别提醒</span>
-            </div>
-            
-            <div class="surplus-notice">
-              <IconAlertTriangle :size="48" class="notice-icon danger" />
-              <div class="notice-text">
-                <h3>折抵重要说明</h3>
-                <p>您当前订单包含旧订阅折抵金额：<strong class="surplus-highlight">{{ formatAmount(orderDetail.surplus_amount) }}</strong></p>
-                <p class="warning-alert-text">【重要警告】为避免滥用，若折抵金额大于新套餐价格，超出部分的差价将直接作废，不退回账户余额！或等当前套餐到期重新购买！请知悉并确认后再继续！</p>
-              </div>
-            </div>
-          </div>
+
           
           <!-- 免费订单提示 -->
 
