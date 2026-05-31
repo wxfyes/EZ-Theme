@@ -207,7 +207,7 @@
               </div>
 
               <!-- 长换短等风险操作提示（红字提醒） -->
-              <div class="surplus-warning-box" v-if="orderDetail.type === 3 && orderDetail.surplus_amount > 0">
+              <div class="surplus-warning-box" v-if="Number(orderDetail.type) === 3 && Number(orderDetail.surplus_amount) > 0">
                 <IconAlertCircle :size="16" class="warning-icon" />
                 <span class="warning-text">防刷余额提示：因防止恶意用户刷余额操作，更换套餐超出的剩余价值系统不予退还，确定此操作则作为默认！</span>
               </div>
@@ -1364,7 +1364,7 @@ export default {
 
       }
 
-      if (orderDetail.value.type === 3 && orderDetail.value.surplus_amount > 0) {
+      if (Number(orderDetail.value.type) === 3 && Number(orderDetail.value.surplus_amount) > 0) {
         if (!window.confirm('温馨提示：\n因防止恶意用户刷余额操作，更换套餐超出的剩余价值系统不予退还。确定此操作则作为默认！')) {
           return;
         }
@@ -1776,7 +1776,7 @@ export default {
 
       }
 
-      if (orderDetail.value.type === 3 && orderDetail.value.surplus_amount > 0) {
+      if (Number(orderDetail.value.type) === 3 && Number(orderDetail.value.surplus_amount) > 0) {
         if (!window.confirm('温馨提示：\n因防止恶意用户刷余额操作，更换套餐超出的剩余价值系统不予退还。确定此操作则作为默认！')) {
           return;
         }
