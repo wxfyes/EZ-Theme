@@ -206,6 +206,12 @@
 
               </div>
 
+              <!-- 长换短等风险操作提示（红字提醒） -->
+              <div class="surplus-warning-box" v-if="orderDetail.type === 3 && orderDetail.surplus_amount > 0">
+                <IconAlertCircle :size="16" class="warning-icon" />
+                <span class="warning-text">防刷余额提示：因防止恶意用户刷余额操作，更换套餐超出的剩余价值系统不予退还，确定此操作则作为默认！</span>
+              </div>
+
             </div>
 
             
@@ -1358,6 +1364,12 @@ export default {
 
       }
 
+      if (orderDetail.value.type === 3 && orderDetail.value.surplus_amount > 0) {
+        if (!window.confirm('温馨提示：\n因防止恶意用户刷余额操作，更换套餐超出的剩余价值系统不予退还。确定此操作则作为默认！')) {
+          return;
+        }
+      }
+
       
 
       loading.checking = true;
@@ -1762,6 +1774,12 @@ export default {
 
         return;
 
+      }
+
+      if (orderDetail.value.type === 3 && orderDetail.value.surplus_amount > 0) {
+        if (!window.confirm('温馨提示：\n因防止恶意用户刷余额操作，更换套餐超出的剩余价值系统不予退还。确定此操作则作为默认！')) {
+          return;
+        }
       }
 
       
@@ -2646,6 +2664,31 @@ export default {
 
     }
 
+  }
+
+  .surplus-warning-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background-color: rgba(244, 67, 54, 0.08);
+    border: 1px solid rgba(244, 67, 54, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 15px;
+    
+    .warning-icon {
+      color: #f44336;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    
+    .warning-text {
+      color: #f44336;
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: 500;
+      text-align: left;
+    }
   }
 
   
