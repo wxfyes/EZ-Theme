@@ -166,6 +166,14 @@
 
               </div>
 
+              <div class="info-row discount-row" v-if="orderDetail.surplus_amount !== null && orderDetail.surplus_amount !== undefined && orderDetail.surplus_amount > 0">
+
+                <div class="info-label">{{ $t('payment.surplus_amount') }}</div>
+
+                <div class="info-value discount">-{{ formatAmount(orderDetail.surplus_amount) }}</div>
+
+              </div>
+
               <div class="info-row" v-if="orderDetail.balance_amount !== null && orderDetail.balance_amount !== undefined && orderDetail.balance_amount > 0">
 
                 <div class="info-label">{{ $t('payment.use_credit') }}</div>

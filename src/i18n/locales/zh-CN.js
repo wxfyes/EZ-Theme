@@ -613,6 +613,7 @@ export default {
         total_price: '套餐金额',
         total_amount: '应付金额',
         discount_amount: '优惠金额',
+        surplus_amount: '折抵金额',
         balance_amount: '使用余额',
         refund_amount: '退款金额',
         use_credit: '使用余额',

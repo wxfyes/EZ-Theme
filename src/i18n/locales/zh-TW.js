@@ -1,4 +1,4 @@
-﻿
+
 import { SITE_CONFIG } from '../../utils/baseConfig';
 
 export default {
@@ -570,6 +570,7 @@ export default {
     total_price: '套餐金額',
     total_amount: '應付金額',
     discount_amount: '優惠金額',
+    surplus_amount: '折抵金額',
     balance_amount: '使用餘額',
     refund_amount: '退款金額',
     use_credit: '使用餘額',

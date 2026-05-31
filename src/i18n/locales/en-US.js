@@ -589,6 +589,7 @@ export default {
         total_price: 'Plan Amount',
         total_amount: 'Amount Payable',
         discount_amount: 'Discount Amount',
+        surplus_amount: 'Prorated Amount',
         balance_amount: 'Use Balance',
         refund_amount: 'Refund Amount',
         use_credit: 'Use Balance',
