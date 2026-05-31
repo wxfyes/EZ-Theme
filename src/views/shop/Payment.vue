@@ -737,6 +737,31 @@
 
     
 
+    <!-- 降级换套餐余额作废警告弹窗 -->
+    <transition name="modal-fade">
+      <div class="cancel-modal" v-if="showDowngradeWarning" style="z-index:9999">
+        <div class="cancel-modal-overlay" @click="cancelDowngrade"></div>
+        <div class="cancel-modal-container">
+          <div class="cancel-modal-content">
+            <div class="cancel-modal-icon" style="color:#e53e3e">
+              <IconAlertCircle :size="28" />
+            </div>
+            <div class="cancel-modal-header">
+              <h3 style="color:#e53e3e">⚠️ 防刷余额提醒</h3>
+              <p style="color:#e53e3e;font-weight:600">因防止恶意用户刷余额操作，更换套餐超出的剩余价值系统不予退还！</p>
+              <p style="color:#666;font-size:13px;margin-top:8px">确认后超出的折抵余额将直接作废，不退回账户。如不同意请取消并联系客服。</p>
+            </div>
+            <div class="cancel-modal-actions">
+              <button class="cancel-btn" @click="cancelDowngrade">取消操作</button>
+              <button class="confirm-btn" style="background:#e53e3e" @click="confirmDowngradeAndProceed">我已知晓，确认激活</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    
+
     <!-- 支付二维码弹窗 -->
 
     <transition name="modal">
@@ -1004,6 +1029,10 @@ export default {
     
 
     const showCancelConfirm = ref(false);
+
+    const showDowngradeWarning = ref(false);
+
+    const pendingActivation = ref(null); // 'checkPayment' | 'processPayment'
 
     const showPaymentModal = ref(false);
 
@@ -1367,9 +1396,9 @@ export default {
       }
 
       if (Number(orderDetail.value.type) === 3 && Number(orderDetail.value.surplus_amount) > 0) {
-        if (!window.confirm('温馨提示：\n因防止恶意用户刷余额操作，更换套餐超出的剩余价值系统不予退还。确定此操作则作为默认！')) {
-          return;
-        }
+        pendingActivation.value = 'checkPayment';
+        showDowngradeWarning.value = true;
+        return;
       }
 
       
@@ -1768,7 +1797,7 @@ export default {
 
     
 
-    const processPayment = async () => {
+    const processPayment = async (skipWarning = false) => {
 
       if (!selectedMethod.value) {
 
@@ -1778,10 +1807,10 @@ export default {
 
       }
 
-      if (Number(orderDetail.value.type) === 3 && Number(orderDetail.value.surplus_amount) > 0) {
-        if (!window.confirm('温馨提示：\n因防止恶意用户刷余额操作，更换套餐超出的剩余价值系统不予退还。确定此操作则作为默认！')) {
-          return;
-        }
+      if (!skipWarning && Number(orderDetail.value.type) === 3 && Number(orderDetail.value.surplus_amount) > 0) {
+        pendingActivation.value = 'processPayment';
+        showDowngradeWarning.value = true;
+        return;
       }
 
       
@@ -2002,6 +2031,78 @@ export default {
 
     
 
+    // 降级警告弹窗：用户点确认后继续执行挂起的操作
+    const confirmDowngradeAndProceed = () => {
+
+      showDowngradeWarning.value = false;
+
+      const action = pendingActivation.value;
+
+      pendingActivation.value = null;
+
+      if (action === 'checkPayment') {
+
+        // 临时标记跳过弹窗，直接执行激活逻辑
+        loading.checking = true;
+
+        
+
+        try {
+
+          if (orderDetail.value.total_amount === 0) {
+
+            if (paymentMethods.value && paymentMethods.value.length > 0) {
+
+              selectedMethod.value = paymentMethods.value[0].id;
+
+            }
+
+          }
+
+          checkoutOrder(orderDetail.value.trade_no, selectedMethod.value).then(() => {
+
+            showToast(t('payment.payment_processing'), 'info');
+
+            startPaymentCheck();
+
+          }).catch((error) => {
+
+            console.error('结算订单失败:', error);
+
+            showToast(t('payment.check_failed'), 'error');
+
+            loading.checking = false;
+
+          });
+
+        } catch (error) {
+
+          console.error('结算订单失败:', error);
+
+          showToast(t('payment.check_failed'), 'error');
+
+          loading.checking = false;
+
+        }
+
+      } else if (action === 'processPayment') {
+
+        processPayment(true);
+
+      }
+
+    };
+
+    const cancelDowngrade = () => {
+
+      showDowngradeWarning.value = false;
+
+      pendingActivation.value = null;
+
+    };
+
+    
+
     const goToDashboard = () => {
 
       if(orderDetail.value.period === 'deposit') {
@@ -2015,6 +2116,7 @@ export default {
       }
 
     };
+
 
     
 
@@ -2343,7 +2445,10 @@ export default {
       cardInfo,
       loadingCard,
       fetchCardInfo,
-      copyCredentials
+      copyCredentials,
+      showDowngradeWarning,
+      confirmDowngradeAndProceed,
+      cancelDowngrade
     };
 
   }
