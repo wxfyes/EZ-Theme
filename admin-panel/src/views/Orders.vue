@@ -14,12 +14,17 @@
             @keyup.enter="handleSearch"
           />
           
-          <el-select v-model="filterStatus" placeholder="订单状态" clearable style="width: 140px" @change="handleSearch">
+          <el-select v-model="filterStatus" placeholder="订单状态" clearable style="width: 120px" @change="handleSearch">
             <el-option label="所有状态" value="" />
             <el-option label="待支付" value="0" />
             <el-option label="已完成" value="3" />
             <el-option label="已取消" value="2" />
             <el-option label="已折抵" value="4" />
+          </el-select>
+
+          <el-select v-model="filterCommission" placeholder="订单分类" style="width: 120px" @change="handleSearch">
+            <el-option label="所有订单" value="all" />
+            <el-option label="仅返佣订单" value="commission" />
           </el-select>
 
           <el-button type="primary" @click="handleSearch">筛选</el-button>
@@ -69,6 +74,36 @@
         <el-table-column prop="total_amount" label="订单金额" width="110" align="right">
           <template #default="scope">
             <span class="amount-text">{{ formatPrice(scope.row.total_amount) }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="commission_balance" label="返佣金额" width="110" align="right">
+          <template #default="scope">
+            <span v-if="scope.row.commission_balance" class="amount-text" style="color: var(--el-color-danger)">{{ formatPrice(scope.row.commission_balance) }}</span>
+            <span v-else class="text-muted">-</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="commission_status" label="佣金状态" width="150" align="center">
+          <template #default="scope">
+            <template v-if="scope.row.invite_user_id && scope.row.commission_balance > 0">
+              <el-dropdown trigger="click" @command="(cmd) => handleUpdateCommissionStatus(scope.row, cmd)" :disabled="scope.row.commission_status === 2">
+                <span class="el-dropdown-link" style="cursor: pointer;" :style="{ cursor: scope.row.commission_status === 2 ? 'not-allowed' : 'pointer' }">
+                  <el-tag :type="getCommissionStatusTag(scope.row.commission_status)" size="small">
+                    {{ getCommissionStatusText(scope.row.commission_status) }}
+                    <el-icon v-if="scope.row.commission_status !== 2" class="el-icon--right"><ArrowDown /></el-icon>
+                  </el-tag>
+                </span>
+                <template #dropdown v-if="scope.row.commission_status !== 2">
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="0" :disabled="scope.row.commission_status === 0">待确认</el-dropdown-item>
+                    <el-dropdown-item command="1" :disabled="scope.row.commission_status === 1">有效 (待发放)</el-dropdown-item>
+                    <el-dropdown-item command="3" :disabled="scope.row.commission_status === 3">无效</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
+            <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
 
@@ -155,12 +190,14 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useMobile } from '../utils/useMobile';
 
 const { isMobile } = useMobile();
+const route = useRoute();
 
 const loading = ref(false);
 const submitLoading = ref(false);
@@ -171,6 +208,7 @@ const pageSize = ref(10);
 
 const searchQuery = ref('');
 const filterStatus = ref('');
+const filterCommission = ref('all');
 const plans = ref([]);
 
 const assignVisible = ref(false);
@@ -253,12 +291,18 @@ const fetchOrders = async () => {
       filter.push({ key: 'status', condition: '=', value: filterStatus.value });
     }
 
+    const params = {
+      current: currentPage.value,
+      pageSize: pageSize.value,
+      filter: filter,
+    };
+
+    if (filterCommission.value === 'commission') {
+      params.is_commission = 1;
+    }
+
     const res = await api.get(`/${securePath}/order/fetch`, {
-      params: {
-        current: currentPage.value,
-        pageSize: pageSize.value,
-        filter: filter,
-      }
+      params: params
     });
 
     if (res.data) {
@@ -362,7 +406,34 @@ const handleAssignSubmit = async () => {
   });
 };
 
+const getCommissionStatusText = (status) => {
+  const map = { 0: '待确认', 1: '有效 (待发放)', 2: '已发放', 3: '无效' };
+  return map[status] ?? '未知';
+};
+
+const getCommissionStatusTag = (status) => {
+  const map = { 0: 'warning', 1: 'primary', 2: 'success', 3: 'danger' };
+  return map[status] ?? 'info';
+};
+
+const handleUpdateCommissionStatus = async (row, newStatus) => {
+  try {
+    const securePath = getSecurePath();
+    await api.post(`/${securePath}/order/update`, {
+      trade_no: row.trade_no,
+      commission_status: parseInt(newStatus)
+    });
+    ElMessage.success('更新佣金状态成功！');
+    fetchOrders();
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 onMounted(() => {
+  if (route.query.is_commission === '1') {
+    filterCommission.value = 'commission';
+  }
   fetchPlans();
   fetchOrders();
 });

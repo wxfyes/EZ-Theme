@@ -127,6 +127,30 @@
     </el-row>
 
     <!-- Security Audit Quick Warning Banner -->
+    <!-- Pending Commission Warning Banner -->
+    <el-row :gutter="16" class="mt-20" v-if="overrideData.commission_pending_total > 0">
+      <el-col :span="24">
+        <el-alert
+          title="返佣佣金待确认提醒"
+          type="warning"
+          :closable="false"
+          show-icon
+          style="border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); padding: 16px;"
+        >
+          <template #default>
+            <div class="flex-between flex-wrap gap-10" style="margin-top: 8px;">
+              <span style="font-size: 13px; line-height: 1.5;">
+                当前有 <strong style="color: var(--el-color-warning); font-size: 15px;">{{ overrideData.commission_pending_total }}</strong> 笔返佣订单等待确认（处理后符合条件的佣金才会发放）。
+              </span>
+              <el-button type="warning" size="small" icon="Document" @click="goToCommissionOrders">
+                立即前往订单管理处理
+              </el-button>
+            </div>
+          </template>
+        </el-alert>
+      </el-col>
+    </el-row>
+
     <el-row :gutter="16" class="mt-20" v-if="flaggedCount > 0 || suspectedCount > 0">
       <el-col :span="24">
         <el-alert
@@ -285,6 +309,10 @@ const fetchAnomalies = async () => {
 
 const goToSecurityAudit = () => {
   router.push('/security-audit');
+};
+
+const goToCommissionOrders = () => {
+  router.push({ path: '/orders', query: { is_commission: '1' } });
 };
 
 const updateCards = () => {
