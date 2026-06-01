@@ -814,18 +814,7 @@ const tagOptions = ref(['香港', '日本', '新加坡', '美国', '台湾', '�
 
 // Prepopulated templates for transport protocol configs
 const networkTemplates = {
-  tcp: {
-    header: {
-      type: "http",
-      request: {
-        path: ["/"],
-        headers: {
-          Host: ["www.baidu.com", "www.bing.com"]
-        }
-      },
-      response: {}
-    }
-  },
+  tcp: {},
   ws: {
     path: "/",
     headers: {
@@ -990,11 +979,15 @@ const tcp_path_shortcut = computed({
   },
   set(val) {
     if (!form.network_settings) form.network_settings = {};
-    if (!form.network_settings.header) form.network_settings.header = {};
-    if (!form.network_settings.header.request) form.network_settings.header.request = {};
-    form.network_settings.header.type = 'http';
-    form.network_settings.header.request.path = [val || '/'];
-    if (!form.network_settings.header.response) form.network_settings.header.response = {};
+    if (val) {
+      if (!form.network_settings.header) form.network_settings.header = {};
+      if (!form.network_settings.header.request) form.network_settings.header.request = {};
+      form.network_settings.header.type = 'http';
+      form.network_settings.header.request.path = [val];
+      if (!form.network_settings.header.response) form.network_settings.header.response = {};
+    } else if (form.network_settings.header?.request?.path) {
+      delete form.network_settings.header.request.path;
+    }
     syncNetworkSettingsToRaw();
   }
 });
@@ -1006,12 +999,16 @@ const tcp_host_shortcut = computed({
   },
   set(val) {
     if (!form.network_settings) form.network_settings = {};
-    if (!form.network_settings.header) form.network_settings.header = {};
-    if (!form.network_settings.header.request) form.network_settings.header.request = {};
-    if (!form.network_settings.header.request.headers) form.network_settings.header.request.headers = {};
-    form.network_settings.header.type = 'http';
-    form.network_settings.header.request.headers.Host = [val || 'www.baidu.com'];
-    if (!form.network_settings.header.response) form.network_settings.header.response = {};
+    if (val) {
+      if (!form.network_settings.header) form.network_settings.header = {};
+      if (!form.network_settings.header.request) form.network_settings.header.request = {};
+      if (!form.network_settings.header.request.headers) form.network_settings.header.request.headers = {};
+      form.network_settings.header.type = 'http';
+      form.network_settings.header.request.headers.Host = [val];
+      if (!form.network_settings.header.response) form.network_settings.header.response = {};
+    } else if (form.network_settings.header?.request?.headers?.Host) {
+      delete form.network_settings.header.request.headers.Host;
+    }
     syncNetworkSettingsToRaw();
   }
 });
@@ -1237,6 +1234,49 @@ const handleNetworkChange = (newVal) => {
   syncNetworkSettingsToRaw();
 };
 
+const pruneEmpty = (value) => {
+  if (Array.isArray(value)) {
+    return value.map(pruneEmpty).filter(item => item !== undefined && item !== null && item !== '');
+  }
+  if (value && typeof value === 'object') {
+    const result = {};
+    Object.keys(value).forEach((key) => {
+      const cleaned = pruneEmpty(value[key]);
+      if (
+        cleaned !== undefined &&
+        cleaned !== null &&
+        cleaned !== '' &&
+        !(Array.isArray(cleaned) && cleaned.length === 0) &&
+        !(typeof cleaned === 'object' && !Array.isArray(cleaned) && Object.keys(cleaned).length === 0)
+      ) {
+        result[key] = cleaned;
+      }
+    });
+    return result;
+  }
+  return value;
+};
+
+const normalizeNetworkSettings = (network, settings = {}) => {
+  const cleaned = pruneEmpty(JSON.parse(JSON.stringify(settings || {})));
+  if (network !== 'tcp') return cleaned;
+
+  const path = cleaned.header?.request?.path?.[0];
+  const host = cleaned.header?.request?.headers?.Host?.[0];
+  if (!path && !host) return {};
+
+  const tcpSettings = {
+    header: {
+      type: 'http',
+      request: {},
+      response: {}
+    }
+  };
+  if (path) tcpSettings.header.request.path = [path];
+  if (host) tcpSettings.header.request.headers = { Host: [host] };
+  return tcpSettings;
+};
+
 // Build tls_settings object from form fields (shared between vless/vmess/v2node submit)
 const buildTlsSettings = () => {
   if (form.tls === 1) {
@@ -1357,8 +1397,8 @@ const handleCreateCommand = (type) => {
   form.tls_settings_raw_str = '{}';
 
   form.edit_network_raw = false;
-  form.network_settings = JSON.parse(JSON.stringify(networkTemplates.tcp));
-  form.network_settings_raw_str = JSON.stringify(networkTemplates.tcp, null, 2);
+  form.network_settings = {};
+  form.network_settings_raw_str = '{}';
 
   form.edit_encryption_raw = false;
   form.encryption_settings = {
@@ -1499,6 +1539,9 @@ const openEditDialog = (row, type) => {
     };
     form.encryption_settings_raw_str = JSON.stringify(encryptionSettings, null, 2);
   } else if (type === 'trojan') {
+    form.network = row.network || 'tcp';
+    form.network_settings = JSON.parse(JSON.stringify(row.network_settings || {}));
+    form.network_settings_raw_str = JSON.stringify(row.network_settings || {}, null, 2);
     form.server_name = row.server_name || '';
     form.allow_insecure = row.allow_insecure || 0;
   } else if (type === 'hysteria') {
@@ -1627,35 +1670,7 @@ const handleSubmit = async () => {
           if (form.edit_tls_raw) {
             finalTlsSettings = parseJSON(form.tls_settings_raw_str, '安全性配置');
           } else {
-            if (form.tls === 1) {
-              finalTlsSettings = {
-                server_name: form.tls_settings.server_name,
-                cert_mode: form.tls_settings.cert_mode,
-                fingerprint: form.tls_settings.fingerprint,
-                allow_insecure: String(form.tls_settings.allow_insecure)
-              };
-              if (form.tls_settings.cert_mode === 'dns') {
-                finalTlsSettings.provider = form.tls_settings.provider;
-                finalTlsSettings.dns_env = form.tls_settings.dns_env;
-              }
-              if (form.tls_settings.cert_mode !== 'none') {
-                if (form.tls_settings.cert_file) finalTlsSettings.cert_file = form.tls_settings.cert_file;
-                if (form.tls_settings.key_file) finalTlsSettings.key_file = form.tls_settings.key_file;
-              }
-              finalTlsSettings.reject_unknown_sni = String(form.tls_settings.reject_unknown_sni);
-            } else if (form.tls === 2) {
-              finalTlsSettings = {
-                server_name: form.tls_settings.server_name,
-                dest: form.tls_settings.dest,
-                server_port: form.tls_settings.server_port || "443",
-                xver: String(form.tls_settings.xver),
-                fingerprint: form.tls_settings.fingerprint,
-                allow_insecure: String(form.tls_settings.allow_insecure)
-              };
-              if (form.tls_settings.private_key) finalTlsSettings.private_key = form.tls_settings.private_key;
-              if (form.tls_settings.public_key) finalTlsSettings.public_key = form.tls_settings.public_key;
-              if (form.tls_settings.short_id) finalTlsSettings.short_id = form.tls_settings.short_id;
-            }
+            finalTlsSettings = buildTlsSettings();
           }
         }
 
@@ -1666,6 +1681,7 @@ const handleSubmit = async () => {
         } else {
           finalNetworkSettings = JSON.parse(JSON.stringify(form.network_settings));
         }
+        finalNetworkSettings = normalizeNetworkSettings(form.network, finalNetworkSettings);
 
         if (activeType.value === 'vmess') {
           payload.network = form.network;
@@ -1707,6 +1723,8 @@ const handleSubmit = async () => {
           payload.encryption_settings = form.encryption !== 'none' ? finalEncryptionSettings : null;
         }
       } else if (activeType.value === 'trojan') {
+        payload.network = form.network || 'tcp';
+        payload.network_settings = normalizeNetworkSettings(payload.network, form.edit_network_raw ? parseJSON(form.network_settings_raw_str, '传输配置') : form.network_settings);
         payload.server_name = form.server_name;
         payload.allow_insecure = form.allow_insecure;
       } else if (activeType.value === 'hysteria') {
@@ -1741,8 +1759,9 @@ const handleSubmit = async () => {
           payload.network = form.network;
           payload.tls = form.tls;
           const ns = form.edit_network_raw ? parseJSON(form.network_settings_raw_str, '传输配置') : JSON.parse(JSON.stringify(form.network_settings));
-          ns.security = form.vmess_security;
-          payload.network_settings = ns;
+          const normalizedNs = normalizeNetworkSettings(form.network, ns);
+          normalizedNs.security = form.vmess_security;
+          payload.network_settings = normalizedNs;
           if (form.tls > 0) {
             payload.tls_settings = form.edit_tls_raw ? parseJSON(form.tls_settings_raw_str, '安全性配置') : buildTlsSettings();
           }
@@ -1751,11 +1770,16 @@ const handleSubmit = async () => {
           payload.network = form.network;
           payload.flow = form.network === 'tcp' ? form.flow : null;
           payload.encryption = form.encryption;
-          payload.network_settings = form.edit_network_raw ? parseJSON(form.network_settings_raw_str, '传输配置') : JSON.parse(JSON.stringify(form.network_settings));
+          payload.network_settings = normalizeNetworkSettings(
+            form.network,
+            form.edit_network_raw ? parseJSON(form.network_settings_raw_str, '传输配置') : form.network_settings
+          );
           if (form.tls > 0) {
             payload.tls_settings = form.edit_tls_raw ? parseJSON(form.tls_settings_raw_str, '安全性配置') : buildTlsSettings();
           }
         } else if (proto === 'trojan') {
+          payload.network = 'tcp';
+          payload.network_settings = {};
           payload.server_name = form.server_name;
           payload.allow_insecure = form.allow_insecure;
         } else if (proto === 'hysteria2') {
