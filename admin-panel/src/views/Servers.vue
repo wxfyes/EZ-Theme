@@ -219,7 +219,7 @@
             <el-col :span="12" :xs="24" :sm="12">
               <el-form-item label="分配权限组" prop="group_id">
                 <el-select v-model="form.group_id" multiple collapse-tags placeholder="请选择权限组" style="width: 100%">
-                  <el-option v-for="g in groupList" :key="g.id" :label="g.name" :value="g.id" />
+                  <el-option v-for="g in groupList" :key="g.id" :label="g.name" :value="String(g.id)" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -477,7 +477,7 @@
                 </div>
 
                 <template v-if="form.edit_network_raw">
-                  <el-input type="textarea" :rows="8" v-model="form.network_settings_raw_str" placeholder="{}" class="code-textarea" @input="syncNetworkSettingsFromRaw" />
+                  <el-input type="textarea" :rows="8" v-model="form.network_settings_raw_str" placeholder="[]" class="code-textarea" @input="syncNetworkSettingsFromRaw" />
                 </template>
                 <template v-else>
                   <!-- Form fields matching network -->
@@ -546,14 +546,14 @@
               </el-tab-pane>
 
               <!-- Encryption Settings Tab (Vless only) -->
-              <el-tab-pane label="加密配置 (encryption_settings)" v-if="activeType === 'vless' || (activeType === 'v2node' && form.v2node_protocol === 'vless')">
+              <el-tab-pane label="加密配置 (encryption_settings)" v-if="(activeType === 'vless' || (activeType === 'v2node' && form.v2node_protocol === 'vless')) && form.encryption !== 'none'">
                 <div class="flex-between align-center mb-15">
                   <span class="sub-section-title">编辑加密配置</span>
                   <el-checkbox v-model="form.edit_encryption_raw">编辑原始 JSON</el-checkbox>
                 </div>
 
                 <template v-if="form.edit_encryption_raw">
-                  <el-input type="textarea" :rows="8" v-model="form.encryption_settings_raw_str" placeholder="{}" class="code-textarea" @input="syncEncryptionSettingsFromRaw" />
+                  <el-input type="textarea" :rows="8" v-model="form.encryption_settings_raw_str" placeholder="[]" class="code-textarea" @input="syncEncryptionSettingsFromRaw" />
                 </template>
                 <template v-else>
                   <el-form-item label="加密模式 (mode)">
@@ -814,7 +814,7 @@ const tagOptions = ref(['香港', '日本', '新加坡', '美国', '台湾', '�
 
 // Prepopulated templates for transport protocol configs
 const networkTemplates = {
-  tcp: {},
+  tcp: [],
   ws: {
     path: "/",
     headers: {
@@ -896,8 +896,8 @@ const form = reactive({
   tls_settings_raw_str: '{}',
 
   edit_network_raw: false,
-  network_settings: {},
-  network_settings_raw_str: '{}',
+  network_settings: [],
+  network_settings_raw_str: '[]',
 
   edit_encryption_raw: false,
   encryption_settings: {
@@ -909,7 +909,7 @@ const form = reactive({
     private_key: '',
     password: ''
   },
-  encryption_settings_raw_str: '{}',
+  encryption_settings_raw_str: '[]',
 
   // Other advanced text strings
   dnsSettings_str: '{}',
@@ -960,11 +960,11 @@ const sameTypeServers = computed(() => {
 // Computed properties for shortcuts & nested structures in network settings
 const network_settings_host = computed({
   get() {
-    if (!form.network_settings) return '';
+    if (!form.network_settings || Array.isArray(form.network_settings)) return '';
     return form.network_settings.headers?.Host || form.network_settings.host || '';
   },
   set(val) {
-    if (!form.network_settings) form.network_settings = {};
+    if (!form.network_settings || Array.isArray(form.network_settings)) form.network_settings = {};
     if (!form.network_settings.headers) form.network_settings.headers = {};
     form.network_settings.headers.Host = val;
     form.network_settings.host = val;
@@ -974,11 +974,11 @@ const network_settings_host = computed({
 
 const tcp_path_shortcut = computed({
   get() {
-    if (!form.network_settings) return '';
+    if (!form.network_settings || Array.isArray(form.network_settings)) return '';
     return form.network_settings.header?.request?.path?.[0] || '';
   },
   set(val) {
-    if (!form.network_settings) form.network_settings = {};
+    if (!form.network_settings || Array.isArray(form.network_settings)) form.network_settings = {};
     if (val) {
       if (!form.network_settings.header) form.network_settings.header = {};
       if (!form.network_settings.header.request) form.network_settings.header.request = {};
@@ -994,11 +994,11 @@ const tcp_path_shortcut = computed({
 
 const tcp_host_shortcut = computed({
   get() {
-    if (!form.network_settings) return '';
+    if (!form.network_settings || Array.isArray(form.network_settings)) return '';
     return form.network_settings.header?.request?.headers?.Host?.[0] || '';
   },
   set(val) {
-    if (!form.network_settings) form.network_settings = {};
+    if (!form.network_settings || Array.isArray(form.network_settings)) form.network_settings = {};
     if (val) {
       if (!form.network_settings.header) form.network_settings.header = {};
       if (!form.network_settings.header.request) form.network_settings.header.request = {};
@@ -1213,7 +1213,7 @@ const syncNetworkSettingsToRaw = () => {
 
 const syncNetworkSettingsFromRaw = () => {
   try {
-    form.network_settings = JSON.parse(form.network_settings_raw_str || '{}');
+    form.network_settings = JSON.parse(form.network_settings_raw_str || '[]');
   } catch (e) {}
 };
 
@@ -1223,8 +1223,8 @@ const syncEncryptionSettingsToRaw = () => {
 
 const syncEncryptionSettingsFromRaw = () => {
   try {
-    const parsed = JSON.parse(form.encryption_settings_raw_str || '{}');
-    Object.assign(form.encryption_settings, parsed);
+    const parsed = JSON.parse(form.encryption_settings_raw_str || '[]');
+    if (!Array.isArray(parsed)) Object.assign(form.encryption_settings, parsed);
   } catch (e) {}
 };
 
@@ -1257,13 +1257,13 @@ const pruneEmpty = (value) => {
   return value;
 };
 
-const normalizeNetworkSettings = (network, settings = {}) => {
+const normalizeNetworkSettings = (network, settings = {}, emptyValue = []) => {
   const cleaned = pruneEmpty(JSON.parse(JSON.stringify(settings || {})));
   if (network !== 'tcp') return cleaned;
 
   const path = cleaned.header?.request?.path?.[0];
   const host = cleaned.header?.request?.headers?.Host?.[0];
-  if (!path && !host) return {};
+  if (!path && !host) return emptyValue;
 
   const tcpSettings = {
     header: {
@@ -1326,8 +1326,8 @@ const buildTlsSettings = () => {
 const handleV2nodeProtocolChange = (proto) => {
   form.tls = ['hysteria2', 'trojan', 'tuic', 'anytls'].includes(proto) ? 1 : 0;
   form.network = 'tcp';
-  form.network_settings = {};
-  form.network_settings_raw_str = '{}';
+  form.network_settings = [];
+  form.network_settings_raw_str = '[]';
   form.tls_settings = { server_name: '', cert_mode: 'self', provider: '', dns_env: '', cert_file: '', key_file: '', dest: '', server_port: '443', xver: 0, private_key: '', public_key: '', short_id: '', fingerprint: 'chrome', reject_unknown_sni: 0, allow_insecure: 0 };
   form.tls_settings_raw_str = '{}';
   form.server_name = '';
@@ -1358,7 +1358,7 @@ const handleCreateCommand = (type) => {
   form.id = null;
   form.name = '';
   form.rate = 1.0;
-  form.group_id = groupList.value.length > 0 ? [groupList.value[0].id] : [];
+  form.group_id = groupList.value.length > 0 ? [String(groupList.value[0].id)] : [];
   form.host = '';
   form.port = 10000;
   form.server_port = 10000;
@@ -1397,8 +1397,8 @@ const handleCreateCommand = (type) => {
   form.tls_settings_raw_str = '{}';
 
   form.edit_network_raw = false;
-  form.network_settings = {};
-  form.network_settings_raw_str = '{}';
+  form.network_settings = [];
+  form.network_settings_raw_str = '[]';
 
   form.edit_encryption_raw = false;
   form.encryption_settings = {
@@ -1410,7 +1410,7 @@ const handleCreateCommand = (type) => {
     private_key: '',
     password: ''
   };
-  form.encryption_settings_raw_str = '{}';
+  form.encryption_settings_raw_str = '[]';
 
   form.dnsSettings_str = '{}';
   form.ruleSettings_str = '{}';
@@ -1448,7 +1448,7 @@ const openEditDialog = (row, type) => {
   form.id = row.id;
   form.name = row.name;
   form.rate = row.rate;
-  form.group_id = row.group_id || [];
+  form.group_id = (row.group_id || []).map(id => String(id));
   form.host = row.host;
   form.port = row.port;
   form.server_port = row.server_port;
@@ -1523,11 +1523,11 @@ const openEditDialog = (row, type) => {
     };
     form.tls_settings_raw_str = JSON.stringify(tlsSettings, null, 2);
 
-    const networkSettings = row.network_settings || {};
+    const networkSettings = row.network_settings || [];
     form.network_settings = JSON.parse(JSON.stringify(networkSettings));
     form.network_settings_raw_str = JSON.stringify(networkSettings, null, 2);
 
-    const encryptionSettings = row.encryption_settings || {};
+    const encryptionSettings = row.encryption_settings || [];
     form.encryption_settings = {
       mode: encryptionSettings.mode || 'native',
       rtt: encryptionSettings.rtt || '0rtt',
@@ -1540,8 +1540,8 @@ const openEditDialog = (row, type) => {
     form.encryption_settings_raw_str = JSON.stringify(encryptionSettings, null, 2);
   } else if (type === 'trojan') {
     form.network = row.network || 'tcp';
-    form.network_settings = JSON.parse(JSON.stringify(row.network_settings || {}));
-    form.network_settings_raw_str = JSON.stringify(row.network_settings || {}, null, 2);
+    form.network_settings = JSON.parse(JSON.stringify(row.network_settings || []));
+    form.network_settings_raw_str = JSON.stringify(row.network_settings || [], null, 2);
     form.server_name = row.server_name || '';
     form.allow_insecure = row.allow_insecure || 0;
   } else if (type === 'hysteria') {
@@ -1578,7 +1578,7 @@ const openEditDialog = (row, type) => {
       const tls = row.tls_settings || {};
       form.tls_settings = { server_name: tls.server_name || '', cert_mode: tls.cert_mode || 'self', provider: tls.provider || '', dns_env: tls.dns_env || '', cert_file: tls.cert_file || '', key_file: tls.key_file || '', dest: tls.dest || '', server_port: tls.server_port || '443', xver: tls.xver || 0, private_key: tls.private_key || '', public_key: tls.public_key || '', short_id: tls.short_id || '', fingerprint: tls.fingerprint || 'chrome', reject_unknown_sni: Number(tls.reject_unknown_sni) || 0, allow_insecure: Number(tls.allow_insecure) || 0 };
       form.tls_settings_raw_str = JSON.stringify(tls, null, 2);
-      const ns = row.network_settings || {};
+      const ns = row.network_settings || [];
       form.network_settings = JSON.parse(JSON.stringify(ns));
       form.network_settings_raw_str = JSON.stringify(ns, null, 2);
     } else if (proto === 'vless') {
@@ -1589,7 +1589,7 @@ const openEditDialog = (row, type) => {
       const tls = row.tls_settings || {};
       form.tls_settings = { server_name: tls.server_name || '', cert_mode: tls.cert_mode || 'self', provider: tls.provider || '', dns_env: tls.dns_env || '', cert_file: tls.cert_file || '', key_file: tls.key_file || '', dest: tls.dest || '', server_port: tls.server_port || '443', xver: tls.xver || 0, private_key: tls.private_key || '', public_key: tls.public_key || '', short_id: tls.short_id || '', fingerprint: tls.fingerprint || 'chrome', reject_unknown_sni: Number(tls.reject_unknown_sni) || 0, allow_insecure: Number(tls.allow_insecure) || 0 };
       form.tls_settings_raw_str = JSON.stringify(tls, null, 2);
-      const ns = row.network_settings || {};
+      const ns = row.network_settings || [];
       form.network_settings = JSON.parse(JSON.stringify(ns));
       form.network_settings_raw_str = JSON.stringify(ns, null, 2);
     } else if (proto === 'trojan') {
@@ -1640,7 +1640,7 @@ const handleSubmit = async () => {
       const payload = {
         name: form.name,
         rate: form.rate,
-        group_id: form.group_id,
+        group_id: form.group_id.map(id => String(id)),
         host: form.host,
         port: form.port,
         server_port: form.server_port,
@@ -1681,7 +1681,7 @@ const handleSubmit = async () => {
         } else {
           finalNetworkSettings = JSON.parse(JSON.stringify(form.network_settings));
         }
-        finalNetworkSettings = normalizeNetworkSettings(form.network, finalNetworkSettings);
+        finalNetworkSettings = normalizeNetworkSettings(form.network, finalNetworkSettings, activeType.value === 'vmess' ? {} : []);
 
         if (activeType.value === 'vmess') {
           payload.network = form.network;
@@ -1720,11 +1720,11 @@ const handleSubmit = async () => {
 
           payload.tls_settings = form.tls > 0 ? finalTlsSettings : null;
           payload.network_settings = finalNetworkSettings;
-          payload.encryption_settings = form.encryption !== 'none' ? finalEncryptionSettings : null;
+          payload.encryption_settings = form.encryption !== 'none' ? finalEncryptionSettings : [];
         }
       } else if (activeType.value === 'trojan') {
         payload.network = form.network || 'tcp';
-        payload.network_settings = normalizeNetworkSettings(payload.network, form.edit_network_raw ? parseJSON(form.network_settings_raw_str, '传输配置') : form.network_settings);
+        payload.network_settings = normalizeNetworkSettings(payload.network, form.edit_network_raw ? parseJSON(form.network_settings_raw_str, '传输配置') : form.network_settings, []);
         payload.server_name = form.server_name;
         payload.allow_insecure = form.allow_insecure;
       } else if (activeType.value === 'hysteria') {
@@ -1759,7 +1759,7 @@ const handleSubmit = async () => {
           payload.network = form.network;
           payload.tls = form.tls;
           const ns = form.edit_network_raw ? parseJSON(form.network_settings_raw_str, '传输配置') : JSON.parse(JSON.stringify(form.network_settings));
-          const normalizedNs = normalizeNetworkSettings(form.network, ns);
+          const normalizedNs = normalizeNetworkSettings(form.network, ns, []);
           normalizedNs.security = form.vmess_security;
           payload.network_settings = normalizedNs;
           if (form.tls > 0) {
@@ -1772,14 +1772,15 @@ const handleSubmit = async () => {
           payload.encryption = form.encryption;
           payload.network_settings = normalizeNetworkSettings(
             form.network,
-            form.edit_network_raw ? parseJSON(form.network_settings_raw_str, '传输配置') : form.network_settings
+            form.edit_network_raw ? parseJSON(form.network_settings_raw_str, '传输配置') : form.network_settings,
+            []
           );
           if (form.tls > 0) {
             payload.tls_settings = form.edit_tls_raw ? parseJSON(form.tls_settings_raw_str, '安全性配置') : buildTlsSettings();
           }
         } else if (proto === 'trojan') {
           payload.network = 'tcp';
-          payload.network_settings = {};
+          payload.network_settings = [];
           payload.server_name = form.server_name;
           payload.allow_insecure = form.allow_insecure;
         } else if (proto === 'hysteria2') {
