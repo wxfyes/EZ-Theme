@@ -1,5 +1,54 @@
 <template>
   <div class="dashboard-container">
+    <!-- Pending Commission Warning Banner -->
+    <el-row :gutter="16" class="mb-20" v-if="overrideData.commission_pending_total > 0">
+      <el-col :span="24">
+        <el-alert
+          title="返佣佣金待确认提醒"
+          type="warning"
+          :closable="false"
+          show-icon
+          style="border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); padding: 16px;"
+        >
+          <template #default>
+            <div class="flex-between flex-wrap gap-10" style="margin-top: 8px;">
+              <span style="font-size: 13px; line-height: 1.5;">
+                当前有 <strong style="color: var(--el-color-warning); font-size: 15px;">{{ overrideData.commission_pending_total }}</strong> 笔返佣订单等待确认（处理后符合条件的佣金才会发放）。
+              </span>
+              <el-button type="warning" size="small" icon="Document" @click="goToCommissionOrders">
+                立即前往订单管理处理
+              </el-button>
+            </div>
+          </template>
+        </el-alert>
+      </el-col>
+    </el-row>
+
+    <!-- Security Audit Quick Warning Banner -->
+    <el-row :gutter="16" class="mb-20" v-if="flaggedCount > 0 || suspectedCount > 0">
+      <el-col :span="24">
+        <el-alert
+          :title="alertTitle"
+          :type="flaggedCount > 0 ? 'error' : 'warning'"
+          :closable="false"
+          show-icon
+          style="border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); padding: 16px;"
+        >
+          <template #default>
+            <div class="flex-between flex-wrap gap-10" style="margin-top: 8px;">
+              <span style="font-size: 13px; line-height: 1.5;">
+                当前有 <strong :style="{ color: flaggedCount > 0 ? 'var(--el-color-danger)' : 'var(--el-color-warning)', fontSize: '15px' }">{{ flaggedCount }}</strong> 个高风险订阅拉取拦截账号，
+                以及 <strong style="color: var(--el-color-warning); font-size: 15px;">{{ suspectedCount }}</strong> 个疑似命令行/爬虫工具拉取的异常记录待审计。
+              </span>
+              <el-button :type="flaggedCount > 0 ? 'danger' : 'warning'" size="small" icon="Platform" @click="goToSecurityAudit">
+                立即前往安全审计页面处理
+              </el-button>
+            </div>
+          </template>
+        </el-alert>
+      </el-col>
+    </el-row>
+
     <!-- Top Stats Cards -->
     <el-row :gutter="16" class="stat-row">
       <el-col :xs="12" :sm="12" :md="6" v-for="(card, index) in statCards" :key="index" class="stat-col">
@@ -126,54 +175,6 @@
       </el-col>
     </el-row>
 
-    <!-- Security Audit Quick Warning Banner -->
-    <!-- Pending Commission Warning Banner -->
-    <el-row :gutter="16" class="mt-20" v-if="overrideData.commission_pending_total > 0">
-      <el-col :span="24">
-        <el-alert
-          title="返佣佣金待确认提醒"
-          type="warning"
-          :closable="false"
-          show-icon
-          style="border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); padding: 16px;"
-        >
-          <template #default>
-            <div class="flex-between flex-wrap gap-10" style="margin-top: 8px;">
-              <span style="font-size: 13px; line-height: 1.5;">
-                当前有 <strong style="color: var(--el-color-warning); font-size: 15px;">{{ overrideData.commission_pending_total }}</strong> 笔返佣订单等待确认（处理后符合条件的佣金才会发放）。
-              </span>
-              <el-button type="warning" size="small" icon="Document" @click="goToCommissionOrders">
-                立即前往订单管理处理
-              </el-button>
-            </div>
-          </template>
-        </el-alert>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="16" class="mt-20" v-if="flaggedCount > 0 || suspectedCount > 0">
-      <el-col :span="24">
-        <el-alert
-          :title="alertTitle"
-          :type="flaggedCount > 0 ? 'error' : 'warning'"
-          :closable="false"
-          show-icon
-          style="border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); padding: 16px;"
-        >
-          <template #default>
-            <div class="flex-between flex-wrap gap-10" style="margin-top: 8px;">
-              <span style="font-size: 13px; line-height: 1.5;">
-                当前有 <strong :style="{ color: flaggedCount > 0 ? 'var(--el-color-danger)' : 'var(--el-color-warning)', fontSize: '15px' }">{{ flaggedCount }}</strong> 个高风险订阅拉取拦截账号，
-                以及 <strong style="color: var(--el-color-warning); font-size: 15px;">{{ suspectedCount }}</strong> 个疑似命令行/爬虫工具拉取的异常记录待审计。
-              </span>
-              <el-button :type="flaggedCount > 0 ? 'danger' : 'warning'" size="small" icon="Platform" @click="goToSecurityAudit">
-                立即前往安全审计页面处理
-              </el-button>
-            </div>
-          </template>
-        </el-alert>
-      </el-col>
-    </el-row>
   </div>
 </template>
 
