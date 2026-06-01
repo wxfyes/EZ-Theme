@@ -704,8 +704,14 @@
 
           <!-- AnyTLS Options -->
           <template v-if="activeType === 'anytls'">
-            <el-form-item label="高级参数" prop="anytls_custom">
-              <el-input type="textarea" :rows="6" v-model="form.anytls_custom_str" placeholder="{}" class="code-textarea" />
+            <el-form-item label="SNI / 域名" prop="server_name">
+              <el-input v-model="form.server_name" placeholder="请输入 SNI / Server Name" />
+            </el-form-item>
+            <el-form-item label="允许不安全证书" prop="insecure">
+              <el-switch v-model="form.insecure" :active-value="1" :inactive-value="0" />
+            </el-form-item>
+            <el-form-item label="填充方案" prop="anytls_custom_str">
+              <el-input type="textarea" :rows="8" v-model="form.anytls_custom_str" placeholder="请输入 JSON 数组，如：[&quot;stop=8&quot;, &quot;0=30-30&quot;]" class="code-textarea" />
             </el-form-item>
           </template>
 
@@ -734,6 +740,9 @@
             </el-form-item>
             <el-form-item label="允许不安全">
               <el-switch v-model="form.allow_insecure" :active-value="1" :inactive-value="0" />
+            </el-form-item>
+            <el-form-item label="填充方案" prop="anytls_custom_str">
+              <el-input type="textarea" :rows="8" v-model="form.anytls_custom_str" placeholder="请输入 JSON 数组，如：[&quot;stop=8&quot;, &quot;0=30-30&quot;]" class="code-textarea" />
             </el-form-item>
           </template>
 
@@ -807,6 +816,18 @@ const allNodes = computed(() => {
   });
   return list.sort((a, b) => (a.sort || 0) - (b.sort || 0) || a.id - b.id);
 });
+
+const DEFAULT_PADDING_SCHEME = JSON.stringify([
+  "stop=8",
+  "0=30-30",
+  "1=100-400",
+  "2=400-500,c,500-1000,c,500-1000,c,500-1000,c,500-1000",
+  "3=9-9,500-1000",
+  "4=500-1000",
+  "5=500-1000",
+  "6=500-1000",
+  "7=500-1000"
+], null, 2);
 
 const groupList = ref([]);
 const routeList = ref([]);
@@ -938,7 +959,7 @@ const form = reactive({
   congestion_control: 'bbr',
 
   // Custom configurations (for AnyTLS)
-  anytls_custom_str: '{}',
+  anytls_custom_str: DEFAULT_PADDING_SCHEME,
 
   // V2node specific
   listen_ip: '0.0.0.0',
@@ -1433,7 +1454,7 @@ const handleCreateCommand = (type) => {
   form.zero_rtt_handshake = 1;
   form.congestion_control = 'bbr';
 
-  form.anytls_custom_str = '{}';
+  form.anytls_custom_str = DEFAULT_PADDING_SCHEME;
   form.listen_ip = '0.0.0.0';
   form.v2node_protocol = 'vmess';
   
@@ -1560,10 +1581,14 @@ const openEditDialog = (row, type) => {
     form.zero_rtt_handshake = row.zero_rtt_handshake || 0;
     form.congestion_control = row.congestion_control || 'bbr';
   } else if (type === 'anytls') {
-    const custom = { ...row };
-    const omit = ['id', 'name', 'rate', 'group_id', 'host', 'port', 'server_port', 'parent_id', 'route_id', 'tags', 'show', 'type', 'created_at', 'updated_at'];
-    omit.forEach(k => delete custom[k]);
-    form.anytls_custom_str = JSON.stringify(custom, null, 2);
+    form.server_name = row.server_name || '';
+    form.insecure = row.insecure || 0;
+    const paddingScheme = row.padding_scheme || [];
+    form.anytls_custom_str = typeof paddingScheme === 'string' ? paddingScheme : JSON.stringify(paddingScheme, null, 2);
+
+
+
+
   } else if (type === 'v2node') {
     form.listen_ip = row.listen_ip || '0.0.0.0';
     const proto = row.protocol || 'vmess';
@@ -1615,6 +1640,8 @@ const openEditDialog = (row, type) => {
       const tls = row.tls_settings || {};
       form.server_name = tls.server_name || '';
       form.allow_insecure = tls.insecure || 0;
+      const paddingScheme = row.padding_scheme || [];
+      form.anytls_custom_str = typeof paddingScheme === 'string' ? paddingScheme : JSON.stringify(paddingScheme, null, 2);
     }
   }
 
@@ -1747,11 +1774,23 @@ const handleSubmit = async () => {
         payload.zero_rtt_handshake = form.zero_rtt_handshake;
         payload.congestion_control = form.congestion_control;
       } else if (activeType.value === 'anytls') {
-        const custom = parseJSON(form.anytls_custom_str, '高级参数');
-        Object.assign(payload, custom);
+        payload.server_name = form.server_name;
+        payload.insecure = form.insecure;
+        try {
+          JSON.parse(form.anytls_custom_str);
+        } catch (e) {
+          throw new Error('填充方案 JSON 格式不正确');
+        }
+        payload.padding_scheme = form.anytls_custom_str;
+
       } else if (activeType.value === 'v2node') {
         payload.listen_ip = form.listen_ip || '0.0.0.0';
         payload.protocol = form.v2node_protocol;
+        // Defaults to satisfy V2nodeController validation
+        payload.tls = 0;
+        payload.network = 'tcp';
+        payload.disable_sni = 0;
+        payload.zero_rtt_handshake = 0;
         const proto = form.v2node_protocol;
         if (proto === 'shadowsocks') {
           payload.cipher = form.cipher;
@@ -1779,11 +1818,13 @@ const handleSubmit = async () => {
             payload.tls_settings = form.edit_tls_raw ? parseJSON(form.tls_settings_raw_str, '安全性配置') : buildTlsSettings();
           }
         } else if (proto === 'trojan') {
+          payload.tls = 1;
           payload.network = 'tcp';
           payload.network_settings = [];
           payload.server_name = form.server_name;
           payload.allow_insecure = form.allow_insecure;
         } else if (proto === 'hysteria2') {
+          payload.tls = 1;
           payload.up_mbps = form.up_mbps;
           payload.down_mbps = form.down_mbps;
           payload.tls_settings = { server_name: form.server_name, insecure: form.insecure };
@@ -1792,13 +1833,21 @@ const handleSubmit = async () => {
             if (form.obfs_password) payload.obfs_password = form.obfs_password;
           }
         } else if (proto === 'tuic') {
+          payload.tls = 1;
           payload.disable_sni = form.disable_sni;
           payload.udp_relay_mode = form.udp_relay_mode;
           payload.zero_rtt_handshake = form.zero_rtt_handshake;
           payload.congestion_control = form.congestion_control;
           payload.tls_settings = { server_name: form.server_name, insecure: form.insecure };
         } else if (proto === 'anytls') {
+          payload.tls = 1;
           payload.tls_settings = { server_name: form.server_name, insecure: form.allow_insecure };
+          try {
+            JSON.parse(form.anytls_custom_str);
+          } catch (e) {
+            throw new Error('填充方案 JSON 格式不正确');
+          }
+          payload.padding_scheme = form.anytls_custom_str;
         }
       }
 
