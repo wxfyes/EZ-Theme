@@ -50,6 +50,17 @@
       </div>
     </el-card>
 
+    <!-- Filter Indicator for Invites -->
+    <el-card v-if="filterInviteByEmail" class="filter-indicator-card mt-20" shadow="never">
+      <div class="flex-between">
+        <div class="flex-center" style="gap: 8px;">
+          <el-icon><User /></el-icon>
+          <span>正在查看用户 <strong style="color: var(--el-color-primary);">{{ filterInviteByEmail }}</strong> 的邀请人列表</span>
+        </div>
+        <el-button type="danger" size="small" icon="Close" @click="clearInviteFilter">清除过滤</el-button>
+      </div>
+    </el-card>
+
     <!-- User Table -->
     <el-card class="table-card mt-20" shadow="hover">
       <el-table :data="users" v-loading="loading" stripe style="width: 100%">
@@ -94,7 +105,9 @@
 
         <el-table-column label="已用(G)" width="100" align="right">
           <template #default="scope">
-            <span>{{ ((scope.row.u + scope.row.d) / 1073741824).toFixed(2) }}</span>
+            <span :style="getTrafficStyle(scope.row.u + scope.row.d, scope.row.transfer_enable)">
+              {{ ((scope.row.u + scope.row.d) / 1073741824).toFixed(2) }}
+            </span>
           </template>
         </el-table-column>
 
@@ -160,21 +173,26 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="140" align="right" fixed="right">
+        <el-table-column label="操作" width="80" align="right" fixed="right">
           <template #default="scope">
-            <el-button type="primary" link @click="openEditDialog(scope.row)">编辑</el-button>
             <el-dropdown trigger="click" @command="(cmd) => handleMoreCommand(cmd, scope.row)">
-              <el-button type="primary" link style="margin-left: 12px">
-                更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              <el-button type="primary" link>
+                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="reset">重置订阅密钥</el-dropdown-item>
-                  <el-dropdown-item command="copy">复制订阅链接</el-dropdown-item>
-                  <el-dropdown-item command="toggleHoneypot" :style="{ color: scope.row.in_honeypot === 1 ? 'var(--el-color-success)' : 'var(--el-color-warning)' }">
+                  <el-dropdown-item command="edit" icon="Edit">编辑</el-dropdown-item>
+                  <el-dropdown-item command="assign" icon="Plus">分配订单</el-dropdown-item>
+                  <el-dropdown-item command="copy" icon="CopyDocument">复制订阅URL</el-dropdown-item>
+                  <el-dropdown-item command="reset" icon="Refresh">重置UUID及订阅URL</el-dropdown-item>
+                  <el-dropdown-item command="orders" icon="Tickets">TA的订单</el-dropdown-item>
+                  <el-dropdown-item command="invites" icon="User">TA的邀请</el-dropdown-item>
+                  <el-dropdown-item command="invite_records" icon="Share">TA的邀请记录</el-dropdown-item>
+                  <el-dropdown-item command="traffic_logs" icon="Histogram">TA的流量记录</el-dropdown-item>
+                  <el-dropdown-item command="toggleHoneypot" :icon="scope.row.in_honeypot === 1 ? 'CircleCheck' : 'Warning'" :style="{ color: scope.row.in_honeypot === 1 ? 'var(--el-color-success)' : 'var(--el-color-warning)' }">
                     {{ scope.row.in_honeypot === 1 ? '移出安全蜜罐' : '加入安全蜜罐' }}
                   </el-dropdown-item>
-                  <el-dropdown-item command="delete" divided style="color: var(--el-color-danger)">删除用户</el-dropdown-item>
+                  <el-dropdown-item command="delete" divided icon="Delete" style="color: var(--el-color-danger)">删除用户</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -375,11 +393,86 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Assign Order Dialog -->
+    <el-dialog v-model="assignVisible" title="分配订阅订单" :width="isMobile ? '95%' : '550px'">
+      <el-form :model="assignForm" :rules="assignRules" ref="assignFormRef" :label-width="isMobile ? undefined : '100px'">
+        <el-form-item label="用户邮箱">
+          <el-input v-model="assignForm.email" disabled />
+        </el-form-item>
+
+        <el-form-item label="选择订阅" prop="plan_id">
+          <el-select v-model="assignForm.plan_id" placeholder="选择计划" style="width: 100%" @change="handlePlanChange">
+            <el-option v-for="plan in plans" :key="plan.id" :label="plan.name" :value="plan.id" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="账单周期" prop="period">
+          <el-select v-model="assignForm.period" placeholder="选择购买周期" style="width: 100%">
+            <el-option label="月付" value="month_price" />
+            <el-option label="季付" value="quarter_price" />
+            <el-option label="半年付" value="half_year_price" />
+            <el-option label="年付" value="year_price" />
+            <el-option label="两年付" value="two_year_price" />
+            <el-option label="三年付" value="three_year_price" />
+            <el-option label="一次性" value="onetime_price" />
+            <el-option label="流量重置包" value="reset_price" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="订单金额 (元)" prop="total_amount">
+          <el-input-number v-model="assignForm.total_amount" :precision="2" :min="0" style="width: 180px" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="assignVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="handleAssignSubmit">分配并激活</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- User Traffic Logs Dialog -->
+    <el-dialog v-model="trafficVisible" title="TA的流量明细记录" :width="isMobile ? '95%' : '650px'">
+      <el-table :data="trafficLogs" v-loading="trafficLoading" stripe style="width: 100%" max-height="400px">
+        <el-table-column prop="record_at" label="记录时间" width="180">
+          <template #default="scope">
+            {{ formatTime(scope.row.record_at) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="u" label="上行流量" width="120">
+          <template #default="scope">
+            {{ formatTraffic(scope.row.u) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="d" label="下行流量" width="120">
+          <template #default="scope">
+            {{ formatTraffic(scope.row.d) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="小计" min-width="120">
+          <template #default="scope">
+            {{ formatTraffic(scope.row.u + scope.row.d) }}
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="pagination flex-between mt-20">
+        <span class="pagination-info">共 {{ trafficTotal }} 条记录</span>
+        <el-pagination
+          v-model:current-page="trafficPage"
+          v-model:page-size="trafficPageSize"
+          layout="prev, pager, next"
+          :total="trafficTotal"
+          @current-change="handleTrafficPageChange"
+        />
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { getSecurePath } from '../api';
 import api from '../api';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -469,6 +562,130 @@ const editForm = reactive({
   is_admin: 0,
   is_staff: 0,
 });
+
+const router = useRouter();
+
+// Invite filter state
+const filterInviteByEmail = ref('');
+
+const clearInviteFilter = () => {
+  filterInviteByEmail.value = '';
+  currentPage.value = 1;
+  fetchUsers();
+};
+
+// Assign order state
+const assignVisible = ref(false);
+const assignFormRef = ref(null);
+const assignForm = reactive({
+  email: '',
+  plan_id: null,
+  period: 'month_price',
+  total_amount: 0,
+});
+const assignRules = {
+  plan_id: [{ required: true, message: '请选择订阅计划', trigger: 'change' }],
+  period: [{ required: true, message: '请选择账单周期', trigger: 'change' }],
+  total_amount: [{ required: true, message: '请输入订单金额', trigger: 'blur' }],
+};
+
+const openAssignDialog = (row) => {
+  assignForm.email = row.email;
+  assignForm.plan_id = null;
+  assignForm.period = 'month_price';
+  assignForm.total_amount = 0;
+  assignVisible.value = true;
+};
+
+const handlePlanChange = (planId) => {
+  const plan = plans.value.find(p => p.id === planId);
+  if (plan && plan.month_price) {
+    assignForm.total_amount = plan.month_price / 100;
+  }
+};
+
+const handleAssignSubmit = async () => {
+  if (!assignFormRef.value) return;
+  await assignFormRef.value.validate(async (valid) => {
+    if (!valid) return;
+    submitLoading.value = true;
+    try {
+      const securePath = getSecurePath();
+      const payload = {
+        email: assignForm.email,
+        plan_id: assignForm.plan_id,
+        period: assignForm.period,
+        total_amount: Math.round(assignForm.total_amount * 100),
+      };
+
+      const res = await api.post(`/${securePath}/order/assign`, payload);
+      if (res.data) {
+        await api.post(`/${securePath}/order/paid`, { trade_no: res.data });
+        ElMessage.success('分配并开通订阅成功！');
+      }
+      assignVisible.value = false;
+      fetchUsers();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      submitLoading.value = false;
+    }
+  });
+};
+
+// User Traffic Logs state
+const trafficVisible = ref(false);
+const trafficLoading = ref(false);
+const trafficLogs = ref([]);
+const trafficTotal = ref(0);
+const trafficPage = ref(1);
+const trafficPageSize = ref(10);
+const trafficUserId = ref(null);
+
+const openTrafficDialog = (row) => {
+  trafficUserId.value = row.id;
+  trafficPage.value = 1;
+  trafficVisible.value = true;
+  fetchTrafficLogs();
+};
+
+const fetchTrafficLogs = async () => {
+  if (!trafficUserId.value) return;
+  trafficLoading.value = true;
+  try {
+    const securePath = getSecurePath();
+    const res = await api.get(`/${securePath}/stat/getStatUser`, {
+      params: {
+        user_id: trafficUserId.value,
+        current: trafficPage.value,
+        pageSize: trafficPageSize.value,
+      }
+    });
+    if (res.data) {
+      trafficLogs.value = res.data;
+      trafficTotal.value = res.total;
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    trafficLoading.value = false;
+  }
+};
+
+const handleTrafficPageChange = (val) => {
+  trafficPage.value = val;
+  fetchTrafficLogs();
+};
+
+const getTrafficStyle = (used, total) => {
+  if (used === 0) {
+    return { color: 'var(--el-text-color-placeholder)' }; // 没用流量显示灰色
+  }
+  if (total > 0 && used >= total) {
+    return { color: 'var(--el-color-danger)', fontWeight: 'bold' }; // 用完显示红色
+  }
+  return { color: 'var(--el-color-primary)' }; // 没超显示蓝色
+};
 
 // Helper formatting functions
 const formatTraffic = (bytes) => {
@@ -594,6 +811,9 @@ const fetchUsers = async () => {
       }
       if (filterStatus.value !== '') {
         filter.push({ key: 'banned', condition: '=', value: filterStatus.value });
+      }
+      if (filterInviteByEmail.value) {
+        filter.push({ key: 'invite_by_email', condition: '=', value: filterInviteByEmail.value });
       }
     }
 
@@ -765,7 +985,21 @@ const handleUpdateUser = async () => {
 const handleMoreCommand = async (command, row) => {
   const securePath = getSecurePath();
   
-  if (command === 'reset') {
+  if (command === 'edit') {
+    openEditDialog(row);
+  } else if (command === 'assign') {
+    openAssignDialog(row);
+  } else if (command === 'orders') {
+    router.push({ name: 'Orders', query: { email: row.email } });
+  } else if (command === 'invites') {
+    filterInviteByEmail.value = row.email;
+    currentPage.value = 1;
+    fetchUsers();
+  } else if (command === 'invite_records') {
+    router.push({ name: 'Orders', query: { invite_user_id: row.id, invite_user_email: row.email } });
+  } else if (command === 'traffic_logs') {
+    openTrafficDialog(row);
+  } else if (command === 'reset') {
     ElMessageBox.confirm('确定要重置该用户的重置订阅密钥和连接 Token 吗？重置后，该用户现有的客户端配置将失效，需要重新导入！', '提示', {
       type: 'warning',
       confirmButtonText: '确定重置',
@@ -898,5 +1132,12 @@ onMounted(() => {
 }
 .client-tooltip-item:last-child {
   border-bottom: none;
+}
+
+.filter-indicator-card {
+  border-radius: 16px;
+  border: 1px solid var(--el-color-primary-light-8);
+  background-color: var(--el-color-primary-light-9);
+  padding: 0px 10px;
 }
 </style>

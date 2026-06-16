@@ -644,10 +644,13 @@
             <el-row :gutter="20">
               <el-col :span="12" :xs="24" :sm="12">
                 <el-form-item label="混淆协议 (obfs)" prop="obfs">
-                  <el-input v-model="form.obfs" placeholder="如 salamander (留空关闭)" clearable />
+                  <el-select v-model="form.obfs" placeholder="不启用混淆" clearable @change="val => { if(!val) form.obfs_password = '' }" style="width: 100%">
+                    <el-option label="无混淆" :value="null" />
+                    <el-option label="salamander" value="salamander" />
+                  </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="12" :xs="24" :sm="12">
+              <el-col :span="12" :xs="24" :sm="12" v-if="form.obfs === 'salamander'">
                 <el-form-item label="混淆密码" prop="obfs_password">
                   <el-input v-model="form.obfs_password" placeholder="留空则自动生成" />
                 </el-form-item>
@@ -1760,12 +1763,8 @@ const handleSubmit = async () => {
         payload.down_mbps = form.down_mbps;
         payload.server_name = form.server_name;
         payload.insecure = form.insecure;
-        if (form.obfs) {
-          payload.obfs = form.obfs;
-          if (form.obfs_password) {
-            payload.obfs_password = form.obfs_password;
-          }
-        }
+        payload.obfs = form.obfs || null;
+        payload.obfs_password = form.obfs_password || null;
       } else if (activeType.value === 'tuic') {
         payload.server_name = form.server_name;
         payload.insecure = form.insecure;
@@ -1828,10 +1827,8 @@ const handleSubmit = async () => {
           payload.up_mbps = form.up_mbps;
           payload.down_mbps = form.down_mbps;
           payload.tls_settings = { server_name: form.server_name, insecure: form.insecure };
-          if (form.obfs) {
-            payload.obfs = form.obfs;
-            if (form.obfs_password) payload.obfs_password = form.obfs_password;
-          }
+          payload.obfs = form.obfs || null;
+          payload.obfs_password = form.obfs_password || null;
         } else if (proto === 'tuic') {
           payload.tls = 1;
           payload.disable_sni = form.disable_sni;

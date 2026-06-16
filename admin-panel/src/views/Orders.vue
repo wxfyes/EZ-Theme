@@ -36,6 +36,22 @@
       </div>
     </el-card>
 
+    <!-- Filter Indicator for User/Inviter -->
+    <el-card v-if="routeFilterEmail || routeFilterInviteId" class="filter-indicator-card mt-20" shadow="never">
+      <div class="flex-between">
+        <div class="flex-center" style="gap: 8px;">
+          <el-icon><InfoFilled /></el-icon>
+          <span v-if="routeFilterEmail">
+            正在查看用户 <strong style="color: var(--el-color-primary);">{{ routeFilterEmail }}</strong> 的订单列表
+          </span>
+          <span v-else-if="routeFilterInviteId">
+            正在查看用户 <strong style="color: var(--el-color-primary);">{{ routeFilterInviteEmail || routeFilterInviteId }}</strong> 的邀请人返利订单
+          </span>
+        </div>
+        <el-button type="danger" size="small" icon="Close" @click="clearRouteFilter">清除过滤</el-button>
+      </div>
+    </el-card>
+
     <!-- Orders Table -->
     <el-card class="table-card mt-20" shadow="hover">
       <el-table :data="orders" v-loading="loading" stripe style="width: 100%">
@@ -189,7 +205,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { getSecurePath } from '../api';
 import api from '../api';
@@ -210,6 +226,18 @@ const searchQuery = ref('');
 const filterStatus = ref('');
 const filterCommission = ref('all');
 const plans = ref([]);
+
+const routeFilterEmail = ref('');
+const routeFilterInviteId = ref('');
+const routeFilterInviteEmail = ref('');
+
+const clearRouteFilter = () => {
+  routeFilterEmail.value = '';
+  routeFilterInviteId.value = '';
+  routeFilterInviteEmail.value = '';
+  currentPage.value = 1;
+  fetchOrders();
+};
 
 const assignVisible = ref(false);
 const assignFormRef = ref(null);
@@ -279,7 +307,11 @@ const fetchOrders = async () => {
   try {
     const securePath = getSecurePath();
     const filter = [];
-    if (searchQuery.value) {
+    if (routeFilterEmail.value) {
+      filter.push({ key: 'email', condition: '=', value: routeFilterEmail.value });
+    } else if (routeFilterInviteId.value) {
+      filter.push({ key: 'invite_user_id', condition: '=', value: routeFilterInviteId.value });
+    } else if (searchQuery.value) {
       // Check if it's an email or trade number
       if (searchQuery.value.includes('@')) {
         filter.push({ key: 'email', condition: '=', value: searchQuery.value });
@@ -297,7 +329,7 @@ const fetchOrders = async () => {
       filter: filter,
     };
 
-    if (filterCommission.value === 'commission') {
+    if (filterCommission.value === 'commission' || routeFilterInviteId.value) {
       params.is_commission = 1;
     }
 
@@ -434,9 +466,43 @@ onMounted(() => {
   if (route.query.is_commission === '1') {
     filterCommission.value = 'commission';
   }
+  
+  if (route.query.email) {
+    routeFilterEmail.value = route.query.email;
+  }
+  if (route.query.invite_user_id) {
+    routeFilterInviteId.value = route.query.invite_user_id;
+    filterCommission.value = 'commission';
+  }
+  if (route.query.invite_user_email) {
+    routeFilterInviteEmail.value = route.query.invite_user_email;
+  }
+
   fetchPlans();
   fetchOrders();
 });
+
+watch(
+  () => route.query,
+  (newQuery) => {
+    if (newQuery.email) {
+      routeFilterEmail.value = newQuery.email;
+      routeFilterInviteId.value = '';
+      routeFilterInviteEmail.value = '';
+    } else if (newQuery.invite_user_id) {
+      routeFilterInviteId.value = newQuery.invite_user_id;
+      routeFilterInviteEmail.value = newQuery.invite_user_email || '';
+      routeFilterEmail.value = '';
+      filterCommission.value = 'commission';
+    } else {
+      routeFilterEmail.value = '';
+      routeFilterInviteId.value = '';
+      routeFilterInviteEmail.value = '';
+    }
+    currentPage.value = 1;
+    fetchOrders();
+  }
+);
 </script>
 
 <style scoped>
@@ -469,5 +535,12 @@ onMounted(() => {
 
 .gap-10 {
   gap: 10px;
+}
+
+.filter-indicator-card {
+  border-radius: 16px;
+  border: 1px solid var(--el-color-primary-light-8);
+  background-color: var(--el-color-primary-light-9);
+  padding: 0px 10px;
 }
 </style>
