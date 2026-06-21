@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 
   <div class="nodes-container">
 
@@ -118,7 +118,7 @@
 
               <!-- 节点主机信息 -->
 
-              <p class="node-host" v-if="showNodeDetails">{{ node.host }}:{{ node.port }}</p>
+              <p class="node-host" v-if="showNodeDetails">已加密保护</p>
 
             </div>
 

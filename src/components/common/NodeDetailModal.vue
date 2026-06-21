@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 
   <transition name="fade">
 
@@ -52,7 +52,7 @@
 
                 <span class="info-label">{{ $t('nodes.host') }}:</span>
 
-                <span class="info-value">{{ node.host }}</span>
+                <span class="info-value">已加密保护</span>
 
               </div>
 
@@ -60,7 +60,7 @@
 
                 <span class="info-label">{{ $t('nodes.port') }}:</span>
 
-                <span class="info-value">{{ node.port }}</span>
+                <span class="info-value">已加密保护</span>
 
               </div>
 
@@ -107,142 +107,6 @@
                 </div>
 
               </template>
-
-            </div>
-
-            
-
-            <!-- 切换到订阅链接页面的按钮 -->
-
-            <div class="page-nav-btn-container">
-
-              <button class="page-nav-btn" @click="switchToPage('subscribe')">
-
-                <IconLink :size="16" />
-
-                {{ $t('nodes.viewSubscribeLink') }}
-
-              </button>
-
-            </div>
-
-          </div>
-
-          
-
-          <!-- 订阅链接页面 -->
-
-          <div v-else-if="currentPage === 'subscribe'" key="subscribe" class="node-detail-modal-body">
-
-            <!-- 快速连接信息切换 -->
-
-            <div class="quick-link-section">
-
-              <div class="section-header">
-
-                <h4>{{ $t('nodes.quickLink') }}</h4>
-
-                <div class="view-toggle">
-
-                  <button 
-
-                    class="toggle-btn" 
-
-                    :class="{ active: viewMode === 'link' }" 
-
-                    @click="viewMode = 'link'"
-
-                  >
-
-                    <IconFileText :size="16" />
-
-                    {{ $t('nodes.linkView') }}
-
-                  </button>
-
-                  <button 
-
-                    class="toggle-btn" 
-
-                    :class="{ active: viewMode === 'qrcode' }" 
-
-                    @click="viewMode = 'qrcode'"
-
-                  >
-
-                    <IconQrcode :size="16" />
-
-                    {{ $t('nodes.qrcodeView') }}
-
-                  </button>
-
-                </div>
-
-              </div>
-
-              
-
-              <!-- 链接视图 -->
-
-              <div v-if="viewMode === 'link'" class="link-card">
-
-                <pre class="link-text">{{ subscribeLink }}</pre>
-
-                <button class="copy-btn" @click="copySubscribeLink">
-
-                  <IconCopy :size="16" />
-
-                  {{ $t('common.copy') }}
-
-                </button>
-
-              </div>
-
-              
-
-              <!-- 二维码视图 -->
-
-              <div v-else-if="viewMode === 'qrcode'" class="qrcode-container">
-
-                <div v-if="qrCodeLoading" class="qrcode-loading">
-
-                  <div class="loader"></div>
-
-                  <p>{{ $t('common.loadingQRCode') }}</p>
-
-                </div>
-
-                <div v-else class="qrcode-wrapper">
-
-                  <img :src="qrCodeUrl" alt="QR Code" @load="qrCodeLoaded" />
-
-                  <button class="copy-btn" @click="copySubscribeLink">
-
-                    <IconCopy :size="16" />
-
-                    {{ $t('common.copy') }}
-
-                  </button>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            
-
-            <!-- 返回节点信息页面的按钮 -->
-
-            <div class="page-nav-btn-container">
-
-              <button class="page-nav-btn" @click="switchToPage('info')">
-
-                <IconArrowLeft :size="16" />
-
-                {{ $t('common.back') }}
-
-              </button>
 
             </div>
 
