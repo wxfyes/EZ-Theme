@@ -312,10 +312,10 @@ const config = {
     // 客户端下载链接  //可以改成文档链接直接在新标签页打开
     clientLinks: {
       ios: 'https://apps.apple.com/ca/app/shadowrocket/id932747118',
-      android: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.0.9%2B260528/TianQue-Mobile-arm64-v8a.apk',
+      android: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.3%2B260704/TianQue-Mobile-arm64-v8a.apk',
       macos: 'https://download.qqccjj.top',
-      windows: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.0.9%2B260528/TianQue-2.0.9+260528-Windows-Setup.exe',
-      linux: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.0.9%2B260528/TianQue-2.0.9+260528-Linux.tar.gz',
+      windows: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.3%2B260704/TianQue-2.1.3+260704-Windows-Setup.exe',
+      linux: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.3%2B260704/TianQue-2.1.3+260704-Linux.tar.gz',
       下载页面: 'https://download.qqccjj.top',
       // 安全收纳敏感链接，打包后自动混淆
       githubRepo: 'https://github.com/tianquege/TianQueClient',
@@ -772,7 +772,7 @@ const config = {
   // 客服系统配置
   CUSTOMER_SERVICE_CONFIG: {
     // 是否启用客服系统
-    enabled: true,
+    enabled: false,
 
     // 客服系统类型: 'crisp' 或 'other'
     // 注意：当客服类型为crisp时，系统会自动向Crisp传递用户数据

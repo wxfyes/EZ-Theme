@@ -42,6 +42,143 @@ export default {
       };
     });
     
+    const makeChatwootDraggable = () => {
+      const checkInterval = setInterval(() => {
+        const holder = document.querySelector('.woot-widget-holder') || document.querySelector('[class*="woot-widget"]');
+        if (holder) {
+          clearInterval(checkInterval);
+          initDraggable(holder);
+        }
+      }, 500);
+      
+      setTimeout(() => clearInterval(checkInterval), 20000);
+    };
+
+    const initDraggable = (el) => {
+      let startX = 0, startY = 0;
+      let initialLeft = 0, initialTop = 0;
+      let isDragging = false;
+      let hasMoved = false;
+
+      // 临时存储初始定位
+      const initPosition = () => {
+        const rect = el.getBoundingClientRect();
+        el.style.position = 'fixed';
+        el.style.left = rect.left + 'px';
+        el.style.top = rect.top + 'px';
+        el.style.bottom = 'auto';
+        el.style.right = 'auto';
+        el.style.zIndex = '99999999';
+      };
+
+      const onTouchStart = (e) => {
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        
+        // 每次开始拖动时重算定位，防止窗口展开/折叠导致坐标丢失
+        initPosition();
+        
+        const currentRect = el.getBoundingClientRect();
+        initialLeft = currentRect.left;
+        initialTop = currentRect.top;
+        isDragging = true;
+        hasMoved = false;
+      };
+
+      const onTouchMove = (e) => {
+        if (!isDragging) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+        
+        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+          hasMoved = true;
+        }
+
+        let newLeft = initialLeft + dx;
+        let newTop = initialTop + dy;
+
+        // 边界范围检查
+        const maxLeft = window.innerWidth - el.offsetWidth;
+        const maxTop = window.innerHeight - el.offsetHeight;
+        newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+        newTop = Math.max(0, Math.min(newTop, maxTop));
+
+        el.style.left = newLeft + 'px';
+        el.style.top = newTop + 'px';
+        
+        if (e.cancelable) e.preventDefault();
+      };
+
+      const onTouchEnd = (e) => {
+        isDragging = false;
+      };
+
+      el.addEventListener('touchstart', onTouchStart, { passive: false });
+      el.addEventListener('touchmove', onTouchMove, { passive: false });
+      el.addEventListener('touchend', onTouchEnd, { passive: false });
+
+      // 桌面端鼠标拖拽支持
+      const onMouseDown = (e) => {
+        // 如果是点击了输入框或按钮内部，不启动拖拽
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.closest('button')) {
+          return;
+        }
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        initPosition();
+        
+        const currentRect = el.getBoundingClientRect();
+        initialLeft = currentRect.left;
+        initialTop = currentRect.top;
+        isDragging = true;
+        hasMoved = false;
+        
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      };
+
+      const onMouseMove = (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+          hasMoved = true;
+        }
+
+        let newLeft = initialLeft + dx;
+        let newTop = initialTop + dy;
+
+        const maxLeft = window.innerWidth - el.offsetWidth;
+        const maxTop = window.innerHeight - el.offsetHeight;
+        newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+        newTop = Math.max(0, Math.min(newTop, maxTop));
+
+        el.style.left = newLeft + 'px';
+        el.style.top = newTop + 'px';
+      };
+
+      const onMouseUp = (e) => {
+        isDragging = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+
+      el.addEventListener('mousedown', onMouseDown);
+
+      // 核心：在捕获阶段拦截点击事件。如果用户进行了拖拽位移，则吞掉这一次 click，避免误触弹窗
+      el.addEventListener('click', (e) => {
+        if (hasMoved) {
+          e.preventDefault();
+          e.stopPropagation();
+          hasMoved = false;
+        }
+      }, true);
+    };
+
     const loadOtherService = () => {
       if (!CUSTOMER_SERVICE_CONFIG.customHtml) return;
       
@@ -69,6 +206,9 @@ export default {
           scriptElement.textContent = scriptContent;
           document.body.appendChild(scriptElement);
         }
+
+        // 启动可拖拽绑定
+        makeChatwootDraggable();
 
         // 监听 Chatwoot 准备就绪事件并自动传入 V2Board 用户数据
         window.addEventListener("chatwoot:ready", function () {

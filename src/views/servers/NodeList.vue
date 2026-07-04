@@ -124,17 +124,7 @@
 
             
 
-            <!-- 更多按钮 - 仅当配置允许显示节点倍率和允许查看节点详情时显示 -->
-
-            <div v-if="showNodeRate && allowViewNodeInfo" class="node-actions">
-
-              <button class="more-btn" @click="openNodeDetail(node)">
-
-                <IconDotsVertical :size="20" />
-
-              </button>
-
-            </div>
+            <!-- 更多按钮已完全禁用和隐藏，防止任何节点信息泄露或复制链接 -->
 
           </div>
 

@@ -108,6 +108,26 @@
 
               </template>
 
+              <template v-if="node.type === 'mieru'">
+
+                <div class="info-row">
+
+                  <span class="info-label">传输协议:</span>
+
+                  <span class="info-value">{{ node.tls_settings?.transport || 'TCP' }}</span>
+
+                </div>
+
+                <div class="info-row" v-if="node.tls_settings?.port_range">
+
+                  <span class="info-label">端口范围:</span>
+
+                  <span class="info-value">{{ node.tls_settings?.port_range }}</span>
+
+                </div>
+
+              </template>
+
             </div>
 
           </div>
@@ -253,7 +273,7 @@ const safeBase64Encode = (str) => {
 
 
 const subscribeLink = computed(() => {
-
+  return '连接复制已被管理员禁用';
   let nodeType = props.node.type?.toLowerCase();
 
   
@@ -362,6 +382,26 @@ const subscribeLink = computed(() => {
       }
       hysteria2Url += `#${encodeURIComponent(props.node.name)}`;
       return hysteria2Url;
+    }
+
+    case 'mieru': {
+      let username = userUuid;
+      let password = userUuid;
+      let mieruUrl = `mieru://${username}:${password}@${props.node.host}:${props.node.port}`;
+      const queryParams = [];
+      if (props.node.tls_settings) {
+        if (props.node.tls_settings.transport) {
+          queryParams.push(`transport=${encodeURIComponent(props.node.tls_settings.transport)}`);
+        }
+        if (props.node.tls_settings.port_range) {
+          queryParams.push(`port-range=${encodeURIComponent(props.node.tls_settings.port_range)}`);
+        }
+      }
+      if (queryParams.length > 0) {
+        mieruUrl += `?${queryParams.join('&')}`;
+      }
+      mieruUrl += `#${encodeURIComponent(props.node.name)}`;
+      return mieruUrl;
     }
 
     default:
