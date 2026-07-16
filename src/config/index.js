@@ -312,10 +312,10 @@ const config = {
     // 客户端下载链接  //可以改成文档链接直接在新标签页打开
     clientLinks: {
       ios: 'https://apps.apple.com/ca/app/shadowrocket/id932747118',
-      android: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.4%2B260709/TianQue-Mobile-arm64-v8a.apk',
-      macos: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.4%2B260709/TianQue-2.1.4+260709-amd64.dmg',
-      windows: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.4%2B260709/TianQue-2.1.4+260709-Windows-Setup.exe',
-      linux: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.4%2B260709/TianQue-2.1.4+260709-Linux.tar.gz',
+      android: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.5%2B260716/TianQue-Mobile-arm64-v8a.apk',
+      macos: 'https://download.qqccjj.top',
+      windows: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.5%2B260716/TianQue-2.1.5+260716-Windows-Setup.exe',
+      linux: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.5%2B260716/TianQue-2.1.5+260716-Linux.tar.gz',
       下载页面: 'https://download.qqccjj.top',
       // 安全收纳敏感链接，打包后自动混淆
       githubRepo: 'https://github.com/tianquege/TianQueClient',
