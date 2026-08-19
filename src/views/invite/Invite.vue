@@ -778,9 +778,22 @@ export default {
       const code = inviteCodes.value[selectedCodeIndex.value].code;
       
       if (INVITE_CONFIG.inviteLinkConfig && INVITE_CONFIG.inviteLinkConfig.linkMode === 'custom') {
-        const customDomain = INVITE_CONFIG.inviteLinkConfig.customDomain;
+        const customDomain = (INVITE_CONFIG.inviteLinkConfig.customDomain || '').trim();
         const domain = customDomain.endsWith('/') ? customDomain.slice(0, -1) : customDomain;
-        return `${domain}/#/register?code=${code}`;
+        try {
+          const urlObj = new URL(domain.startsWith('http') ? domain : `https://${domain}`);
+          const host = urlObj.hostname;
+          const scheme = urlObj.protocol || 'https:';
+          if (host.startsWith('www.')) {
+            // 固定标准链接模式 (例如: https://www.domain.com/#/register?code=xxx)
+            return `${domain}/#/register?code=${code}`;
+          } else {
+            // 一人一专属子域名模式 (例如: https://xxx.domain.com)
+            return `${scheme}//${code}.${host}`;
+          }
+        } catch(e) {
+          return `${domain}/#/register?code=${code}`;
+        }
       } else {
         return `${window.location.origin}/#/register?code=${code}`;
       }
