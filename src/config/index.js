@@ -490,8 +490,8 @@ const config = {
     inviteLinkConfig: {
       // 链接模式：'auto'=自动使用当前站点域名，'custom'=使用自定义域名
       linkMode: 'custom',
-      // 自定义域名，当linkMode为'custom'时使用
-      customDomain: 'https://www.tianque.cc'
+      // 自定义域名（不带 www. 将自动生成专属子域名: https://QQEJnq7J.tianque.cc）
+      customDomain: 'https://tianque.cc'
     },
 
     // 社交分享配置
