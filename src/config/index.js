@@ -312,10 +312,10 @@ const config = {
     // 客户端下载链接  //可以改成文档链接直接在新标签页打开
     clientLinks: {
       ios: 'https://apps.apple.com/ca/app/shadowrocket/id932747118',
-      android: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.5%2B260716/TianQue-Mobile-arm64-v8a.apk',
+      android: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.6%2B260723/TianQue-Mobile-arm64-v8a.apk',
       macos: 'https://download.qqccjj.top',
-      windows: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.5%2B260716/TianQue-2.1.5+260716-Windows-Setup.exe',
-      linux: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.5%2B260716/TianQue-2.1.5+260716-Linux.tar.gz',
+      windows: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.6%2B260723/TianQue-2.1.6+260723-Windows-Setup.exe',
+      linux: 'https://pyxy.126581.xyz/https://github.com/tianquege/TianQueClient/releases/download/v2.1.6%2B260723/TianQue-2.1.6+260723-Linux.tar.gz',
       下载页面: 'https://download.qqccjj.top',
       // 安全收纳敏感链接，打包后自动混淆
       githubRepo: 'https://github.com/tianquege/TianQueClient',
@@ -489,9 +489,9 @@ const config = {
     // 邀请链接配置
     inviteLinkConfig: {
       // 链接模式：'auto'=自动使用当前站点域名，'custom'=使用自定义域名
-      linkMode: 'auto',
+      linkMode: 'custom',
       // 自定义域名，当linkMode为'custom'时使用
-      customDomain: 'https://example.com'
+      customDomain: 'https://www.tianque.cc'
     },
 
     // 社交分享配置
@@ -766,7 +766,7 @@ const config = {
     showNodeDetails: false,
 
     // 是否允许查看节点详细信息（控制详情按钮和模态框）
-    allowViewNodeInfo: true
+    allowViewNodeInfo: false
   },
 
   // 客服系统配置
