@@ -102,12 +102,34 @@ module.exports = defineConfig({
       });
     }
     
+    config.module = config.module || {};
+    config.module.rules = config.module.rules || [];
+    config.module.rules.push({
+      test: /[\\/]node_modules[\\/]@tabler[\\/]icons-vue[\\/]/,
+      sideEffects: false
+    });
+
     if (isProd) {
       config.optimization = {
         ...config.optimization,
+        usedExports: true,
         splitChunks: {
           chunks: "all",
+          maxInitialRequests: 6,
+          minSize: 20000,
           cacheGroups: {
+            vue: {
+              name: "chunk-vue",
+              test: /[\\/]node_modules[\\/](vue|vue-router|vuex|vue-i18n|@vue)[\\/]/,
+              priority: 20,
+              chunks: "initial"
+            },
+            echarts: {
+              name: "chunk-echarts",
+              test: /[\\/]node_modules[\\/](echarts|zrender)[\\/]/,
+              priority: 15,
+              chunks: "async"
+            },
             vendors: { 
               name: "chunk-vendors", 
               test: /[\\/]node_modules[\\/]/, 
@@ -145,7 +167,7 @@ module.exports = defineConfig({
         args[0].templateParameters = {
           ...args[0].templateParameters,
           injectCustomScript: `
-            ${enableConfigJS ? `<script src="${extraScriptFileName}"></script>` : ""}
+            ${enableConfigJS ? `<script>document.write('<script src="${extraScriptFileName}?_t=' + Date.now() + '"><\\/script>');</script>` : ""}
           `,
         };
         return args;

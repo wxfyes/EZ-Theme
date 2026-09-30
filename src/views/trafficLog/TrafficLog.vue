@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 
   <div class="trafficlog-container">
 
@@ -238,7 +238,7 @@ import { TRAFFICLOG_CONFIG } from '@/utils/baseConfig';
 
 
 
-import * as echarts from 'echarts';
+import echarts from '@/utils/echarts';
 
 import { createDebouncedUpdate } from '@/utils/componentLifecycle';
 

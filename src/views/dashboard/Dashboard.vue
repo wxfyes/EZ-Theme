@@ -732,7 +732,8 @@ import {
   onUnmounted,
   reactive,
   ref,
-  watch
+  watch,
+  defineAsyncComponent
 } from 'vue';
 import {useRouter} from 'vue-router';
 import {useI18n} from 'vue-i18n';
@@ -779,7 +780,7 @@ import {
   IconCalendarPlus
 } from '@tabler/icons-vue';
 import CommonDialog from '@/components/popup/CommonDialog.vue';
-import TrafficTrendChart from '@/components/dashboard/TrafficTrendChart.vue';
+const TrafficTrendChart = defineAsyncComponent(() => import('@/components/dashboard/TrafficTrendChart.vue'));
 import {getNotices, getSubscribe, getUserConfig, getUserInfo, getUserStats, setNextPeriod} from '@/api/dashboard';
 import {updateRemindSettings} from '@/api/user';
 import {useToast} from '@/composables/useToast';

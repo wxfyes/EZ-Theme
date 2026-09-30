@@ -35,7 +35,7 @@ import { IconAlertCircle, IconFileOff } from '@tabler/icons-vue';
 import { getTrafficLog } from '@/api/trafficLog';
 import { formatTraffic, formatDate } from '@/utils/formatters';
 import { TRAFFICLOG_CONFIG } from '@/utils/baseConfig';
-import * as echarts from 'echarts';
+import echarts from '@/utils/echarts';
 import { createDebouncedUpdate } from '@/utils/componentLifecycle';
 
 const { t } = useI18n();

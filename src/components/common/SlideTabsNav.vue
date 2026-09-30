@@ -193,7 +193,7 @@ export default {
       return timer;
     };
 
-    let positionCheckInterval = null;
+    let handlePopState = null;
     
     const checkAndFixSliderPosition = () => {
       if (!isComponentMounted.value || !tabsNav.value) return;
@@ -301,75 +301,36 @@ export default {
         }, 300);
       });
       
-      [100, 300, 500, 1000].forEach(delay => {
-        safeTimeout(() => {
-          if (tabsNav.value) {
-            const index = findIndexByRouteName(route.name);
-            updateSliderPosition(index, delay > 300);
-          }
-        }, delay);
-      });
-      
-      safeTimeout(() => {
-        if (isComponentMounted.value && tabsNav.value) {
-          const index = findIndexByRouteName(route.name);
-          updateSliderPosition(index, false);
-          safeTimeout(() => {
-            updateSliderPosition(index, true);
-          }, 50);
-        }
-      }, 1500);
-      
-      window.addEventListener('load', () => {
-        if (isComponentMounted.value && tabsNav.value) {
-          const index = findIndexByRouteName(route.name);
-          updateSliderPosition(index, false);
-          safeTimeout(() => {
-            updateSliderPosition(index, true);
-          }, 100);
-        }
-      });
-      
-      const debouncedResize = debounce(handleResize, 100);
-      window.addEventListener('resize', debouncedResize);
-      
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      
-      positionCheckInterval = setInterval(() => {
-        if (isComponentMounted.value) {
-          checkAndFixSliderPosition();
-        }
-      }, 3000);
-      
-      safeTimeout(() => {
-        handleResize();
-      }, 1500);
-      
-      window.addEventListener('popstate', () => {
-        if (isComponentMounted.value && tabsNav.value) {
-          safeTimeout(() => {
-            const index = findIndexByRouteName(route.name);
-            updateSliderPosition(index, false);
-            safeTimeout(() => {
-              updateSliderPosition(index, true);
-            }, 50);
-          }, 0);
-        }
-      });
-    });
-    
-    onUnmounted(() => {
-      if (stopRouteWatch) {
-        stopRouteWatch();
-        stopRouteWatch = null;
-      }
-      
-      if (positionCheckInterval) {
-        clearInterval(positionCheckInterval);
-        positionCheckInterval = null;
-      }
-      
-      window.removeEventListener('popstate', () => {});
+      safeTimeout(() => {
+        if (tabsNav.value) {
+          const index = findIndexByRouteName(route.name);
+          updateSliderPosition(index, false);
+          isTransitionEnabled.value = true;
+        }
+      }, 100);
+      
+      const debouncedResize = debounce(handleResize, 100);
+      window.addEventListener('resize', debouncedResize);
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      
+      handlePopState = () => {
+        if (isComponentMounted.value && tabsNav.value) {
+          const index = findIndexByRouteName(route.name);
+          updateSliderPosition(index, true);
+        }
+      };
+      window.addEventListener('popstate', handlePopState);
+    });
+    
+    onUnmounted(() => {
+      if (stopRouteWatch) {
+        stopRouteWatch();
+        stopRouteWatch = null;
+      }
+      if (handlePopState) {
+        window.removeEventListener('popstate', handlePopState);
+        handlePopState = null;
+      }
     });
     
     onBeforeUnmount(() => {

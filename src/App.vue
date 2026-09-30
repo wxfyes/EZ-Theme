@@ -96,12 +96,6 @@ import CrispEmbed from '@/components/common/CrispEmbed.vue';
 import ResourcePreloader from '@/components/common/ResourcePreloader.vue';
 import pageCache from '@/utils/pageCache';
 import { IconGift } from '@tabler/icons-vue';
-// NProgress 已禁用以提升加载感官速度
-const NProgress = {
-  start: () => {},
-  done: () => {},
-  configure: () => {}
-};
 
 export default {
   name: 'App',
@@ -129,23 +123,7 @@ export default {
     
     const customerServiceConfig = computed(() => CUSTOMER_SERVICE_CONFIG);
     
-    router.beforeEach((to, from, next) => {
-      if (to.meta.keepAlive && to.name) {
-        pageCache.addRouteToCache(to.name);
-      }
-      
-      if (from.name && from.meta.keepAlive === false) {
-        pageCache.removeRouteFromCache(from.name);
-      }
-      
-      NProgress.start();
-      next();
-    });
-    
-    router.afterEach(() => {
-      NProgress.done();
-    });
-    
+        
     const handleRedirectParam = () => {
       let redirectParam = null;
       
@@ -172,8 +150,8 @@ export default {
       handleRedirectParam();
     });
     
-    const username = computed(() => store.getters.username);
-    const avatarUrl = computed(() => store.getters.avatarUrl || '');
+    const username = computed(() => store.getters.userInfo?.email || store.getters.userInfo?.username || '');
+    const avatarUrl = computed(() => store.getters.userInfo?.avatar_url || '');
     
     const languageChangedSignal = ref(0);
     
