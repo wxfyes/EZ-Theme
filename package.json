@@ -5,7 +5,9 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "preview": "node build-preview.js"
+    "preview": "node build-preview.js",
+    "deploy": "node scripts/deploy-to-v2board.js",
+    "deploy:clean": "node scripts/deploy-to-v2board.js --clean"
   },
   "keywords": [],
   "author": "",
