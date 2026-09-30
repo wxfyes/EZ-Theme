@@ -2798,10 +2798,15 @@ export default {
               rgba(255, 255, 255, 0.2) 50%,
               rgba(255, 255, 255, 0) 100%
       );
-      animation: card-shimmer 3s infinite;
-      transform: skewX(-25deg);
-    }
+    // 优化：仅在鼠标悬停时触发流光，静止时不消耗 CPU 算力
+    display: none;
   }
+
+  &:hover::before {
+    display: block;
+    animation: card-shimmer 1.2s ease;
+  }
+}
 }
 
 @keyframes card-shimmer {
@@ -2987,8 +2992,13 @@ export default {
           rgba(255, 255, 255, 0.2) 50%,
           rgba(255, 255, 255, 0) 100%
   );
-  animation: card-shimmer 3s infinite;
   transform: skewX(-25deg);
+  display: none;
+}
+
+.stats-card.doc-card:hover::after {
+  display: block;
+  animation: card-shimmer 1.2s ease;
 }
 
 @keyframes card-shimmer {

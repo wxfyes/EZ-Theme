@@ -157,14 +157,8 @@ input, button, textarea, select {
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* 核心性能拯救：完全禁用高开销的 backdrop-filter 高斯模糊运算，释放 CPU 占用 */
-.site-logo,
-.slide-tabs-nav,
-.nav-card,
-header,
-.top-toolbar,
-.stats-card,
-.dashboard-card {
+/* 核心性能拯救：全局禁用高开销的 backdrop-filter 高斯模糊运算，释放 CPU/GPU 算力 */
+*, *::before, *::after {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }

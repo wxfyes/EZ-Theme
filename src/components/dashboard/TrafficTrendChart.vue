@@ -235,12 +235,12 @@ const initChart = () => {
         data: totalData,
         color: themeColor
       }
-    ]
+    ],
+    animationDuration: 300,
+    animationEasing: 'linear'
   };
   
   chartInstance.setOption(option);
-  
-  window.addEventListener('resize', handleResize);
 };
 
 const handleResize = () => {
