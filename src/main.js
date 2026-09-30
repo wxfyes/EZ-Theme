@@ -42,8 +42,11 @@ if (typeof window.hideAppLoading === 'function') {
   if (loadingElement) loadingElement.style.display = 'none';
 }
 
-// 后台初始化用户信息
-store.dispatch('initUserInfo');
+// 仅当用户已登录存在有效 token 时，才在后台初始化用户信息
+const userToken = localStorage.getItem('token');
+if (userToken && userToken !== 'undefined' && userToken !== 'null' && userToken.trim() !== '') {
+  store.dispatch('initUserInfo');
+}
 
 // 确保初始语言匹配用户设定
 const savedLang = localStorage.getItem('language') || 'zh-CN';

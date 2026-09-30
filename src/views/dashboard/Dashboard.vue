@@ -1784,17 +1784,12 @@ export default {
       }
     };
 
-    onMounted(async () => {
-      await fetchUserConfig();
-
+    onMounted(() => {
+      fetchUserConfig();
       fetchUserInfo();
-
       fetchSubscribe();
-
       fetchNotices();
-
       fetchUserStats();
-
       updateQRCodeUrl();
     });
 

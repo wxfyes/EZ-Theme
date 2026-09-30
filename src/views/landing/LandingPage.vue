@@ -16,8 +16,8 @@
           <svg v-if="!isDarkTheme" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path><path d="M12 2l0 2"></path><path d="M12 20l0 2"></path><path d="M20 12l2 0"></path><path d="M2 12l2 0"></path><path d="M18.5 5.5l-1.5 1.5"></path><path d="M18.5 18.5l-1.5 -1.5"></path><path d="M5.5 5.5l1.5 1.5"></path><path d="M5.5 18.5l1.5 -1.5"></path></svg>
           <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9a9 9 0 1 1 -9 -9z"></path></svg>
         </div>
-        <a href="javascript:void(0)" @click="navigateTo('login')" class="button secondary-button">登录</a>
-        <a href="javascript:void(0)" @click="navigateTo('register')" class="button primary-button">注册</a>
+        <router-link to="/login" class="button secondary-button">登录</router-link>
+        <router-link to="/register" class="button primary-button">注册</router-link>
       </div>
       <button class="mobile-menu-button" @click="toggleMobileMenu">☰</button>
     </header>
@@ -31,8 +31,8 @@
         <span>切换主题</span>
       </div>
       <div class="mobile-nav-links">
-        <a href="javascript:void(0)" @click="navigateTo('login'); toggleMobileMenu();">登录账户</a>
-        <a href="javascript:void(0)" @click="navigateTo('register'); toggleMobileMenu();">注册账户</a>
+        <router-link to="/login" @click="toggleMobileMenu">登录账户</router-link>
+        <router-link to="/register" @click="toggleMobileMenu">注册账户</router-link>
         <a href="javascript:void(0)" @click="scrollToSection('features'); toggleMobileMenu();">特性介绍</a>
         <a href="javascript:void(0)" @click="scrollToSection('download'); toggleMobileMenu();">客户端下载</a>
         <a v-if="siteConfig.showPricing" href="javascript:void(0)" @click="scrollToSection('pricing'); toggleMobileMenu();">价格方案</a>
@@ -45,8 +45,8 @@
       <p class="animate-up delay-1">{{ siteConfig.landingSubtitle || '高速稳定、安全私密，助力业务数字化转型' }}</p>
       <div class="hero-buttons animate-up delay-2">
         <div class="main-action-buttons">
-          <a href="javascript:void(0)" @click="navigateTo('login')" class="button primary-button">立即登录</a>
-          <a href="javascript:void(0)" @click="navigateTo('register')" class="button outline-button">立即注册</a>
+          <router-link to="/login" class="button primary-button">立即登录</router-link>
+          <router-link to="/register" class="button outline-button">立即注册</router-link>
         </div>
         <div class="hero-divider"></div>
         <a href="javascript:void(0)" @click="scrollToSection('download')" class="button outline-button download-button-hero">

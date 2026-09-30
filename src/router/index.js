@@ -572,123 +572,41 @@ const router = createRouter({
 
 
 
-router.beforeEach(async (to, from, next) => {
-
+router.beforeEach((to, from, next) => {
   if (to.name !== 'BrowserRestricted' && isBrowserRestricted()) {
-
-    next({ name: 'BrowserRestricted' });
-
-    return;
-
+    return next({ name: 'BrowserRestricted' });
   }
 
-  
-
-  // 跳过阻塞检测，直接导航
-  // ... (保留注释结构)
-
-  
-
-  // 设置页面标题
-  const setPageTitle = () => {
-    if (to.meta.titleKey) {
-      try {
-        // 直接尝试获取翻译
-        if (i18n.global && i18n.global.t) {
-          const title = i18n.global.t(to.meta.titleKey);
-          if (title && title !== to.meta.titleKey) {
-            document.title = SITE_CONFIG.siteName ? `${title} - ${SITE_CONFIG.siteName}` : title;
-            return;
-          }
-        }
-      } catch (error) {
-        console.warn('获取页面标题失败:', error);
+  if (to.meta.titleKey && i18n.global && i18n.global.t) {
+    try {
+      const title = i18n.global.t(to.meta.titleKey);
+      if (title && title !== to.meta.titleKey) {
+        document.title = SITE_CONFIG.siteName ? `${title} - ${SITE_CONFIG.siteName}` : title;
+      } else {
+        document.title = SITE_CONFIG.siteName || 'Dashboard';
       }
+    } catch (e) {
+      document.title = SITE_CONFIG.siteName || 'Dashboard';
     }
-    // 如果翻译失败，使用默认标题
+  } else {
     document.title = SITE_CONFIG.siteName || 'Dashboard';
-  };
-
-  // 立即设置标题
-  setPageTitle();
-  
-  // 延迟再次尝试设置标题，确保语言包完全加载
-  setTimeout(() => {
-    if (to.meta.titleKey) {
-      try {
-        if (i18n.global && i18n.global.t) {
-          const title = i18n.global.t(to.meta.titleKey);
-          if (title && title !== to.meta.titleKey) {
-            document.title = `${title} - ${SITE_CONFIG.siteName}`;
-          }
-        }
-      } catch (error) {
-        // 忽略延迟设置时的错误
-      }
-    }
-  }, 100);
-
-  
+  }
 
   const token = localStorage.getItem('token');
 
-  
-
-  const loginStatusChanged = 
-
-    (from.meta.requiresAuth && !to.meta.requiresAuth) || 
-
-    (!from.meta.requiresAuth && to.meta.requiresAuth);
-
-  
-
-  if (loginStatusChanged) {
-
-    try {
-
-      const { setLanguage } = await import('@/i18n');
-      const currentLang = localStorage.getItem('language') || 'zh-CN';
-      await setLanguage(currentLang);
-      console.log('路由状态改变，重新加载语言包完成');
-
-    } catch (error) {
-
-    }
-
-  }
-
-  
-
   if (to.meta.requiresAuth && !token) {
-
-    next({ name: 'Login' });
-
+    return next({ name: 'Login' });
   } else if (to.path === '/login' && token) {
-
-    next({ path: '/dashboard' });
-
-  } else {
-
-    document.body.classList.add('page-transitioning');
-
-    
-
-    if (to.meta.keepAlive && to.name) {
-
-      pageCache.addRouteToCache(to.name);
-
-    } else if (to.name && to.meta.keepAlive === false) {
-
-      pageCache.removeRouteFromCache(to.name);
-
-    }
-
-    
-
-    next();
-
+    return next({ path: '/dashboard' });
   }
 
+  if (to.meta.keepAlive && to.name) {
+    pageCache.addRouteToCache(to.name);
+  } else if (to.name && to.meta.keepAlive === false) {
+    pageCache.removeRouteFromCache(to.name);
+  }
+
+  next();
 });
 
 

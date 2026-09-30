@@ -167,7 +167,7 @@ module.exports = defineConfig({
         args[0].templateParameters = {
           ...args[0].templateParameters,
           injectCustomScript: `
-            ${enableConfigJS ? `<script>document.write('<script src="${extraScriptFileName}?_t=' + Date.now() + '"><\\/script>');</script>` : ""}
+            ${enableConfigJS ? `<script src="${extraScriptFileName}"></script>` : ""}
           `,
         };
         return args;
