@@ -621,12 +621,14 @@ router.afterEach(() => {
 
 });
 
-// 全局捕获由于静态文件发版更新导致的旧 Chunk 404 错位，自动静默刷新自愈，杜绝用户手动强刷
+// 全局捕获由于静态文件发版更新导致的旧 Chunk 404 错位，带时间戳强行击穿本地缓存自愈
 router.onError((error) => {
-  const pattern = /Loading chunk (\d)+ failed|ChunkLoadError/i;
+  const pattern = /Loading (CSS )?chunk .* failed|ChunkLoadError/i;
   if (pattern.test(error.message) || error.name === 'ChunkLoadError') {
-    console.warn('检测到系统版本更新，正在自动载入最新资源...');
-    window.location.reload();
+    console.warn('检测到系统版本更新，正在穿透本地缓存自愈...');
+    const now = Date.now();
+    const hash = window.location.hash || '#/';
+    window.location.replace(window.location.origin + window.location.pathname + '?_t=' + now + hash);
   }
 });
 
