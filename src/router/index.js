@@ -621,6 +621,15 @@ router.afterEach(() => {
 
 });
 
+// 全局捕获由于静态文件发版更新导致的旧 Chunk 404 错位，自动静默刷新自愈，杜绝用户手动强刷
+router.onError((error) => {
+  const pattern = /Loading chunk (\d)+ failed|ChunkLoadError/i;
+  if (pattern.test(error.message) || error.name === 'ChunkLoadError') {
+    console.warn('检测到系统版本更新，正在自动载入最新资源...');
+    window.location.reload();
+  }
+});
+
 
 
 function getCustomOrDefaultLandingPage() {
