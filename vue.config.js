@@ -25,7 +25,7 @@ if (isProd && enableConfigJS) {
 }
 
 module.exports = defineConfig({
-  publicPath: "./",
+  publicPath: process.env.VUE_APP_PUBLIC_PATH || "./",
   outputDir: "dist",
   assetsDir: "static",
   lintOnSave: false,

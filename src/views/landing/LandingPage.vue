@@ -435,7 +435,13 @@ export default {
       
       try {
         const echarts = await import('echarts');
-        const res = await fetch('/world.json');
+        let res;
+        try {
+          res = await fetch('/theme/ez/world.json');
+          if (!res.ok) throw new Error();
+        } catch (e) {
+          res = await fetch('/world.json');
+        }
         const worldJson = await res.json();
         
         echarts.registerMap('world', worldJson);

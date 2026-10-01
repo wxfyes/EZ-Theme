@@ -4,6 +4,42 @@
 
 import {getAvailableApiUrl} from '@/utils/apiAvailabilityChecker';
 
+// 联动 v2board 后台主题配置：若 Blade 模板注入了 window.settings.theme_config，自动实时覆盖主题配置
+if (typeof window !== 'undefined' && window.settings && window.settings.theme_config) {
+    try {
+        const tc = window.settings.theme_config;
+        window.__SYS_CFG__ = window.__SYS_CFG__ || {};
+
+        // 站点基础配置
+        window.__SYS_CFG__.SITE_CONFIG = window.__SYS_CFG__.SITE_CONFIG || {};
+        if (tc.site_name) window.__SYS_CFG__.SITE_CONFIG.siteName = tc.site_name;
+        if (tc.site_logo) {
+            window.__SYS_CFG__.SITE_CONFIG.siteLogo = tc.site_logo;
+            window.__SYS_CFG__.SITE_CONFIG.logo = tc.site_logo;
+        }
+        if (tc.site_subtitle) window.__SYS_CFG__.SITE_CONFIG.siteSubtitle = tc.site_subtitle;
+        if (tc.enable_landing_page !== undefined && tc.enable_landing_page !== '') {
+            window.__SYS_CFG__.SITE_CONFIG.enableLandingPage = tc.enable_landing_page === '1' || tc.enable_landing_page === 1;
+        }
+
+        // 客户端下载卡片开关与下载链接 (完全受 v2board 后台主题设置实时控制)
+        window.__SYS_CFG__.CLIENT_CONFIG = window.__SYS_CFG__.CLIENT_CONFIG || {};
+        if (tc.show_download_card !== undefined && tc.show_download_card !== '') {
+            window.__SYS_CFG__.CLIENT_CONFIG.showDownloadCard = tc.show_download_card === '1' || tc.show_download_card === 1;
+        }
+        window.__SYS_CFG__.CLIENT_CONFIG.clientLinks = window.__SYS_CFG__.CLIENT_CONFIG.clientLinks || {};
+        if (tc.client_windows) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.windows = tc.client_windows;
+        if (tc.client_android) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.android = tc.client_android;
+        if (tc.client_ios) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.ios = tc.client_ios;
+        if (tc.client_macos) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.macos = tc.client_macos;
+        if (tc.client_linux) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.linux = tc.client_linux;
+        if (tc.client_page) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks['下载页面'] = tc.client_page;
+        if (tc.telegram_group) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.telegramGroup = tc.telegram_group;
+    } catch (e) {
+        console.warn('解析后台主题配置失败:', e);
+    }
+}
+
 const getConfig = (key, defaultValue) => {
     if (typeof window !== 'undefined' && window.__SYS_CFG__ && window.__SYS_CFG__[key] !== undefined) {
         return window.__SYS_CFG__[key];
