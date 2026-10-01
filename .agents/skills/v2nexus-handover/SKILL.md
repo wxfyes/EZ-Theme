@@ -136,10 +136,11 @@ git pull
 
 ## 5. 待跟进事项与未来规划建议
 
-若用户提出后续需求，可优先参考以下方向：
-1. **EZ-Theme 插件化改造（重点）**：
-   - 现状：过去的 EZ 主题历史打包方式是将静态文件直接扔在 `v2board/public/` 根目录，导致整站 public 被污染且无法通过后台自由开关；
-   - 目标：将 `e:\GitHub\EZ-Theme` 按照 V2Nexus 的标准插件化架构改造，产物全部收拢至 `public/theme/ez/`，补齐 `config.json` 和 `dashboard.blade.php`，彻底清理 `public/` 根目录残留静态资源，实现 v2board 后台自由在 `ez` 与 `v2nexus` 之间一键切换；
+1. **EZ-Theme 插件化改造（✅ 已交付完成）**：
+   - 已将 `e:\GitHub\EZ-Theme` 按照标准插件化架构改造完成；
+   - 产物 100% 收拢至 `public/theme/ez/`，补齐了 `config.json` 与 `dashboard.blade.php`；
+   - 彻底清理了 `v2board/public/` 根目录下历史残留的静态文件（`index.html`、`landingpage.html`、`config.js`、`world.json` 等）；
+   - 在 v2board 后台【系统配置 -> 主题配置】中已可自由切换 `ez` 与 `v2nexus`，并支持后台修改客户端下载链接即时生效！
 2. **暗黑模式多主题色板微调**：进一步优化暗黑模式在高对比度屏幕上的柔和度；
 3. **多语言国际化 (i18n)**：如有海外用户需求，可预留 Vue-i18n 多语言适配接口；
 4. **节点延迟测速 Ping 组件**：优化节点列表卡片，加入更直观的延迟小圆点与节点测速展示。
