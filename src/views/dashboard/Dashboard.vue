@@ -1981,8 +1981,12 @@ export default {
       } catch (e) {}
     };
 
-    // 仅限周期有效订阅会员展示每日签到
+    // 仅限周期有效订阅会员展示每日签到 (且受后台主题设置 checkin_enable 控制)
     const isPeriodicSubscriber = computed(() => {
+      if (typeof window !== 'undefined') {
+        if (window.__SYS_CFG__ && window.__SYS_CFG__.checkinEnable === false) return false;
+        if (window.settings?.theme_config?.checkin_enable === '0') return false;
+      }
       if (!hasPlan.value || !userPlanId.value) return false;
       if (userPlan.value.isExpireDatePermanent || userStats.isRemainingDaysPermanent) return false;
       if (isExpired.value) return false;

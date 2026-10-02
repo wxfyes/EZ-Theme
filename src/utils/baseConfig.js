@@ -35,6 +35,9 @@ if (typeof window !== 'undefined' && window.settings && window.settings.theme_co
         if (tc.client_linux) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.linux = tc.client_linux;
         if (tc.client_page) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks['下载页面'] = tc.client_page;
         if (tc.telegram_group) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.telegramGroup = tc.telegram_group;
+        if (tc.checkin_enable !== undefined && tc.checkin_enable !== '') {
+            window.__SYS_CFG__.checkinEnable = tc.checkin_enable === '1' || tc.checkin_enable === 1;
+        }
     } catch (e) {
         console.warn('解析后台主题配置失败:', e);
     }
