@@ -219,7 +219,7 @@
                 <span class="">{{ $t('dashboard.resetTraffic') }}</span>
 
               </button>
-              <button class="btn-outline" v-if="allowNewPeriod==='1'&&showResetTrafficButton" @click="showPopup=true">
+              <button class="btn-outline" v-if="showNewPeriodBtn" @click="showPopup=true">
                 <IconCalendarPlus :size="16" class="btn-icon"/>
                 <span>{{ $t('dashboard.activateDataCycleInAdvance') }}</span>
               </button>
@@ -1993,7 +1993,22 @@ export default {
       return true;
     });
 
+    // 提前开启新周期展示条件：流量耗尽 + 剩余时间大于30天 + 后台主题及系统允许
+    const showNewPeriodBtn = computed(() => {
+      if (typeof window !== 'undefined') {
+        if (window.__SYS_CFG__ && window.__SYS_CFG__.enableNewPeriod === false) return false;
+        if (window.settings?.theme_config?.enable_new_period === '0') return false;
+      }
+      if (allowNewPeriod.value !== '1' && allowNewPeriod.value !== 1) return false;
+      if (!hasPlan.value || !userPlanId.value || userPlan.value.isExpireDatePermanent || userStats.isRemainingDaysPermanent) return false;
+      if (!isTrafficDepleted.value) return false;
+      const days = parseInt(userStats.remainingDays, 10);
+      if (isNaN(days) || days <= 30) return false;
+      return true;
+    });
+
     return {
+      showNewPeriodBtn,
       isPeriodicSubscriber,
       showCheckinModal,
       handleCheckinSuccess,

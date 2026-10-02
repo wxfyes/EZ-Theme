@@ -38,6 +38,9 @@ if (typeof window !== 'undefined' && window.settings && window.settings.theme_co
         if (tc.checkin_enable !== undefined && tc.checkin_enable !== '') {
             window.__SYS_CFG__.checkinEnable = tc.checkin_enable === '1' || tc.checkin_enable === 1;
         }
+        if (tc.enable_new_period !== undefined && tc.enable_new_period !== '') {
+            window.__SYS_CFG__.enableNewPeriod = tc.enable_new_period === '1' || tc.enable_new_period === 1;
+        }
     } catch (e) {
         console.warn('解析后台主题配置失败:', e);
     }
