@@ -84,4 +84,20 @@ export function getUserSubscribe() {
     url: '/user/getSubscribe',
     method: 'get'
   });
-} 
+}
+
+// 每日签到与状态查询
+export function getCheckinStatus() {
+  return request({
+    url: '/user/checkin/status',
+    method: 'get'
+  });
+}
+
+export function doCheckin() {
+  return request({
+    url: '/user/checkin/do',
+    method: 'post'
+  });
+}
+

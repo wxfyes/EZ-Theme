@@ -14,8 +14,12 @@
       </div>
 
       <div class="dashboard-card welcome-card" :class="{'card-animate': !loading.userInfo}">
-        <div class="card-header">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
           <h2 class="card-title">{{ $t('dashboard.welcome') }}</h2>
+          <button class="ez-checkin-btn" @click="showCheckinModal = true">
+            <IconGift :size="16" />
+            <span>每日签到</span>
+          </button>
         </div>
         <div class="card-body">
           <p class="">{{ $t('dashboard.welcomeDesc') }}</p>
@@ -714,6 +718,12 @@
         </div>
       </div>
 
+      <!-- 每日签到差额补齐弹窗 -->
+      <CheckinModal
+        :show="showCheckinModal"
+        @close="showCheckinModal = false"
+        @checkinSuccess="handleCheckinSuccess"
+      />
 
     </div>
   </transition>
@@ -777,9 +787,11 @@ import {
   IconWaveSawTool,
   IconWaveSine,
   IconX,
+  IconGift,
   IconCalendarPlus
 } from '@tabler/icons-vue';
 import CommonDialog from '@/components/popup/CommonDialog.vue';
+import CheckinModal from '@/components/dashboard/CheckinModal.vue';
 const TrafficTrendChart = defineAsyncComponent(() => import('@/components/dashboard/TrafficTrendChart.vue'));
 import {getNotices, getSubscribe, getUserConfig, getUserInfo, getUserStats, setNextPeriod} from '@/api/dashboard';
 import {updateRemindSettings} from '@/api/user';
@@ -855,6 +867,8 @@ md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
 export default {
   name: 'UserDashboard',
   components: {
+    CheckinModal,
+    IconGift,
     IconBox,
     IconSend,
     IconCalendar,
@@ -1958,7 +1972,18 @@ export default {
       return Math.min(Math.max(Math.round((remainingBytes / totalBytes) * 100), 0), 100);
     });
 
+    const showCheckinModal = ref(false);
+    const handleCheckinSuccess = async () => {
+      try {
+        loading.subscribe = false;
+        userPlan.value.subscribeUrl = '';
+        await fetchSubscribe();
+      } catch (e) {}
+    };
+
     return {
+      showCheckinModal,
+      handleCheckinSuccess,
       userStats,
       userBalance,
       currencySymbol,
@@ -4632,6 +4657,28 @@ a.eztheme-btn {
   }
   100% {
     transform: translateX(100%);
+  }
+}
+.ez-checkin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, #f59e0b, #eab308);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25);
+  transition: all 0.25s ease;
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(245, 158, 11, 0.35);
+  }
+  &:active {
+    transform: scale(0.96);
   }
 }
 </style>
