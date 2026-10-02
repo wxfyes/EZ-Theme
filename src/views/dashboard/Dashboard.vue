@@ -16,7 +16,7 @@
       <div class="dashboard-card welcome-card" :class="{'card-animate': !loading.userInfo}">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
           <h2 class="card-title">{{ $t('dashboard.welcome') }}</h2>
-          <button class="ez-checkin-btn" @click="showCheckinModal = true">
+          <button v-if="isPeriodicSubscriber" class="ez-checkin-btn" @click="showCheckinModal = true">
             <IconGift :size="16" />
             <span>每日签到</span>
           </button>
@@ -718,7 +718,7 @@
         </div>
       </div>
 
-      <!-- 每日签到差额补齐弹窗 -->
+      <!-- 每日签到专属福利礼包弹窗 -->
       <CheckinModal
         :show="showCheckinModal"
         @close="showCheckinModal = false"
@@ -1981,7 +1981,16 @@ export default {
       } catch (e) {}
     };
 
+    // 仅限周期有效订阅会员展示每日签到
+    const isPeriodicSubscriber = computed(() => {
+      if (!hasPlan.value || !userPlanId.value) return false;
+      if (userPlan.value.isExpireDatePermanent || userStats.isRemainingDaysPermanent) return false;
+      if (isExpired.value) return false;
+      return true;
+    });
+
     return {
+      isPeriodicSubscriber,
       showCheckinModal,
       handleCheckinSuccess,
       userStats,

@@ -11,9 +11,9 @@
             <div>
               <h3 class="dialog-title flex items-center gap-2">
                 <span>每日签到</span>
-                <span class="checkin-badge">差额补齐</span>
+                <span class="checkin-badge">福利礼包</span>
               </h3>
-              <p class="checkin-subtitle">抽取套餐差额流量，免费补齐标准容量</p>
+              <p class="checkin-subtitle">每日打卡抽取专属随机流量，实时累加至套餐</p>
             </div>
           </div>
           <button class="dialog-close-btn" @click="handleClose">
@@ -55,26 +55,26 @@
             <p class="claimed-tip">明日 00:00 刷新打卡机会，明天继续来领~</p>
           </div>
 
-          <!-- 本月累计进度条 -->
+          <!-- 本月累计收获进度条 -->
           <div class="checkin-progress-box">
             <div class="progress-info-row">
               <span class="consecutive-text">
                 <IconFlame :size="16" class="flame-icon" />
                 <span>连续打卡 <strong>{{ statusData.consecutive_days || 0 }}</strong> 天</span>
               </span>
-              <span class="percent-text">本月进度：{{ statusData.month_percentage }}%</span>
+              <span class="percent-text">本月已领：<strong style="color: #f59e0b;">{{ statusData.month_used_formatted || '0 B' }}</strong></span>
             </div>
 
             <div class="progress-bar-track">
               <div
                 class="progress-bar-fill"
-                :style="{ width: `${Math.min(100, statusData.month_percentage || 0)}%` }"
+                :style="{ width: `${Math.min(100, Math.max(8, statusData.month_percentage || 0))}%` }"
               ></div>
             </div>
 
             <div class="progress-labels">
-              <span>已领差额：{{ statusData.month_used_formatted || '0 B' }}</span>
-              <span>本月上限：{{ statusData.month_limit_formatted || '0 B' }}</span>
+              <span>🌟 坚持打卡，畅享更多额外流量</span>
+              <span style="color: #10b981; font-weight: 500;">✨ 每日惊喜连连</span>
             </div>
           </div>
 
@@ -105,7 +105,7 @@
 
           <!-- 规则提示 -->
           <div class="checkin-rules-box">
-            💡 <strong>活动细则</strong>：系统根据您的套餐容量阶梯赠送标准差额流量（每 1024 GB 对应 24 GB 差额）。每天打卡赠送随机额度，当月可全额补齐，领取的流量直接累加至套餐包中！
+            💡 <strong>活动细则</strong>：每日打卡均可随机抽取专属流量盲盒礼包，每天签到赠送随机额度，领取的流量直接实时累加至套餐包中！
           </div>
         </div>
       </div>
