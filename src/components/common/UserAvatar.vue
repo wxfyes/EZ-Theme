@@ -1,11 +1,12 @@
-﻿<template>
+<template>
   <div class="user-avatar-container" ref="avatarContainer">
     <div class="avatar-wrapper" @click="toggleDropdown">
       <img 
-        v-if="avatarUrl" 
+        v-if="avatarUrl && !imageError" 
         :src="avatarUrl" 
         alt="User Avatar" 
-        class="avatar-image"
+        class="avatar-image"
+        @error="imageError = true"
       />
       <div v-else class="avatar-placeholder">
         <IconUser class="user-icon" />
@@ -73,7 +74,8 @@ export default {
     const { t } = useI18n();
     const { showToast } = useToast();
     const isDropdownOpen = ref(false);
-    const avatarContainer = ref(null);
+    const avatarContainer = ref(null);
+    const imageError = ref(false);
     
     const toggleDropdown = () => {
       isDropdownOpen.value = !isDropdownOpen.value;
@@ -119,7 +121,8 @@ export default {
       toggleDropdown,
       navigateTo,
       logout,
-      avatarContainer,
+      avatarContainer,
+      imageError,
       isXiaoV2board: isXiaoV2board()
     };
   }
@@ -128,13 +131,15 @@ export default {
 
 <style lang="scss" scoped>
 .user-avatar-container {
-  position: relative;
+  position: relative;
+  flex-shrink: 0;
 }
 
 .avatar-wrapper {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
+  border-radius: 50%;
+  flex-shrink: 0;
   cursor: pointer;
   overflow: hidden;
   background-color: rgba(var(--theme-color-rgb), 0.1);
