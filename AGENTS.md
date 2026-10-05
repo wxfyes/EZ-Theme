@@ -21,7 +21,20 @@
 
 ---
 
-## 二、工作技能与上下文继承 (必读)
+## 二、双商业主题与双管理后台协同迭代铁律 (Strict Parity Rule)
+
+1. **双商业前端主题协同开发（Feature Parity）**：
+   - 本项目并行维护两大官方商业前端主题：`EZ-Theme`（经典稳健）与 `V2Nexus-Theme`（现代轻奢）。
+   - **凡是添加任何新业务功能、新活动、新命令或交互优化（如每日签到、充值返现福利、Telegram 机器人绑定交互、提前开启新周期、套餐差价折抵等），必须在 EZ-Theme 与 V2Nexus-Theme 两个主题中一同实现、同步修改与构建，严禁只改一个漏掉另一个！**
+2. **双管理后台前端源码协同维护**：
+   - 后台管理端存在两套源码：
+     - **Vue 3 Element-Plus 版**：`e:\GitHub\v2board\admin-panel`（产物输出至 `public/assets/admin-new/`，对应 `admin.blade.php`）
+     - **React 19 Ant-Design 版**：`e:\GitHub\v2board\v2board-admin-main`（产物输出至 `public/assets/admin-react/`，对应 `admin_react.blade.php`）
+   - 新增管理后台功能（如【每日签到记录】），必须在**两套管理端源码**中同步增加页面、路由与侧边栏菜单，分别执行构建并同步至各自的 public 资产目录，保持双后台 100% 同步！
+
+---
+
+## 三、工作技能与上下文继承 (必读)
 
 1. **项目全量交接技能**：
    - 在开始任何需求开发或代码修改前，**必须首先调用并阅读技能**：`v2nexus-handover`。
