@@ -572,35 +572,45 @@ const router = createRouter({
 
 
 
-// 智能提取专属二级域名中的邀请码 (仅在站长明确配置专属推广域名时生效)
+// 智能提取专属二级域名中的邀请码 (严格校验：当前访问域名必须隶属于配置的专属推广域名)
 function getSubdomainInviteCode() {
   if (typeof window === 'undefined') return null;
 
   const themeConfig = window.settings?.theme_config || {};
-  const inviteDomain = themeConfig.custom_invite_domain;
-  const enableSubdomain = themeConfig.enable_subdomain_invite === true || themeConfig.enable_subdomain_invite === '1';
+  const inviteDomain = (themeConfig.custom_invite_domain || '').trim().toLowerCase();
 
-  // 必须显式配置了自定义邀请域名或开启了子域名邀请，方可触发提取，严禁误杀站长正常业务二级域名！
-  if (!inviteDomain && !enableSubdomain) {
+  // 核心守则：若未配置专属推广域名，直接返回 null，严禁任何拦截
+  if (!inviteDomain) {
     return null;
   }
 
-  const hostname = window.location.hostname;
-  if (/^(\d+\.){3}\d+$/.test(hostname) || hostname === 'localhost' || hostname.startsWith('www.')) {
+  // 清洗提取纯域名 (如从 https://tianque.cc 或 tianque.cc 提取出 tianque.cc)
+  const cleanInviteHost = inviteDomain.replace(/^https?:\/\//i, '').split('/')[0].split(':')[0];
+  if (!cleanInviteHost) return null;
+
+  const currentHost = window.location.hostname.toLowerCase();
+
+  // 核心守则：当前域名必须严格以 '.' + cleanInviteHost 结尾 (例如 xxx.tianque.cc)，才属于专属推广二级域名！
+  // 在 tianque.cngoodok.org 等业务主站域名下绝对不匹配！
+  if (!currentHost.endsWith('.' + cleanInviteHost)) {
     return null;
   }
-  const parts = hostname.split('.');
-  if (parts.length >= 3) {
-    const potentialCode = parts[0];
-    const systemPrefixes = [
-      'api', 'admin', 'panel', 'mail', 'cdn', 'static', 'assets', 'dev', 'test', 'app',
-      'user', 'client', 'portal', 'auth', 'node', 'vpn', 'v2', 'v2board', 'shop', 'member',
-      'cloud', 'vip', 'dash', 'web', 'home', 'main'
-    ];
-    if (potentialCode && /^[a-zA-Z0-9]{4,16}$/.test(potentialCode) && !systemPrefixes.includes(potentialCode.toLowerCase())) {
-      return potentialCode;
-    }
+
+  // 提取子域名前缀
+  const prefix = currentHost.slice(0, currentHost.length - cleanInviteHost.length - 1);
+  if (!prefix || prefix.includes('.')) {
+    return null;
   }
+
+  const systemPrefixes = [
+    'api', 'admin', 'panel', 'mail', 'cdn', 'static', 'assets', 'dev', 'test', 'app',
+    'user', 'client', 'portal', 'auth', 'node', 'vpn', 'v2', 'v2board', 'shop', 'member',
+    'cloud', 'vip', 'dash', 'web', 'home', 'main', 'www'
+  ];
+  if (/^[a-zA-Z0-9]{4,16}$/.test(prefix) && !systemPrefixes.includes(prefix)) {
+    return prefix;
+  }
+
   return null;
 }
 
