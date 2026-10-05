@@ -572,9 +572,19 @@ const router = createRouter({
 
 
 
-// 智能提取专属二级域名中的邀请码 (如 https://Lyhk1LDP.tianque.cc)
+// 智能提取专属二级域名中的邀请码 (仅在站长明确配置专属推广域名时生效)
 function getSubdomainInviteCode() {
   if (typeof window === 'undefined') return null;
+
+  const themeConfig = window.settings?.theme_config || {};
+  const inviteDomain = themeConfig.custom_invite_domain;
+  const enableSubdomain = themeConfig.enable_subdomain_invite === true || themeConfig.enable_subdomain_invite === '1';
+
+  // 必须显式配置了自定义邀请域名或开启了子域名邀请，方可触发提取，严禁误杀站长正常业务二级域名！
+  if (!inviteDomain && !enableSubdomain) {
+    return null;
+  }
+
   const hostname = window.location.hostname;
   if (/^(\d+\.){3}\d+$/.test(hostname) || hostname === 'localhost' || hostname.startsWith('www.')) {
     return null;
@@ -582,7 +592,11 @@ function getSubdomainInviteCode() {
   const parts = hostname.split('.');
   if (parts.length >= 3) {
     const potentialCode = parts[0];
-    const systemPrefixes = ['api', 'admin', 'panel', 'mail', 'cdn', 'static', 'assets', 'dev', 'test', 'app'];
+    const systemPrefixes = [
+      'api', 'admin', 'panel', 'mail', 'cdn', 'static', 'assets', 'dev', 'test', 'app',
+      'user', 'client', 'portal', 'auth', 'node', 'vpn', 'v2', 'v2board', 'shop', 'member',
+      'cloud', 'vip', 'dash', 'web', 'home', 'main'
+    ];
     if (potentialCode && /^[a-zA-Z0-9]{4,16}$/.test(potentialCode) && !systemPrefixes.includes(potentialCode.toLowerCase())) {
       return potentialCode;
     }
