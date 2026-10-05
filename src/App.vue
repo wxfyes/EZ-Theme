@@ -96,6 +96,7 @@ import CrispEmbed from '@/components/common/CrispEmbed.vue';
 import ResourcePreloader from '@/components/common/ResourcePreloader.vue';
 import pageCache from '@/utils/pageCache';
 import { IconGift } from '@tabler/icons-vue';
+import { getUserAvatarUrl } from '@/utils/avatar';
 
 export default {
   name: 'App',
@@ -151,7 +152,7 @@ export default {
     });
     
     const username = computed(() => store.getters.userInfo?.email || store.getters.userInfo?.username || '');
-    const avatarUrl = computed(() => store.getters.userInfo?.avatar_url || '');
+    const avatarUrl = computed(() => getUserAvatarUrl(store.getters.userInfo));
     
     const languageChangedSignal = ref(0);
     
