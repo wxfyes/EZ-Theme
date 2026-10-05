@@ -572,9 +572,35 @@ const router = createRouter({
 
 
 
+// 智能提取专属二级域名中的邀请码 (如 https://Lyhk1LDP.tianque.cc)
+function getSubdomainInviteCode() {
+  if (typeof window === 'undefined') return null;
+  const hostname = window.location.hostname;
+  if (/^(\d+\.){3}\d+$/.test(hostname) || hostname === 'localhost' || hostname.startsWith('www.')) {
+    return null;
+  }
+  const parts = hostname.split('.');
+  if (parts.length >= 3) {
+    const potentialCode = parts[0];
+    const systemPrefixes = ['api', 'admin', 'panel', 'mail', 'cdn', 'static', 'assets', 'dev', 'test', 'app'];
+    if (potentialCode && /^[a-zA-Z0-9]{4,16}$/.test(potentialCode) && !systemPrefixes.includes(potentialCode.toLowerCase())) {
+      return potentialCode;
+    }
+  }
+  return null;
+}
+
 router.beforeEach((to, from, next) => {
   if (to.name !== 'BrowserRestricted' && isBrowserRestricted()) {
     return next({ name: 'BrowserRestricted' });
+  }
+
+  // 若通过专属二级域名访问 (例如 https://Lyhk1LDP.tianque.cc)，自动重定向到注册页面并附带邀请码
+  if (to.path === '/' || to.path === '/landing' || to.path === '/login') {
+    const subCode = getSubdomainInviteCode();
+    if (subCode && !to.query.code) {
+      return next({ path: '/register', query: { ...to.query, code: subCode } });
+    }
   }
 
   if (to.meta.titleKey && i18n.global && i18n.global.t) {

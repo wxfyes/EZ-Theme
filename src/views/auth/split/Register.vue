@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 
   <div class="register-view-container">
 
@@ -1703,6 +1703,32 @@ export default {
             formData.inviteCode = codeMatch[1];
 
             inviteCodeFromUrl.value = true;
+
+          } else {
+
+            const hostname = window.location.hostname;
+
+            if (!/^(\d+\.){3}\d+$/.test(hostname) && hostname !== 'localhost' && !hostname.startsWith('www.')) {
+
+              const parts = hostname.split('.');
+
+              if (parts.length >= 3) {
+
+                const sub = parts[0];
+
+                const prefixes = ['api', 'admin', 'panel', 'mail', 'cdn', 'static', 'assets', 'dev', 'test', 'app'];
+
+                if (sub && /^[a-zA-Z0-9]{4,16}$/.test(sub) && !prefixes.includes(sub.toLowerCase())) {
+
+                  formData.inviteCode = sub;
+
+                  inviteCodeFromUrl.value = true;
+
+                }
+
+              }
+
+            }
 
           }
 
