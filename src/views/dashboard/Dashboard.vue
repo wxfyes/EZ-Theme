@@ -1687,46 +1687,46 @@ export default {
             url = `surge:///install-config?url=${encodeURIComponent(subscribeUrl)}&name=${siteName}`;
             break;
           case 'flclash':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl) + '&flag=meta'}&name=${siteName}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}&name=${encodeURIComponent(siteName)}`;
             break;
           case 'clashverge':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl) + '&flag=meta'}&name=${siteName}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}&name=${encodeURIComponent(siteName)}`;
             break;
           case 'nekobox':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl) + '&flag=meta'}&name=${siteName}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}&name=${encodeURIComponent(siteName)}`;
             break;
           case 'nekoray':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl) + '&flag=meta'}&name=${siteName}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}&name=${encodeURIComponent(siteName)}`;
             break;
           case 'clashx':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl)}&name=${siteName}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl)}&name=${encodeURIComponent(siteName)}`;
             break;
           case 'clashx-meta':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}&name=${siteName}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}&name=${encodeURIComponent(siteName)}`;
             break;
           case 'singbox-ios':
-            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl)}#${siteName}`;
+            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + '&flag=sing-box')}#${encodeURIComponent(siteName)}`;
             break;
           case 'singbox-android':
-            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl)}#${siteName}`;
+            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + '&flag=sing-box')}#${encodeURIComponent(siteName)}`;
             break;
           case 'singbox-windows':
-            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl)}#${siteName}`;
+            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + '&flag=sing-box')}#${encodeURIComponent(siteName)}`;
             break;
           case 'singbox-macos':
-            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl)}#${siteName}`;
+            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + '&flag=sing-box')}#${encodeURIComponent(siteName)}`;
             break;
           case 'hiddify-android':
-            url = `hiddify://import/${subscribeUrl}&flag=sing#${siteName}`;
+            url = `hiddify://install-sub?url=${encodeURIComponent(subscribeUrl + '&flag=sing')}#${encodeURIComponent(siteName)}`;
             break;
           case 'hiddify-windows':
-            url = `hiddify://import/${subscribeUrl}&flag=sing#${siteName}`;
+            url = `hiddify://install-sub?url=${encodeURIComponent(subscribeUrl + '&flag=sing')}#${encodeURIComponent(siteName)}`;
             break;
           case 'hiddify-macos':
-            url = `hiddify://import/${subscribeUrl}&flag=sing#${siteName}`;
+            url = `hiddify://install-sub?url=${encodeURIComponent(subscribeUrl + '&flag=sing')}#${encodeURIComponent(siteName)}`;
             break;
           case 'hiddify-ios':
-            url = `hiddify://import/${subscribeUrl}&flag=sing#${siteName}`;
+            url = `hiddify://install-sub?url=${encodeURIComponent(subscribeUrl + '&flag=sing')}#${encodeURIComponent(siteName)}`;
             break;
           default:
             navigator.clipboard.writeText(subscribeUrl)
@@ -1740,6 +1740,9 @@ export default {
         }
 
         if (url) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(subscribeUrl).catch(() => {});
+          }
           if (shouldUseCurrentWindow) {
             window.location.href = url;
           } else {

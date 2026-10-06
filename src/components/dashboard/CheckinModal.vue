@@ -114,7 +114,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import { getCheckinStatus, doCheckin } from '@/api/user';
 import {
   IconGift,
@@ -192,9 +192,16 @@ export default {
       }
     };
 
-    onMounted(() => {
-      loadStatus();
-    });
+      // 仅当弹窗真正被用户打开时才懒加载签到状态，消灭首屏多余并发请求
+      watch(
+        () => props.show,
+        (val) => {
+          if (val) {
+            loadStatus();
+          }
+        },
+        { immediate: false }
+      );
 
     return {
       loading,
