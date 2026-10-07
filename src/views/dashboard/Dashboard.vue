@@ -1687,46 +1687,46 @@ export default {
             url = `surge:///install-config?url=${encodeURIComponent(subscribeUrl)}&name=${siteName}`;
             break;
           case 'flclash':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}&name=${encodeURIComponent(siteName)}`;
+            url = `flclash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}&name=${encodeURIComponent(siteName)}`;
             break;
           case 'clashverge':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}&name=${encodeURIComponent(siteName)}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}&name=${encodeURIComponent(siteName)}`;
             break;
           case 'nekobox':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}&name=${encodeURIComponent(siteName)}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}&name=${encodeURIComponent(siteName)}`;
             break;
           case 'nekoray':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}&name=${encodeURIComponent(siteName)}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}&name=${encodeURIComponent(siteName)}`;
             break;
           case 'clashx':
             url = `clash://install-config?url=${encodeURIComponent(subscribeUrl)}&name=${encodeURIComponent(siteName)}`;
             break;
           case 'clashx-meta':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}&name=${encodeURIComponent(siteName)}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}&name=${encodeURIComponent(siteName)}`;
             break;
           case 'singbox-ios':
-            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + '&flag=sing-box')}#${encodeURIComponent(siteName)}`;
+            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=sing-box')}#${encodeURIComponent(siteName)}`;
             break;
           case 'singbox-android':
-            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + '&flag=sing-box')}#${encodeURIComponent(siteName)}`;
+            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=sing-box')}#${encodeURIComponent(siteName)}`;
             break;
           case 'singbox-windows':
-            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + '&flag=sing-box')}#${encodeURIComponent(siteName)}`;
+            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=sing-box')}#${encodeURIComponent(siteName)}`;
             break;
           case 'singbox-macos':
-            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + '&flag=sing-box')}#${encodeURIComponent(siteName)}`;
+            url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=sing-box')}#${encodeURIComponent(siteName)}`;
             break;
           case 'hiddify-android':
-            url = `hiddify://install-sub?url=${encodeURIComponent(subscribeUrl + '&flag=sing')}#${encodeURIComponent(siteName)}`;
+            url = `hiddify://install-sub?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=hiddify')}#${encodeURIComponent(siteName)}`;
             break;
           case 'hiddify-windows':
-            url = `hiddify://install-sub?url=${encodeURIComponent(subscribeUrl + '&flag=sing')}#${encodeURIComponent(siteName)}`;
+            url = `hiddify://install-sub?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=hiddify')}#${encodeURIComponent(siteName)}`;
             break;
           case 'hiddify-macos':
-            url = `hiddify://install-sub?url=${encodeURIComponent(subscribeUrl + '&flag=sing')}#${encodeURIComponent(siteName)}`;
+            url = `hiddify://install-sub?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=hiddify')}#${encodeURIComponent(siteName)}`;
             break;
           case 'hiddify-ios':
-            url = `hiddify://install-sub?url=${encodeURIComponent(subscribeUrl + '&flag=sing')}#${encodeURIComponent(siteName)}`;
+            url = `hiddify://install-sub?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=hiddify')}#${encodeURIComponent(siteName)}`;
             break;
           default:
             navigator.clipboard.writeText(subscribeUrl)
