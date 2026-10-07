@@ -157,6 +157,32 @@
                   <span class="saving-amount">&nbsp;{{ currencySymbol }}{{ calculateDiscount(plan).savingsAmount }}</span>
                 </div>
               </div>
+
+              <!-- 赛博极光流光优惠券舱 (仅在配置了该周期专属优惠码时展示，空值平滑隐藏) -->
+              <div 
+                class="coupon-streamer-pod"
+                v-if="getPlanCurrentCoupon(plan)"
+              >
+                <div class="coupon-shimmer-sweep"></div>
+                <div class="coupon-pod-content">
+                  <div class="coupon-left">
+                    <span class="coupon-badge-icon">
+                      <IconTicket :size="16" />
+                    </span>
+                    <span class="coupon-tag-label">{{ getPlanCurrentCoupon(plan).label }}</span>
+                    <span class="coupon-code-val">{{ getPlanCurrentCoupon(plan).code }}</span>
+                  </div>
+                  <button 
+                    type="button" 
+                    class="btn-copy-coupon" 
+                    @click.stop="copyCouponCode(getPlanCurrentCoupon(plan).code)"
+                    title="复制优惠码"
+                  >
+                    <IconCopy :size="14" />
+                    <span>复制</span>
+                  </button>
+                </div>
+              </div>
               
               <!-- 套餐特性 -->
               <div class="plan-features">
@@ -283,7 +309,7 @@ import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToast } from '@/composables/useToast';
 import { fetchPlans, getCommConfig, fetchCardProducts } from '@/api/shop';
-import { SHOP_CONFIG } from '@/utils/baseConfig';
+import { SHOP_CONFIG, getPeriodCouponConfig } from '@/utils/baseConfig';
 import ShopPopup from '@/components/shop/ShopPopup.vue';
 import {
   IconRocket,
@@ -297,7 +323,9 @@ import {
   IconInfoCircle,
   IconCircle,
   IconCircleCheck,
-  IconChevronDown
+  IconChevronDown,
+  IconTicket,
+  IconCopy
 } from '@tabler/icons-vue';
 import { useRouter } from 'vue-router';
 
@@ -316,6 +344,8 @@ export default {
     IconCircle,
     IconCircleCheck,
     IconChevronDown,
+    IconTicket,
+    IconCopy,
     ShopPopup
   },
   setup() {
@@ -589,6 +619,48 @@ export default {
       }
     };
     
+    // 获取套餐当前选中周期的流光优惠券配置
+    const getPlanCurrentCoupon = (plan) => {
+      const priceType = getDisplayPriceType(plan);
+      if (!priceType) return null;
+      return getPeriodCouponConfig(priceType);
+    };
+
+    // 一键复制优惠券码
+    const copyCouponCode = (code) => {
+      if (!code) return;
+      const successTip = `已复制优惠码 [${code}]，订阅将自动抵扣！`;
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard
+          .writeText(code)
+          .then(() => {
+            showToast(successTip, 'success');
+          })
+          .catch(() => {
+            fallbackCopy(code, successTip);
+          });
+      } else {
+        fallbackCopy(code, successTip);
+      }
+    };
+
+    const fallbackCopy = (text, successTip) => {
+      try {
+        const el = document.createElement('textarea');
+        el.value = text;
+        el.style.position = 'fixed';
+        el.style.opacity = '0';
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        showToast(successTip, 'success');
+      } catch (e) {
+        showToast(`优惠码为：${text}`, 'info');
+      }
+    };
+    
+    // 点击购买套餐 (携带当前选中的周期与专属优惠码，实现零阻力结账)
     const purchasePlan = (plan) => {
       if (plan.capacity_limit === 0) {
         showToast(t('shop.plan.stock.sold_out'), 'error');
@@ -596,12 +668,14 @@ export default {
       }
       
       const priceType = getDisplayPriceType(plan);
+      const couponCfg = getPlanCurrentCoupon(plan);
       
       router.push({
         path: 'order-confirm',
         query: { 
           id: plan.id,
-          period: priceType
+          period: priceType,
+          coupon: couponCfg?.code || ''
         }
       });
     };
@@ -762,7 +836,9 @@ export default {
       calculateDiscount,
       expandedCards,
       isLongDescription,
-      toggleExpand
+      toggleExpand,
+      getPlanCurrentCoupon,
+      copyCouponCode
     };
   }
 };
@@ -1233,6 +1309,102 @@ export default {
       }
     }
     
+    .coupon-streamer-pod {
+      position: relative;
+      margin: 8px 0 16px 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, rgba(244, 63, 94, 0.08) 50%, rgba(245, 158, 11, 0.08) 100%);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.08);
+
+      .coupon-shimmer-sweep {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.35) 50%, transparent 100%);
+        transform: skewX(-22deg);
+        animation: ez-coupon-sweep 3.6s infinite ease-in-out;
+        pointer-events: none;
+      }
+
+      .coupon-pod-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+
+        .coupon-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          min-width: 0;
+          flex-wrap: wrap;
+
+          .coupon-badge-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #f59e0b 0%, #f43f5e 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+
+          .coupon-tag-label {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(245, 158, 11, 0.2);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            white-space: nowrap;
+          }
+
+          .coupon-code-val {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            color: var(--text-color, #1e293b);
+          }
+        }
+
+        .btn-copy-coupon {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 10px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 700;
+          color: #b45309;
+          background: rgba(245, 158, 11, 0.15);
+          border: 1px solid rgba(245, 158, 11, 0.3);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+
+          &:hover {
+            background: rgba(245, 158, 11, 0.25);
+            transform: scale(1.02);
+          }
+
+          &:active {
+            transform: scale(0.96);
+          }
+        }
+      }
+    }
+    
     .plan-features {
       margin: 24px 0 10px 0;
       padding: 0 4px;
@@ -1623,6 +1795,18 @@ export default {
         }
       }
     }
+  }
+}
+
+@keyframes ez-coupon-sweep {
+  0% {
+    left: -100%;
+  }
+  35% {
+    left: 200%;
+  }
+  100% {
+    left: 200%;
   }
 }
 </style> 

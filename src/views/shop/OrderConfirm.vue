@@ -1332,6 +1332,12 @@ export default {
 
       await Promise.all([fetchPlanData(), fetchUserInfo(), fetchConfig()]);
 
+      // 若携带优惠码参数，自动注入并验证抵扣（实现零阻力直通结账）
+      if (route.query.coupon && typeof route.query.coupon === 'string' && route.query.coupon.trim()) {
+        couponCode.value = route.query.coupon.trim();
+        await verifyCoupon();
+      }
+
     });
 
     

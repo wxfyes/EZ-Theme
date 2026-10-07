@@ -41,10 +41,50 @@ if (typeof window !== 'undefined' && window.settings && window.settings.theme_co
         if (tc.enable_new_period !== undefined && tc.enable_new_period !== '') {
             window.__SYS_CFG__.enableNewPeriod = tc.enable_new_period === '1' || tc.enable_new_period === 1;
         }
+
+        // 套餐卡片流光优惠券与周期联动配置
+        window.__SYS_CFG__.COUPON_CONFIG = {
+            enabled: tc.coupon_streamer_enable !== undefined && tc.coupon_streamer_enable !== '' ? (tc.coupon_streamer_enable === '1' || tc.coupon_streamer_enable === 1) : true,
+            periods: {
+                month_price: { code: (tc.coupon_month_code || '').trim(), label: (tc.coupon_month_label || '95折').trim() },
+                quarter_price: { code: (tc.coupon_quarter_code || '').trim(), label: (tc.coupon_quarter_label || '9折').trim() },
+                half_year_price: { code: (tc.coupon_half_year_code || '').trim(), label: (tc.coupon_half_year_label || '85折').trim() },
+                year_price: { code: (tc.coupon_year_code || '').trim(), label: (tc.coupon_year_label || '8折').trim() },
+                two_year_price: { code: (tc.coupon_two_year_code || '').trim(), label: (tc.coupon_two_year_label || '75折').trim() },
+                three_year_price: { code: (tc.coupon_three_year_code || '').trim(), label: (tc.coupon_three_year_label || '7折').trim() },
+                onetime_price: { code: (tc.coupon_onetime_code || '').trim(), label: (tc.coupon_onetime_label || '特惠直减').trim() },
+            }
+        };
     } catch (e) {
         console.warn('解析后台主题配置失败:', e);
     }
 }
+
+/**
+ * 获取优惠券流光卡舱配置
+ */
+export function getPeriodCouponConfig(periodKey) {
+    if (typeof window === 'undefined') return null;
+    const couponCfg = window.__SYS_CFG__?.COUPON_CONFIG;
+    if (couponCfg && couponCfg.enabled === false) return null;
+    const item = couponCfg?.periods?.[periodKey];
+    if (item && item.code) {
+        return { code: item.code, label: item.label || '限时优惠' };
+    }
+    // 兼容直读 window.settings.theme_config
+    const tc = window.settings?.theme_config;
+    if (tc) {
+        if (tc.coupon_streamer_enable === '0' || tc.coupon_streamer_enable === 0) return null;
+        const codeKey = `coupon_${periodKey.replace('_price', '')}_code`;
+        const labelKey = `coupon_${periodKey.replace('_price', '')}_label`;
+        const code = (tc[codeKey] || '').trim();
+        if (code) {
+            return { code, label: (tc[labelKey] || '限时优惠').trim() };
+        }
+    }
+    return null;
+}
+
 
 const getConfig = (key, defaultValue) => {
     if (typeof window !== 'undefined' && window.__SYS_CFG__ && window.__SYS_CFG__[key] !== undefined) {
