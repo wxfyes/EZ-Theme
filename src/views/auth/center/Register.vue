@@ -1605,31 +1605,38 @@ export default {
             inviteCodeFromUrl.value = true;
 
           } else {
+            // 智能提取专属推广二级域名中的邀请码 (严格白名单匹配后台配置的 custom_invite_domain)
+            const themeConfig = window.settings?.theme_config || {};
+            const inviteDomain = (themeConfig.custom_invite_domain || '').trim().toLowerCase();
+            const currentHost = (window.location.hostname || '').toLowerCase();
+            const systemPrefixes = [
+              'api', 'admin', 'panel', 'mail', 'cdn', 'static', 'assets', 'dev', 'test', 'app',
+              'user', 'client', 'portal', 'auth', 'node', 'vpn', 'v2', 'v2board', 'shop', 'member',
+              'cloud', 'vip', 'dash', 'web', 'home', 'main', 'www', 'sub', 'subscribe', 'status',
+              'pay', 'payment', 'gateway', 'order', 'docs', 'help', 'blog', 'news', 'notice', 'support'
+            ];
 
-            const hostname = window.location.hostname;
-
-            if (!/^(\d+\.){3}\d+$/.test(hostname) && hostname !== 'localhost' && !hostname.startsWith('www.')) {
-
-              const parts = hostname.split('.');
-
-              if (parts.length >= 3) {
-
-                const sub = parts[0];
-
-                const prefixes = ['api', 'admin', 'panel', 'mail', 'cdn', 'static', 'assets', 'dev', 'test', 'app'];
-
-                if (sub && /^[a-zA-Z0-9]{4,16}$/.test(sub) && !prefixes.includes(sub.toLowerCase())) {
-
-                  formData.inviteCode = sub;
-
-                  inviteCodeFromUrl.value = true;
-
+            if (!/^(\d+\.){3}\d+$/.test(currentHost) && currentHost !== 'localhost' && currentHost.includes('.')) {
+              if (inviteDomain) {
+                const cleanInviteHost = inviteDomain.replace(/^https?:\/\//i, '').split('/')[0].split(':')[0];
+                if (cleanInviteHost && currentHost.endsWith('.' + cleanInviteHost)) {
+                  const prefix = currentHost.slice(0, currentHost.length - cleanInviteHost.length - 1);
+                  if (prefix && !prefix.includes('.') && !systemPrefixes.includes(prefix) && /^[a-zA-Z0-9_-]{3,32}$/.test(prefix)) {
+                    formData.inviteCode = prefix;
+                    inviteCodeFromUrl.value = true;
+                  }
                 }
-
+              } else {
+                const parts = currentHost.split('.');
+                if (parts.length >= 3) {
+                  const sub = parts[0];
+                  if (sub && /^[a-zA-Z0-9]{6,16}$/.test(sub) && !systemPrefixes.includes(sub)) {
+                    formData.inviteCode = sub;
+                    inviteCodeFromUrl.value = true;
+                  }
+                }
               }
-
             }
-
           }
 
         }

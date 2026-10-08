@@ -620,7 +620,7 @@ router.beforeEach((to, from, next) => {
   }
 
   // 若通过专属二级域名访问 (例如 https://Lyhk1LDP.tianque.cc)，自动重定向到注册页面并附带邀请码
-  if (to.path === '/' || to.path === '/landing' || to.path === '/login') {
+  if (to.path === '/' || to.path === '/landing' || to.path === '/login' || to.path === '/register') {
     const subCode = getSubdomainInviteCode();
     if (subCode && !to.query.code) {
       return next({ path: '/register', query: { ...to.query, code: subCode } });
