@@ -28,11 +28,43 @@ if (typeof window !== 'undefined' && window.settings && window.settings.theme_co
             window.__SYS_CFG__.CLIENT_CONFIG.showDownloadCard = tc.show_download_card === '1' || tc.show_download_card === 1;
         }
         window.__SYS_CFG__.CLIENT_CONFIG.clientLinks = window.__SYS_CFG__.CLIENT_CONFIG.clientLinks || {};
-        if (tc.client_windows) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.windows = tc.client_windows;
-        if (tc.client_android) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.android = tc.client_android;
-        if (tc.client_ios) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.ios = tc.client_ios;
-        if (tc.client_macos) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.macos = tc.client_macos;
-        if (tc.client_linux) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.linux = tc.client_linux;
+        if (tc.client_windows) {
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.windows = tc.client_windows;
+            window.__SYS_CFG__.CLIENT_CONFIG.showWindows = true;
+            window.__SYS_CFG__.CLIENT_CONFIG.showDownloadCard = true;
+        }
+        if (tc.client_android) {
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.android = tc.client_android;
+            window.__SYS_CFG__.CLIENT_CONFIG.showAndroid = true;
+            window.__SYS_CFG__.CLIENT_CONFIG.showDownloadCard = true;
+        }
+        if (tc.client_ios) {
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.ios = tc.client_ios;
+            window.__SYS_CFG__.CLIENT_CONFIG.showIOS = true;
+            window.__SYS_CFG__.CLIENT_CONFIG.showDownloadCard = true;
+        }
+        if (tc.client_macos || tc.client_macos_arm || tc.client_macos_intel) {
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.macos = tc.client_macos_arm || tc.client_macos_intel || tc.client_macos;
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.macos_arm = tc.client_macos_arm || '';
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.macos_intel = tc.client_macos_intel || '';
+            window.__SYS_CFG__.CLIENT_CONFIG.showMacOS = true;
+            window.__SYS_CFG__.CLIENT_CONFIG.showDownloadCard = true;
+        }
+        if (tc.client_linux) {
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.linux = tc.client_linux;
+            window.__SYS_CFG__.CLIENT_CONFIG.showLinux = true;
+            window.__SYS_CFG__.CLIENT_CONFIG.showDownloadCard = true;
+        }
+        if (tc.client_openwrt || tc.client_openwrt_x86_64 || tc.client_openwrt_aarch64 || tc.client_openwrt_arm_v7 || tc.client_openwrt_mips || tc.client_openwrt_releases) {
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.openwrt = tc.client_openwrt_x86_64 || tc.client_openwrt_aarch64 || tc.client_openwrt_releases || tc.client_openwrt || '';
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.openwrt_x86_64 = tc.client_openwrt_x86_64 || '';
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.openwrt_aarch64 = tc.client_openwrt_aarch64 || '';
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.openwrt_arm_v7 = tc.client_openwrt_arm_v7 || '';
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.openwrt_mips = tc.client_openwrt_mips || '';
+            window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.openwrt_releases = tc.client_openwrt_releases || '';
+            window.__SYS_CFG__.CLIENT_CONFIG.showOpenWrt = true;
+            window.__SYS_CFG__.CLIENT_CONFIG.showDownloadCard = true;
+        }
         if (tc.client_page) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks['下载页面'] = tc.client_page;
         if (tc.telegram_group) window.__SYS_CFG__.CLIENT_CONFIG.clientLinks.telegramGroup = tc.telegram_group;
         if (tc.checkin_enable !== undefined && tc.checkin_enable !== '') {
@@ -1079,3 +1111,93 @@ const DEFAULT_AUTH_CONFIG = {
 };
 
 export const AUTH_CONFIG = mergeDeep(DEFAULT_AUTH_CONFIG, getConfig('AUTH_CONFIG'));
+
+/**
+ * 获取 MacOS 客户端多架构下载配置
+ * @returns {{ arm: string, intel: string, defaultUrl: string, hasMultiArch: boolean, isAvailable: boolean }}
+ */
+export function getMacClientConfig() {
+  const tc = (typeof window !== 'undefined' && window.settings?.theme_config) || {};
+  const sysCfg = (typeof window !== 'undefined' && window.__SYS_CFG__?.CLIENT_CONFIG?.clientLinks) || {};
+  const arm = (tc.client_macos_arm || sysCfg.macos_arm || '').trim();
+  const intel = (tc.client_macos_intel || sysCfg.macos_intel || '').trim();
+  const legacy = (tc.client_macos || sysCfg.macos || '').trim();
+  const hasMultiArch = Boolean(arm || intel);
+  const isAvailable = Boolean(arm || intel || legacy);
+  return {
+    arm,
+    intel,
+    legacy,
+    defaultUrl: arm || intel || legacy,
+    hasMultiArch,
+    isAvailable,
+  };
+}
+
+/**
+ * 获取 OpenWrt 客户端多架构下载配置
+ * @returns {{ list: Array<{ key: string, name: string, label: string, desc: string, url: string }>, releasesUrl: string, isAvailable: boolean, defaultUrl: string }}
+ */
+export function getOpenwrtClientConfig() {
+  const tc = (typeof window !== 'undefined' && window.settings?.theme_config) || {};
+  const sysCfg = (typeof window !== 'undefined' && window.__SYS_CFG__?.CLIENT_CONFIG?.clientLinks) || {};
+  const x86_64 = (tc.client_openwrt_x86_64 || sysCfg.openwrt_x86_64 || '').trim();
+  const aarch64 = (tc.client_openwrt_aarch64 || sysCfg.openwrt_aarch64 || '').trim();
+  const arm_v7 = (tc.client_openwrt_arm_v7 || sysCfg.openwrt_arm_v7 || '').trim();
+  const mips = (tc.client_openwrt_mips || sysCfg.openwrt_mips || '').trim();
+  const releases = (tc.client_openwrt_releases || sysCfg.openwrt_releases || '').trim();
+  const legacy = (tc.client_openwrt || sysCfg.openwrt || '').trim();
+
+  const allArchs = [
+    {
+      key: 'x86_64',
+      name: 'x86_64 (64位)',
+      label: '软路由 / 工控机 / 虚拟机',
+      desc: '适用 J4125、N100、PVE、ESXi 等 64位 x86 设备',
+      url: x86_64,
+    },
+    {
+      key: 'aarch64',
+      name: 'aarch64 / ARM64',
+      label: 'ARM 64位硬路由 / 开发板',
+      desc: '适用 NanoPi R2S/R4S/R5S/R6S、红米 AX6000、MT7986 等',
+      url: aarch64,
+    },
+    {
+      key: 'arm_v7',
+      name: 'arm_cortex-a7 / a9',
+      label: 'ARM 32位经典硬路由',
+      desc: '适用高通 IPQ40xx、博通等主流 32位硬路由',
+      url: arm_v7,
+    },
+    {
+      key: 'mips',
+      name: 'mipsel_24kc / mips',
+      label: 'MIPS 架构路由器',
+      desc: '适用 MT7621、斐讯 K2P 等经典路由器',
+      url: mips,
+    },
+  ];
+
+  const availableList = allArchs.filter((item) => Boolean(item.url));
+
+  if (availableList.length === 0 && legacy) {
+    availableList.push({
+      key: 'general',
+      name: '通用架构 IPK',
+      label: '标准 OpenWrt 安装包',
+      desc: '路由器固件扩展安装包',
+      url: legacy,
+    });
+  }
+
+  const isAvailable = availableList.length > 0 || Boolean(releases);
+
+  return {
+    list: availableList,
+    releasesUrl: releases,
+    isAvailable,
+    defaultUrl: availableList[0]?.url || releases || legacy,
+  };
+}
+

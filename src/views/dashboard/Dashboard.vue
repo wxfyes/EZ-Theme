@@ -728,6 +728,20 @@
     </div>
   </transition>
 
+  <!-- MacOS 客户端多架构智能识别下载弹窗 -->
+  <MacArchModal
+    :show="showMacModal"
+    :mac-config="macConfig"
+    @close="showMacModal = false"
+  />
+
+  <!-- OpenWrt 路由器多架构选择下载弹窗 -->
+  <OpenWrtArchModal
+    :show="showOpenwrtModal"
+    :openwrt-config="openwrtConfig"
+    @close="showOpenwrtModal = false"
+  />
+
 </template>
 
 <script>
@@ -747,7 +761,7 @@ import {
 } from 'vue';
 import {useRouter} from 'vue-router';
 import {useI18n} from 'vue-i18n';
-import {CLIENT_CONFIG, DASHBOARD_CONFIG, isXiaoV2board, SITE_CONFIG, TRAFFICLOG_CONFIG} from '@/utils/baseConfig';
+import {CLIENT_CONFIG, DASHBOARD_CONFIG, isXiaoV2board, SITE_CONFIG, TRAFFICLOG_CONFIG, getMacClientConfig, getOpenwrtClientConfig} from '@/utils/baseConfig';
 import {
   IconAlertTriangle,
   IconBox,
@@ -792,6 +806,8 @@ import {
 } from '@tabler/icons-vue';
 import CommonDialog from '@/components/popup/CommonDialog.vue';
 import CheckinModal from '@/components/dashboard/CheckinModal.vue';
+import MacArchModal from '@/components/dashboard/MacArchModal.vue';
+import OpenWrtArchModal from '@/components/dashboard/OpenWrtArchModal.vue';
 const TrafficTrendChart = defineAsyncComponent(() => import('@/components/dashboard/TrafficTrendChart.vue'));
 import {getNotices, getSubscribe, getUserConfig, getUserInfo, getUserStats, setNextPeriod} from '@/api/dashboard';
 import {updateRemindSettings} from '@/api/user';
@@ -868,6 +884,8 @@ export default {
   name: 'UserDashboard',
   components: {
     CheckinModal,
+    MacArchModal,
+    OpenWrtArchModal,
     IconGift,
     IconBox,
     IconSend,
@@ -1041,7 +1059,29 @@ export default {
       router.push('/docs');
     };
 
+    const showMacModal = ref(false);
+    const showOpenwrtModal = ref(false);
+    const macConfig = computed(() => getMacClientConfig());
+    const openwrtConfig = computed(() => getOpenwrtClientConfig());
+
     const downloadClient = (platform) => {
+      if (platform === 'macos') {
+        if (macConfig.value.hasMultiArch) {
+          showMacModal.value = true;
+          return;
+        }
+        const url = macConfig.value.defaultUrl || clientConfig.clientLinks?.macos;
+        if (url) {
+          window.open(url, '_blank');
+        }
+        return;
+      }
+
+      if (platform === 'openwrt') {
+        showOpenwrtModal.value = true;
+        return;
+      }
+
       const downloadUrl = clientConfig.clientLinks[platform];
       if (downloadUrl) {
         window.open(downloadUrl, '_blank');
@@ -1675,34 +1715,34 @@ export default {
             url = `v2rayng://install-sub?url=${encodeURIComponent(subscribeUrl)}#${siteName}`;
             break;
           case 'clash':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl)}&name=${siteName}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl)}`;
             break;
           case 'clash-android':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl)}&name=${siteName}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl)}`;
             break;
           case 'clash-meta-android':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}&name=${siteName}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + '&flag=meta')}`;
             break;
           case 'surfboard':
             url = `surge:///install-config?url=${encodeURIComponent(subscribeUrl)}&name=${siteName}`;
             break;
           case 'flclash':
-            url = `flclash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}&name=${encodeURIComponent(siteName)}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}`;
             break;
           case 'clashverge':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}&name=${encodeURIComponent(siteName)}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}`;
             break;
           case 'nekobox':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}&name=${encodeURIComponent(siteName)}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}`;
             break;
           case 'nekoray':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}&name=${encodeURIComponent(siteName)}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}`;
             break;
           case 'clashx':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl)}&name=${encodeURIComponent(siteName)}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl)}`;
             break;
           case 'clashx-meta':
-            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}&name=${encodeURIComponent(siteName)}`;
+            url = `clash://install-config?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=meta')}`;
             break;
           case 'singbox-ios':
             url = `sing-box://import-remote-profile?url=${encodeURIComponent(subscribeUrl + (subscribeUrl.includes('?') ? '&' : '?') + 'flag=sing-box')}#${encodeURIComponent(siteName)}`;
@@ -2026,6 +2066,10 @@ export default {
       goToShop,
       openDocumentation,
       downloadClient,
+      showMacModal,
+      showOpenwrtModal,
+      macConfig,
+      openwrtConfig,
       hasPendingItems,
       router,
       currentNoticeIndex,
