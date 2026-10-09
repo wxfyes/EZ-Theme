@@ -1598,7 +1598,9 @@ export default {
       if (userPlan.value.subscribeUrl) {
         qrCodeLoading.value = true;
         try {
-          QRCode.toDataURL(userPlan.value.subscribeUrl, {
+          const siteName = SITE_CONFIG.siteName || '订阅';
+          const fullQrUrl = `${userPlan.value.subscribeUrl}#${encodeURIComponent(siteName)}`;
+          QRCode.toDataURL(fullQrUrl, {
             width: 200,
             margin: 2,
             color: {
