@@ -1599,7 +1599,7 @@ export default {
         qrCodeLoading.value = true;
         try {
           const siteName = SITE_CONFIG.siteName || '订阅';
-          const fullQrUrl = `${userPlan.value.subscribeUrl}#${encodeURIComponent(siteName)}`;
+          const fullQrUrl = `${userPlan.value.subscribeUrl}#${siteName}`;
           QRCode.toDataURL(fullQrUrl, {
             width: 200,
             margin: 2,
